@@ -1,32 +1,11 @@
-name: Log Push Activity
-
-on:
-  push:
-    branches:
-      - '**'  # Trigger on all branches
-
-jobs:
-  log-push:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      
-    - name: Get commit details
-      run: |
-        echo "Logging Push Event"
-        echo "Push detected for branch: ${{ github.ref }}" >> push-log.txt
-        echo "Commit Message: ${{ github.event.head_commit.message }}" >> push-log.txt
-        echo "Commit Author: ${{ github.event.head_commit.committer.name }}" >> push-log.txt
-        echo "Commit Timestamp: ${{ github.event.head_commit.timestamp }}" >> push-log.txt
-        echo "Log written at: $(date)" >> push-log.txt
-        echo "------------" >> push-log.txt
-
-    - name: Save the log to repository
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add push-log.txt
-        git commit -m "Update Push Log"
-        git push origin HEAD
+{
+  "timestamp": "2025-12-06T14:32:00Z",
+  "branch": "refs/heads/main",
+  "commit_message": "Fix bug in authentication",
+  "commit_author": "realnotsteve",
+  "files_changed": [
+    { "file": "src/main.py", "status": "M" },
+    { "file": "src/utils/logger.py", "status": "A" },
+    { "file": "src/old_code.py", "status": "D" }
+  ]
+}
