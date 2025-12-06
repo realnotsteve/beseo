@@ -5,9 +5,6 @@ on:
     paths:
       - 'beseo/**'
       - 'beseo'
-    # ignore the log so commits that update the log won't re-trigger
-    paths-ignore:
-      - 'logs/beseo.jsonl'
 
 permissions:
   contents: write
