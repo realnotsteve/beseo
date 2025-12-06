@@ -21,36 +21,41 @@ jobs:
 
     - name: Generate a new JSON entry for the push
       env:
-        GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        GITHUB_EVENT_HEAD_COMMIT_COMMITTER_NAME: ${{ github.event.head_commit.committer.name }}
         GITHUB_REF: ${{ github.ref }}
+        GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
+        GITHUB_AUTHOR: ${{ github.event.head_commit.committer.name }}
       run: |
-        # Handle HEAD^ gracefully
+        # Check for file changes using git diff
         if git rev-parse HEAD^ >/dev/null 2>&1; then
-          FILE_DIFF=$(git diff --name-status HEAD^ HEAD | jq -R '. | split("\t") | {file: .[1], status: .[0]}')
+          FILE_DIFF=$(git diff HEAD^ HEAD --name-status | jq -R 'split("\t") | {file: .[1], status: .[0]}')
         else
           FILE_DIFF="[]"
         fi
 
-        # Create the new log entry
+        # Create the JSON entry
         NEW_LOG=$(cat <<EOF
         {
-          "timestamp": "$(date --iso-8601=seconds)",
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
           "branch": "${GITHUB_REF}",
-          "commit_message": "${GITHUB_EVENT_HEAD_COMMIT_MESSAGE}",
-          "commit_author": "${GITHUB_EVENT_HEAD_COMMIT_COMMITTER_NAME}",
-          "files_changed": ${FILE_DIFF}
+          "commit_message": "${GITHUB_MESSAGE}",
+          "commit_author": "${GITHUB_AUTHOR}",
+          "files_changed": $FILE_DIFF
         }
         EOF
         )
+        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry, stopping workflow" && exit 1)
 
-        # Validate the new log entry
-        echo "$NEW_LOG" | jq . || (echo "JSON is invalid" && exit 1)
-
-        # Append the new log to the file
+        # Append the JSON entry to the log
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
-    - name: Push updated log
+    - name: Debug Log File and Git Status
+      run: |
+        echo "Contents of BE_SEO-Commit_Log.json:"
+        cat BE_SEO-Commit_Log.json
+        echo "Unstaged changes:"
+        git status
+
+    - name: Push Updated Commit Log
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
