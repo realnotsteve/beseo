@@ -7,6 +7,9 @@
  * Tabs:
  *  - Settings  (global plugin toggles, Elementor toggle, debug, snapshot)
  *  - Website   (site entities: Global / Person / Organisation / Publisher)
+ *
+ * User test
+ *
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
