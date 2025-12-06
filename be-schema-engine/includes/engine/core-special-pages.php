@@ -277,31 +277,3 @@ function be_schema_output_special_page_schema() {
 
     echo '<script type="application/ld+json">' . wp_json_encode( $node ) . '</script>' . "\n";
 }
-
-/**
- * Normalize free-text descriptions:
- * - Strip tags
- * - Collapse whitespace
- * - Trim to a reasonable length.
- *
- * @param string $text Raw text.
- * @param int    $max_length Max length (characters).
- * @return string
- */
-function be_schema_normalize_text( $text, $max_length = 320 ) {
-    $text = (string) $text;
-    $text = wp_strip_all_tags( $text );
-    $text = preg_replace( '/\s+/', ' ', $text );
-    $text = trim( $text );
-
-    if ( $max_length > 0 && strlen( $text ) > $max_length ) {
-        $text = substr( $text, 0, $max_length );
-        // Trim to last full word.
-        $last_space = strrpos( $text, ' ' );
-        if ( false !== $last_space && $last_space > 0 ) {
-            $text = substr( $text, 0, $last_space );
-        }
-    }
-
-    return $text;
-}

@@ -398,7 +398,17 @@ function be_schema_elementor_build_videoplaylist_nodes( array $settings, array &
         return;
     }
 
-    $page_url = get_permalink();
+    // Resolve the page URL safely.
+	$post = get_post();
+	if ( ! $post instanceof WP_Post ) {
+		return $nodes;
+	}
+	
+	$page_url = get_permalink( $post );
+	if ( ! $page_url ) {
+		return $nodes;
+	}
+    
     if ( ! $page_url ) {
         $page_url = trailingslashit( home_url() );
     }
