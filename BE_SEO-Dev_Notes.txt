@@ -17,10 +17,10 @@ This file is the authoritative reference for the **BE Schema Engine** developmen
    - Any structural or functional change to the project should result in an update to this file.
 
 2. **Commit Log File**:
-   - ChatGPT must examine the **commit log** (`BE_SEO-Commit_Log.js`) after every push to keep its knowledge synchronized with the codebase. 
+   - ChatGPT must examine the **commit log** (`BE_SEO-Commit_Log.json`) after every push to keep its knowledge synchronized with the codebase. 
    - The log contains a history of all code commits, the files changed in each commit, and other metadata.
    - Always access the log from this URL: 
-     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
+     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json]
 
 3. **File Access Using URLs**:
    - Every source file is listed in the **Directory Structure** below, along with its corresponding raw GitHub URL (in square brackets).
