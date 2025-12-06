@@ -49,21 +49,25 @@ jobs:
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
     - name: Check for Changes in Log File
+      id: check_changes
       run: |
         if git diff --quiet BE_SEO-Commit_Log.json; then
-          echo "No changes to commit. Exiting workflow."
-          exit 0
+          echo "No changes detected. Exiting successfully."
+          exit 0  # Graceful exit if no changes
+        else
+          echo "::set-output name=changes_detected::true"
         fi
 
     - name: Debug Log File and Git Status
-      if: always() # Always run this step for debugging, even if the workflow exits
+      if: always() # Always run this step for debugging
       run: |
         echo "Contents of BE_SEO-Commit_Log.json:"
         cat BE_SEO-Commit_Log.json
         echo "Unstaged changes:"
         git status
 
-    - name: Push Updated Commit Log
+    - name: Commit and Push Updated Commit Log
+      if: steps.check_changes.outputs.changes_detected == 'true' # Run only if changes are detected
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
