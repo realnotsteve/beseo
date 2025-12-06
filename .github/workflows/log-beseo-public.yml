@@ -1,54 +1,61 @@
-name: Log Pushes to BE_SEO-Commit_Log.js
+name: Update Commit Log
 
 on:
   push:
     branches:
-      - '**'
+      - '**' # Listen for pushes to all branches
 
 jobs:
   log-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout the repository
       uses: actions/checkout@v3
 
-    - name: Initialize `BE_SEO-Commit_Log.js` if it doesn't exist
+    - name: Ensure Commit Log File Exists
       run: |
-        if [ ! -f BE_SEO-Commit_Log.js ]; then
-          echo "[]" > BE_SEO-Commit_Log.js
+        if [ ! -f BE_SEO-Commit_Log.json ]; then
+          echo "[]" > BE_SEO-Commit_Log.json
         fi
 
-    - name: Append JSON log of this change
+    - name: Generate a new JSON entry for the push
+      env:
+        GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        GITHUB_EVENT_HEAD_COMMIT_COMMITTER_NAME: ${{ github.event.head_commit.committer.name }}
+        GITHUB_REF: ${{ github.ref }}
       run: |
-        # Generate a new JSON entry for the push
+        # Handle HEAD^ gracefully
+        if git rev-parse HEAD^ >/dev/null 2>&1; then
+          FILE_DIFF=$(git diff --name-status HEAD^ HEAD | jq -R '. | split("\t") | {file: .[1], status: .[0]}')
+        else
+          FILE_DIFF="[]"
+        fi
+
+        # Create the new log entry
         NEW_LOG=$(cat <<EOF
         {
           "timestamp": "$(date --iso-8601=seconds)",
-          "branch": "${{ github.ref }}",
-          "commit_message": "${{ github.event.head_commit.message }}",
-          "commit_author": "${{ github.event.head_commit.committer.name }}",
-          "files_changed": [
+          "branch": "${GITHUB_REF}",
+          "commit_message": "${GITHUB_EVENT_HEAD_COMMIT_MESSAGE}",
+          "commit_author": "${GITHUB_EVENT_HEAD_COMMIT_COMMITTER_NAME}",
+          "files_changed": ${FILE_DIFF}
+        }
         EOF
         )
 
-        # List the files that were added, modified, or deleted in this push
-        git fetch origin
-        git diff --name-status HEAD^ HEAD | while read -r status file; do
-          NEW_LOG+="    {\"file\": \"${file}\", \"status\": \"${status}\"},"
-        done
+        # Validate the new log entry
+        echo "$NEW_LOG" | jq . || (echo "JSON is invalid" && exit 1)
 
-        # Close array
-        NEW_LOG=$(echo "$NEW_LOG" | sed '$s/,$/]/')")"
-        NEW_LOG+="}"
+        # Append the new log to the file
+        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
-        # Append the new log entry to the historical JSON file
-        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.js > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.js
-
-    - name: Save updated log to repository
+    - name: Push updated log
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add BE_SEO-Commit_Log.js
-        git commit -m "Update commit log (BE_SEO-Commit_Log.js)"
+        git add BE_SEO-Commit_Log.json
+        git commit -m "Update Commit Log"
         git push origin HEAD
