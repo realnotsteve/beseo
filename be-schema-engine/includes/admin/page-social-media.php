@@ -5,11 +5,9 @@
  * Submenu: BE SEO → Social Media
  *
  * Tabs:
- * - Settings  (global toggles + global default image)
- * - Facebook  (OG defaults)
- * - Twitter   (Twitter Card defaults)
- *
- * Stores settings in the be_schema_social_settings option.
+ *  - Settings (global enable flags + global fallback image + tiny image summary)
+ *  - Facebook (FB page, FB default image, app id, notes)
+ *  - Twitter (handle, card type, Twitter default image, notes)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,44 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Get Social Media settings for OG/Twitter (admin side).
+ * Save BE Social Media settings.
  *
- * Keep defaults in sync with:
- * - includes/engine/core-social.php -> be_schema_social_get_settings()
- *
- * @return array
- */
-function be_schema_engine_get_social_settings() {
-    $defaults = array(
-        // Global settings.
-        'social_enable_og'       => '0',
-        'social_enable_twitter'  => '0',
-        'social_default_image'   => '',
-
-        // Facebook.
-        'facebook_page_url'      => '',
-        'facebook_default_image' => '',
-        'facebook_app_id'        => '',
-        'facebook_notes'         => '',
-
-        // Twitter.
-        'twitter_handle'         => '',
-        'twitter_card_type'      => 'summary_large_image',
-        'twitter_default_image'  => '',
-        'twitter_notes'          => '',
-    );
-
-    $saved = get_option( 'be_schema_social_settings', array() );
-
-    if ( ! is_array( $saved ) ) {
-        $saved = array();
-    }
-
-    return wp_parse_args( $saved, $defaults );
-}
-
-/**
- * Save Social Media settings from the admin form.
+ * Option name: be_schema_social_settings
  */
 function be_schema_engine_save_social_settings() {
     if ( ! current_user_can( 'manage_options' ) ) {
@@ -63,23 +26,34 @@ function be_schema_engine_save_social_settings() {
 
     if (
         ! isset( $_POST['be_schema_social_settings_nonce'] ) ||
-        ! wp_verify_nonce( $_POST['be_schema_social_settings_nonce'], 'be_schema_social_save_settings' )
+        ! wp_verify_nonce( $_POST['be_schema_social_settings_nonce'], 'be_schema_engine_save_social_settings' )
     ) {
         return;
     }
 
-    $settings = be_schema_engine_get_social_settings();
+    // Load current settings from helper if available.
+    if ( function_exists( 'be_schema_social_get_settings' ) ) {
+        $settings = be_schema_social_get_settings();
+    } else {
+        $settings = get_option( 'be_schema_social_settings', array() );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+    }
 
-    // Global toggles.
-    $settings['social_enable_og']      = isset( $_POST['be_schema_social_enable_og'] ) ? '1' : '0';
-    $settings['social_enable_twitter'] = isset( $_POST['be_schema_social_enable_twitter'] ) ? '1' : '0';
+    // SETTINGS TAB -------------------------------.
 
-    // Global default image (URL).
-    $settings['social_default_image'] = isset( $_POST['be_schema_social_default_image'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_social_default_image'] ) )
+    // Global enables.
+    $settings['og_enabled']      = isset( $_POST['be_schema_og_enabled'] ) ? '1' : '0';
+    $settings['twitter_enabled'] = isset( $_POST['be_schema_twitter_enabled'] ) ? '1' : '0';
+
+    // Global default fallback image.
+    $settings['global_default_image'] = isset( $_POST['be_schema_global_default_image'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_global_default_image'] ) )
         : '';
 
-    // Facebook fields.
+    // FACEBOOK TAB ------------------------------.
+
     $settings['facebook_page_url'] = isset( $_POST['be_schema_facebook_page_url'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_facebook_page_url'] ) )
         : '';
@@ -96,21 +70,15 @@ function be_schema_engine_save_social_settings() {
         ? wp_kses_post( wp_unslash( $_POST['be_schema_facebook_notes'] ) )
         : '';
 
-    // Twitter fields.
+    // TWITTER TAB -------------------------------.
+
     $settings['twitter_handle'] = isset( $_POST['be_schema_twitter_handle'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_handle'] ) )
         : '';
 
-    $allowed_card_types  = array( 'summary', 'summary_large_image' );
-    $submitted_card_type = isset( $_POST['be_schema_twitter_card_type'] )
+    $settings['twitter_card_type'] = isset( $_POST['be_schema_twitter_card_type'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_card_type'] ) )
         : 'summary_large_image';
-
-    if ( ! in_array( $submitted_card_type, $allowed_card_types, true ) ) {
-        $submitted_card_type = 'summary_large_image';
-    }
-
-    $settings['twitter_card_type'] = $submitted_card_type;
 
     $settings['twitter_default_image'] = isset( $_POST['be_schema_twitter_default_image'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_twitter_default_image'] ) )
@@ -124,11 +92,14 @@ function be_schema_engine_save_social_settings() {
 }
 
 /**
- * Render the "Social Media" admin page.
+ * Render the Social Media admin page (BE SEO → Social Media).
  */
 function be_schema_engine_render_social_media_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
 
-    // Enqueue media library for image pickers.
+    // Enqueue media for image pickers.
     if ( function_exists( 'wp_enqueue_media' ) ) {
         wp_enqueue_media();
     }
@@ -138,13 +109,21 @@ function be_schema_engine_render_social_media_page() {
         be_schema_engine_save_social_settings();
     }
 
-    $settings = be_schema_engine_get_social_settings();
+    // Settings snapshot from canonical helper.
+    if ( function_exists( 'be_schema_social_get_settings' ) ) {
+        $settings = be_schema_social_get_settings();
+    } else {
+        $settings = get_option( 'be_schema_social_settings', array() );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+    }
 
-    $social_enable_og      = ( isset( $settings['social_enable_og'] ) && '1' === $settings['social_enable_og'] );
-    $social_enable_twitter = ( isset( $settings['social_enable_twitter'] ) && '1' === $settings['social_enable_twitter'] );
+    // Simple access helpers.
+    $og_enabled      = ! empty( $settings['og_enabled'] ) && '1' === $settings['og_enabled'];
+    $twitter_enabled = ! empty( $settings['twitter_enabled'] ) && '1' === $settings['twitter_enabled'];
 
-    $social_default_image = isset( $settings['social_default_image'] ) ? $settings['social_default_image'] : '';
-
+    $global_default_image   = isset( $settings['global_default_image'] ) ? $settings['global_default_image'] : '';
     $facebook_page_url      = isset( $settings['facebook_page_url'] ) ? $settings['facebook_page_url'] : '';
     $facebook_default_image = isset( $settings['facebook_default_image'] ) ? $settings['facebook_default_image'] : '';
     $facebook_app_id        = isset( $settings['facebook_app_id'] ) ? $settings['facebook_app_id'] : '';
@@ -154,13 +133,14 @@ function be_schema_engine_render_social_media_page() {
     $twitter_card_type     = isset( $settings['twitter_card_type'] ) ? $settings['twitter_card_type'] : 'summary_large_image';
     $twitter_default_image = isset( $settings['twitter_default_image'] ) ? $settings['twitter_default_image'] : '';
     $twitter_notes         = isset( $settings['twitter_notes'] ) ? $settings['twitter_notes'] : '';
+
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-social-wrap">
         <h1><?php esc_html_e( 'BE SEO – Social Media', 'be-schema-engine' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
-                'Configure global defaults for OpenGraph and Twitter Cards. This panel only controls social meta tags and does not change JSON-LD schema.',
+                'Configure OpenGraph and Twitter Card defaults. This module controls social meta only; it does not change JSON-LD schema or sameAs arrays.',
                 'be-schema-engine'
             ); ?>
         </p>
@@ -215,30 +195,7 @@ function be_schema_engine_render_social_media_page() {
             }
 
             .be-schema-social-description {
-                max-width: 720px;
-            }
-
-            .be-schema-social-image-field {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .be-schema-social-image-field input[type="text"] {
-                width: 360px;
-            }
-
-            .be-schema-social-image-preview {
-                margin-top: 8px;
-            }
-
-            .be-schema-social-image-preview img {
-                max-width: 150px;
-                height: auto;
-                border: 1px solid #ccd0d4;
-                padding: 2px;
-                background: #fff;
+                max-width: 760px;
             }
 
             .be-schema-social-status-pill {
@@ -255,19 +212,81 @@ function be_schema_engine_render_social_media_page() {
                 background: #fbeaea;
                 color: #8a1f11;
             }
+
+            .be-schema-image-field {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .be-schema-image-field input[type="text"] {
+                width: 360px;
+            }
+
+            .be-schema-image-preview {
+                margin-top: 8px;
+            }
+
+            .be-schema-image-preview img {
+                max-width: 150px;
+                height: auto;
+                border: 1px solid #ccd0d4;
+                padding: 2px;
+                background: #fff;
+            }
+
+            .be-schema-social-mini-summary {
+                margin-top: 20px;
+                padding: 12px 10px;
+                border-left: 4px solid #ccd0d4;
+                background: #f8f9fa;
+                max-width: 760px;
+            }
+
+            .be-schema-social-mini-summary h3 {
+                margin-top: 0;
+                margin-bottom: 8px;
+            }
+
+            .be-schema-social-mini-summary ul {
+                margin: 0 0 8px 18px;
+                padding: 0;
+                list-style: disc;
+            }
+
+            .be-schema-social-mini-summary li {
+                margin-bottom: 2px;
+            }
+
+            .be-schema-social-mini-summary-images {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                margin-top: 6px;
+            }
+
+            .be-schema-social-mini-summary-images > div {
+                font-size: 12px;
+            }
+
+            .be-schema-social-mini-summary-images strong {
+                display: block;
+                margin-bottom: 2px;
+            }
         </style>
 
         <p>
-            <span class="be-schema-social-status-pill <?php echo $social_enable_og ? '' : 'off'; ?>">
-                <?php echo $social_enable_og ? esc_html__( 'OpenGraph: ON', 'be-schema-engine' ) : esc_html__( 'OpenGraph: OFF', 'be-schema-engine' ); ?>
+            <span class="be-schema-social-status-pill <?php echo $og_enabled ? '' : 'off'; ?>">
+                <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'be-schema-engine' ) : esc_html__( 'OpenGraph: OFF', 'be-schema-engine' ); ?>
             </span>
-            <span class="be-schema-social-status-pill <?php echo $social_enable_twitter ? '' : 'off'; ?>">
-                <?php echo $social_enable_twitter ? esc_html__( 'Twitter Cards: ON', 'be-schema-engine' ) : esc_html__( 'Twitter Cards: OFF', 'be-schema-engine' ); ?>
+            <span class="be-schema-social-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
+                <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'be-schema-engine' ) : esc_html__( 'Twitter Cards: OFF', 'be-schema-engine' ); ?>
             </span>
         </p>
 
         <form method="post">
-            <?php wp_nonce_field( 'be_schema_social_save_settings', 'be_schema_social_settings_nonce' ); ?>
+            <?php wp_nonce_field( 'be_schema_engine_save_social_settings', 'be_schema_social_settings_nonce' ); ?>
             <input type="hidden" name="be_schema_social_settings_submitted" value="1" />
 
             <div class="be-schema-social-tabs">
@@ -295,31 +314,31 @@ function be_schema_engine_render_social_media_page() {
                     </li>
                 </ul>
 
-                <!-- Settings tab -->
+                <!-- SETTINGS TAB -->
                 <div id="be-schema-social-tab-settings"
                      class="be-schema-social-tab-panel be-schema-social-tab-panel-active">
-                    <h2><?php esc_html_e( 'Global Settings', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Global Social Settings', 'be-schema-engine' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Enable OpenGraph tags', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Enable OpenGraph', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <label>
                                         <input type="checkbox"
-                                               name="be_schema_social_enable_og"
+                                               name="be_schema_og_enabled"
                                                value="1"
-                                               <?php checked( $social_enable_og ); ?> />
+                                               <?php checked( $og_enabled ); ?> />
                                         <?php esc_html_e(
-                                            'Output og:* meta tags in the document head.',
+                                            'Output og:* tags for supported pages.',
                                             'be-schema-engine'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'When enabled, the Social engine outputs OpenGraph tags using these settings as defaults. Per-page overrides can be added in a future version.',
+                                            'When enabled, the plugin will output OpenGraph tags for pages and posts using the rules described below.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -333,17 +352,17 @@ function be_schema_engine_render_social_media_page() {
                                 <td>
                                     <label>
                                         <input type="checkbox"
-                                               name="be_schema_social_enable_twitter"
+                                               name="be_schema_twitter_enabled"
                                                value="1"
-                                               <?php checked( $social_enable_twitter ); ?> />
+                                               <?php checked( $twitter_enabled ); ?> />
                                         <?php esc_html_e(
-                                            'Output twitter:* meta tags in the document head.',
+                                            'Output twitter:* tags for supported pages.',
                                             'be-schema-engine'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'When enabled, the Social engine outputs Twitter Card meta tags using these settings as defaults.',
+                                            'When enabled, the plugin will output Twitter Card tags for pages and posts using the rules described below.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -352,49 +371,117 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default fallback image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Global default image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
-                                    <div class="be-schema-social-image-field">
+                                    <div class="be-schema-image-field">
                                         <input type="text"
-                                               id="be_schema_social_default_image"
-                                               name="be_schema_social_default_image"
-                                               value="<?php echo esc_url( $social_default_image ); ?>"
+                                               id="be_schema_global_default_image"
+                                               name="be_schema_global_default_image"
+                                               value="<?php echo esc_url( $global_default_image ); ?>"
                                                class="regular-text" />
                                         <button type="button"
-                                                class="button be-schema-social-image-select"
-                                                data-target-input="be_schema_social_default_image"
-                                                data-target-preview="be_schema_social_default_image_preview">
+                                                class="button be-schema-image-select"
+                                                data-target-input="be_schema_global_default_image"
+                                                data-target-preview="be_schema_global_default_image_preview">
                                             <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
-                                                class="button be-schema-social-image-clear"
-                                                data-target-input="be_schema_social_default_image"
-                                                data-target-preview="be_schema_social_default_image_preview">
+                                                class="button be-schema-image-clear"
+                                                data-target-input="be_schema_global_default_image"
+                                                data-target-preview="be_schema_global_default_image_preview">
                                             <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
                                         </button>
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Used as a global fallback for OpenGraph and Twitter Cards when no featured image and no network-specific default image are available.',
+                                            'Used as a final fallback when there is no featured image and no network-specific default image. This applies to both OpenGraph and Twitter.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
-                                    <div id="be_schema_social_default_image_preview"
-                                         class="be-schema-social-image-preview">
-                                        <?php if ( $social_default_image ) : ?>
-                                            <img src="<?php echo esc_url( $social_default_image ); ?>" alt="" />
+                                    <div id="be_schema_global_default_image_preview"
+                                         class="be-schema-image-preview">
+                                        <?php if ( $global_default_image ) : ?>
+                                            <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
                                         <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <!-- Tiny "what image did we pick?" style summary -->
+                    <div class="be-schema-social-mini-summary">
+                        <h3><?php esc_html_e( 'Image selection summary', 'be-schema-engine' ); ?></h3>
+                        <p class="be-schema-social-description">
+                            <?php esc_html_e(
+                                'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
+                                'be-schema-engine'
+                            ); ?>
+                        </p>
+                        <ul>
+                            <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'be-schema-engine' ); ?></li>
+                            <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'be-schema-engine' ); ?></li>
+                            <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'be-schema-engine' ); ?></li>
+                        </ul>
+
+                        <p class="be-schema-social-description">
+                            <?php esc_html_e(
+                                'Below is a quick preview of the images that will be used when there is no featured image on a page:',
+                                'be-schema-engine'
+                            ); ?>
+                        </p>
+
+                        <div class="be-schema-social-mini-summary-images">
+                            <div>
+                                <strong><?php esc_html_e( 'Global fallback image', 'be-schema-engine' ); ?></strong>
+                                <?php if ( $global_default_image ) : ?>
+                                    <div class="be-schema-image-preview">
+                                        <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
+                                    </div>
+                                    <code><?php echo esc_html( $global_default_image ); ?></code>
+                                <?php else : ?>
+                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'be-schema-engine' ); ?></em>
+                                <?php endif; ?>
+                            </div>
+
+                            <div>
+                                <strong><?php esc_html_e( 'Facebook default OG image', 'be-schema-engine' ); ?></strong>
+                                <?php if ( $facebook_default_image ) : ?>
+                                    <div class="be-schema-image-preview">
+                                        <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
+                                    </div>
+                                    <code><?php echo esc_html( $facebook_default_image ); ?></code>
+                                <?php else : ?>
+                                    <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'be-schema-engine' ); ?></em>
+                                <?php endif; ?>
+                            </div>
+
+                            <div>
+                                <strong><?php esc_html_e( 'Twitter default card image', 'be-schema-engine' ); ?></strong>
+                                <?php if ( $twitter_default_image ) : ?>
+                                    <div class="be-schema-image-preview">
+                                        <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
+                                    </div>
+                                    <code><?php echo esc_html( $twitter_default_image ); ?></code>
+                                <?php else : ?>
+                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'be-schema-engine' ); ?></em>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <p class="be-schema-social-description" style="margin-top: 8px;">
+                            <?php esc_html_e(
+                                'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
+                                'be-schema-engine'
+                            ); ?>
+                        </p>
+                    </div>
                 </div>
 
-                <!-- Facebook tab -->
+                <!-- FACEBOOK TAB -->
                 <div id="be-schema-social-tab-facebook" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Facebook / OpenGraph', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Facebook Settings', 'be-schema-engine' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
@@ -409,7 +496,7 @@ function be_schema_engine_render_social_media_page() {
                                            class="regular-text" />
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. Your primary Facebook Page URL, used for reference and, in the future, for integrations such as article:publisher.',
+                                            'Optional. A public Facebook Page URL for your site or organisation.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -421,20 +508,20 @@ function be_schema_engine_render_social_media_page() {
                                     <?php esc_html_e( 'Default Facebook OG image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
-                                    <div class="be-schema-social-image-field">
+                                    <div class="be-schema-image-field">
                                         <input type="text"
                                                id="be_schema_facebook_default_image"
                                                name="be_schema_facebook_default_image"
                                                value="<?php echo esc_url( $facebook_default_image ); ?>"
                                                class="regular-text" />
                                         <button type="button"
-                                                class="button be-schema-social-image-select"
+                                                class="button be-schema-image-select"
                                                 data-target-input="be_schema_facebook_default_image"
                                                 data-target-preview="be_schema_facebook_default_image_preview">
                                             <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
-                                                class="button be-schema-social-image-clear"
+                                                class="button be-schema-image-clear"
                                                 data-target-input="be_schema_facebook_default_image"
                                                 data-target-preview="be_schema_facebook_default_image_preview">
                                             <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
@@ -442,12 +529,12 @@ function be_schema_engine_render_social_media_page() {
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. Preferred default image when Facebook reads your OpenGraph tags. If empty, the global fallback image is used.',
+                                            'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
                                     <div id="be_schema_facebook_default_image_preview"
-                                         class="be-schema-social-image-preview">
+                                         class="be-schema-image-preview">
                                         <?php if ( $facebook_default_image ) : ?>
                                             <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
                                         <?php endif; ?>
@@ -466,7 +553,7 @@ function be_schema_engine_render_social_media_page() {
                                            class="regular-text" />
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. If set, the social engine can emit fb:app_id in OpenGraph meta for better integration with Facebook tools.',
+                                            'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -475,16 +562,16 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (admin-only)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <textarea
                                         name="be_schema_facebook_notes"
                                         rows="4"
-                                        class="large-text"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
+                                        class="large-text code"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. For your own reference only. This is not used in any output.',
+                                            'Free-form notes for your own reference. This is never output on the front end.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -494,26 +581,24 @@ function be_schema_engine_render_social_media_page() {
                     </table>
                 </div>
 
-                <!-- Twitter tab -->
+                <!-- TWITTER TAB -->
                 <div id="be-schema-social-tab-twitter" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Twitter / X – Cards', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Twitter Settings', 'be-schema-engine' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Twitter handle', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Twitter handle (without @)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
-                                    <span>@</span>
                                     <input type="text"
                                            name="be_schema_twitter_handle"
                                            value="<?php echo esc_attr( $twitter_handle ); ?>"
-                                           class="regular-text"
-                                           style="max-width: 240px; margin-left: 4px;" />
+                                           class="regular-text" />
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. Your Twitter username without the @. The social engine can use this to populate twitter:site and twitter:creator.',
+                                            'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -525,26 +610,19 @@ function be_schema_engine_render_social_media_page() {
                                     <?php esc_html_e( 'Default card type', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
-                                    <fieldset>
-                                        <label>
-                                            <input type="radio"
-                                                   name="be_schema_twitter_card_type"
-                                                   value="summary_large_image"
-                                                   <?php checked( $twitter_card_type, 'summary_large_image' ); ?> />
-                                            <?php esc_html_e( 'Summary with large image (summary_large_image)', 'be-schema-engine' ); ?>
-                                        </label>
-                                        <br />
-                                        <label>
-                                            <input type="radio"
-                                                   name="be_schema_twitter_card_type"
-                                                   value="summary"
-                                                   <?php checked( $twitter_card_type, 'summary' ); ?> />
-                                            <?php esc_html_e( 'Summary (small image)', 'be-schema-engine' ); ?>
-                                        </label>
-                                    </fieldset>
+                                    <select name="be_schema_twitter_card_type">
+                                        <option value="summary"
+                                            <?php selected( $twitter_card_type, 'summary' ); ?>>
+                                            <?php esc_html_e( 'summary', 'be-schema-engine' ); ?>
+                                        </option>
+                                        <option value="summary_large_image"
+                                            <?php selected( $twitter_card_type, 'summary_large_image' ); ?>>
+                                            <?php esc_html_e( 'summary_large_image', 'be-schema-engine' ); ?>
+                                        </option>
+                                    </select>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Controls the default value of twitter:card. Per-page overrides can be added later if needed.',
+                                            'This value is used for twitter:card on pages that do not specify a per-post override.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -556,33 +634,33 @@ function be_schema_engine_render_social_media_page() {
                                     <?php esc_html_e( 'Default Twitter card image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
-                                    <div class="be-schema-social-image-field">
+                                    <div class="be-schema-image-field">
                                         <input type="text"
                                                id="be_schema_twitter_default_image"
                                                name="be_schema_twitter_default_image"
                                                value="<?php echo esc_url( $twitter_default_image ); ?>"
                                                class="regular-text" />
                                         <button type="button"
-                                                class="button be-schema-social-image-select"
+                                                class="button be-schema-image-select"
                                                 data-target-input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
                                             <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
-                                                class="button be-schema-social-image-clear"
-                                                data-target_input="be_schema_twitter_default_image"
+                                                class="button be-schema-image-clear"
+                                                data-target-input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
                                             <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
                                         </button>
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. Preferred default image for Twitter Cards. If empty, the global fallback image is used.',
+                                            'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
                                     <div id="be_schema_twitter_default_image_preview"
-                                         class="be-schema-social-image-preview">
+                                         class="be-schema-image-preview">
                                         <?php if ( $twitter_default_image ) : ?>
                                             <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
                                         <?php endif; ?>
@@ -592,16 +670,16 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (admin-only)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <textarea
                                         name="be_schema_twitter_notes"
                                         rows="4"
-                                        class="large-text"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
+                                        class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. For your own reference only. This is not used in any output.',
+                                            'Free-form notes for your own reference. This is never output on the front end.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -613,17 +691,17 @@ function be_schema_engine_render_social_media_page() {
 
             </div>
 
-            <?php submit_button( __( 'Save Social Media Settings', 'be-schema-engine' ) ); ?>
+            <?php submit_button( __( 'Save Social Settings', 'be-schema-engine' ) ); ?>
         </form>
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Tabs
-                var navLinks = document.querySelectorAll('.be-schema-social-tab-link');
-                var panels   = document.querySelectorAll('.be-schema-social-tab-panel');
+                // Top-level social tabs.
+                var socialTabLinks = document.querySelectorAll('.be-schema-social-tab-link');
+                var socialTabPanels = document.querySelectorAll('.be-schema-social-tab-panel');
 
                 function activateSocialTab(tabKey) {
-                    navLinks.forEach(function (link) {
+                    socialTabLinks.forEach(function (link) {
                         if (link.getAttribute('data-social-tab') === tabKey) {
                             link.classList.add('be-schema-social-tab-active');
                         } else {
@@ -631,7 +709,7 @@ function be_schema_engine_render_social_media_page() {
                         }
                     });
 
-                    panels.forEach(function (panel) {
+                    socialTabPanels.forEach(function (panel) {
                         if (panel.id === 'be-schema-social-tab-' + tabKey) {
                             panel.classList.add('be-schema-social-tab-panel-active');
                         } else {
@@ -640,7 +718,7 @@ function be_schema_engine_render_social_media_page() {
                     });
                 }
 
-                navLinks.forEach(function (link) {
+                socialTabLinks.forEach(function (link) {
                     link.addEventListener('click', function (event) {
                         event.preventDefault();
                         var tabKey = link.getAttribute('data-social-tab');
@@ -648,9 +726,9 @@ function be_schema_engine_render_social_media_page() {
                     });
                 });
 
-                // Media pickers
-                var selectButtons = document.querySelectorAll('.be-schema-social-image-select');
-                var clearButtons  = document.querySelectorAll('.be-schema-social-image-clear');
+                // Media pickers.
+                var selectButtons = document.querySelectorAll('.be-schema-image-select');
+                var clearButtons = document.querySelectorAll('.be-schema-image-clear');
 
                 function openMediaFrame(targetInputId, targetPreviewId) {
                     if (typeof wp === 'undefined' || ! wp.media) {
@@ -664,9 +742,9 @@ function be_schema_engine_render_social_media_page() {
 
                     frame.on('select', function () {
                         var attachment = frame.state().get('selection').first().toJSON();
-                        var url        = attachment.url || '';
+                        var url = attachment.url || '';
 
-                        var input   = document.getElementById(targetInputId);
+                        var input = document.getElementById(targetInputId);
                         var preview = document.getElementById(targetPreviewId);
 
                         if (input) {
@@ -688,7 +766,7 @@ function be_schema_engine_render_social_media_page() {
                 selectButtons.forEach(function (button) {
                     button.addEventListener('click', function (event) {
                         event.preventDefault();
-                        var targetInputId   = button.getAttribute('data-target-input');
+                        var targetInputId = button.getAttribute('data-target-input');
                         var targetPreviewId = button.getAttribute('data-target-preview');
                         if (targetInputId && targetPreviewId) {
                             openMediaFrame(targetInputId, targetPreviewId);
@@ -699,10 +777,10 @@ function be_schema_engine_render_social_media_page() {
                 clearButtons.forEach(function (button) {
                     button.addEventListener('click', function (event) {
                         event.preventDefault();
-                        var targetInputId   = button.getAttribute('data-target-input');
+                        var targetInputId = button.getAttribute('data-target-input');
                         var targetPreviewId = button.getAttribute('data-target-preview');
 
-                        var input   = document.getElementById(targetInputId);
+                        var input = document.getElementById(targetInputId);
                         var preview = document.getElementById(targetPreviewId);
 
                         if (input) {
