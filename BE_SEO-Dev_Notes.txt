@@ -1,83 +1,189 @@
-BE SEO Engine – DEV NOTES
-Author: Bill Evans
-Plugin: BE Schema Engine
-Purpose: Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
+# BE SEO Engine – Development Notes
 
---------------------------------------------------
-1. INFORMATION ABOUT THIS FILE
---------------------------------------------------
+## Author: Bill Evans
+### Plugin: BE Schema Engine
+### Purpose: Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
 
-A. Use
+-------------------------------------------------------------------------------
+## Section I: How ChatGPT Uses This File
+-------------------------------------------------------------------------------
 
-	• This file is used by chatGTP to access information about the plugin project.
+### Overview:
+This file is the authoritative reference for the **BE Schema Engine** development project. It enables ChatGPT to understand the plugin's architecture, functionality, and directory structure, and facilitates its role in suggesting or applying code changes. 
 
-B. Naming Conventions
+### Key Directives for ChatGPT:
+1. **Codebase Knowledge**:
+   - ChatGPT refers to this file before suggesting or applying any code changes.
+   - Any structural or functional change to the project should result in an update to this file.
 
-	• This file itself will be referred to as "BE_SEO-Dev_Notes".
-	• The plugin project will be referred to as "BE_SEO".
-	
-C. Data Quality Flags
+2. **Commit Log File**:
+   - ChatGPT must examine the **commit log** (`BE_SEO-Commit_Log.js`) after every push to keep its knowledge synchronized with the codebase. 
+   - The log contains a history of all code commits, the files changed in each commit, and other metadata.
+   - Always access the log from this URL: 
+     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
 
-	• BE_SEO-Dev_Note does not contain Data Quality Flags to indicate if the architecture of BE_SEO has changed.
-	• BE_SEO-Dev_Note does contain Data Quality Flags for changes to the directories and source files of BE_SEO.
+3. **File Access Using URLs**:
+   - Every source file is listed in the **Directory Structure** below, along with its corresponding raw GitHub URL (in square brackets).
+   - Use these URLs to fetch the latest versions of files when needed.
 
-D. Metadata for Source Files in BE_SEO-Dev_Notes
+4. **Workflow and Updates**:
+   - When ChatGPT suggests any code or architectural change, it must provide an updated version of this file if the change affects:
+     - Architecture or functionality.
+     - The directory structure.
+     - File organization or URLs.
+   - The `BE_SEO-Commit_Log.js` should be checked after each push to verify modifications.
 
-	• File and Directory Metadata is contained on the same line as the file or directory's name.
-	• This metadata is available for directories:
-		- Name
-	• This metadata is available for source files: Name, Name Data Quality, File Content Data Quality, and GitHub URL. They are tab or multiple-space delimited.
-		– Name: As text, at the beginning of the line.
-		— File Ontology Flag: A constant name and boolean value between curly brackets.
-			> "{ONTOLOGY: TRUE}" indicates the file or directory existed the last time chatGTP accessed BE_SEO-Dev_Notes.
-			> "{ONTOLOGY: FALSE}" indicates the file or directory is new since the last time chatGTP accessed BE_SEO-Dev_Notes.
-		- File Data Quality Flag: A constant name and boolean value between curly brackets.
-			> "{CONTENTS: TRUE}" indicates the file has not changed since the last time chatGPT could access it.
-			> "{CONTENTS: FALSE}" indicates the user has just uploaded a new version of that file; it has changed since the last time chatGPT could access it
-		- URL at GitHub: Contained between square brackets.
+5. **Pushed Changes**:
+   - After user confirms "Pushed":
+     - Cross-check the actual changes in `BE_SEO-Commit_Log.js` against what was suggested.
+     - Access the updated files and adjust knowledge as needed.
 
-D. Naming and Structure of Files and Directories
+6. **Debugging Assistance**:
+   - Use the information in this file to support debugging by maintaining an understanding of the plugin’s structure, safety mechanisms, and integration points.
 
-	• The contents of the source files of BE_SEO are always updated by the user, by pushing new versions of them to GitHub.
-	• New files and directories are created by the user, and uploaded to GitHub.
-	• Directory Structure 
-		- chatGTP creates the directory structure. 
-		- If the user wants to change the directory structure, the user will request this in a chatGTP session.		
-	• Naming
-		- chatGTP names all directories and source files.
-		- If the user wants to change the name of a file or structure, the user will request this in a chatGTP session.
+### File Naming and Availability:
+1. **Development Notes File**:
+  - Name: `BE_SEO-Dev_Notes.txt`
+  - Available at: [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.txt]
 
-E. Updating of BE_SEO-Dev_Note.
+2. **Commit Log File**:
+  - Name: `BE_SEO-Commit_Log.js`
+  - Available at: [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
 
-	• This file is only generated by chatGTP, except for the URLs of source files.
-	• Whenever chatGTP has made a change that should be reflected in BE_SEO, it will always print a complete new version of BE_SEO-Dev_Notes for the user to upload.
-	• Examples of changes are alterations to the architecture, creation of source files or directories, changes to names of directories, changes to the directory structure, and hanges to the contents of source files.
+### Workflows:
+#### Log Push Activity as JSON:
+Whenever a push is made to the `origin` repository, GitHub Actions automatically updates the commit log (`BE_SEO-Commit_Log.js`). The action’s steps are as follows:
+1. Check if the log file exists; otherwise, initialize it as an empty JSON array.
+2. Append detailed information about the latest push, including:
+   - Timestamp.
+   - Branch name.
+   - Commit message.
+   - Author information.
+   - A list of added, modified, or deleted files.
+3. Push the updated log file back to the repository.
 
---------------------------------------------------
-2. Directory Structure
---------------------------------------------------
+-------------------------------------------------------------------------------
+## Section II: How to Read the Commit Log File
+-------------------------------------------------------------------------------
 
-be-schema-engine.php	{ONTOLOGY: TRUE}	  	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/be-schema-engine.php ]			// main plugin bootstrap (now “BE SEO” in WP UI)
+### Overview:
+The `BE_SEO-Commit_Log.js` file contains a historical log of all codebase changes, detailing each commit that was made to the repository. Each entry in the file records metadata about the commit, such as the timestamp, branch, commit message, files affected, and the status of each file. This section explains how ChatGPT can parse and use this JSON data to verify changes and update its knowledge of the codebase.
 
-/includes/admin/	{ONTOLOGY: TRUE}
-    admin-menu.php	{ONTOLOGY: TRUE}		[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/admin-menu.php ]
-    page-dashboard.php	{ONTOLOGY: TRUE}	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-dashboard.php ]
-    page-schema.php	{ONTOLOGY: TRUE}	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-schema.php ]		// “Schema” submenu: Settings + Website (Global/Person/Org/Publisher)
-    page-social-media.php	{ONTOLOGY: TRUE}	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-social-media.php ] 	// “Social Media” submenu: Settings / Facebook / Twitter
-    page-tools.php	{ONTOLOGY: TRUE}		[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-tools.php ]		// “Tools” submenu (currently mostly placeholder or light UI)
+### JSON Schema:
+The `BE_SEO-Commit_Log.js` file is structured as a JSON array, where each object in the array represents a single commit. The log file may grow indefinitely, maintaining a record of every push. Below is the structure of each JSON object:
+
+#### Top-Level Fields:
+- **`timestamp` (string)**:
+  - The ISO-8601 timestamp (`YYYY-MM-DDTHH:mm:ssZ`) indicating when the commit was pushed.
+  - Example: `"2025-12-06T14:32:00Z"`
+
+- **`branch` (string)**:
+  - The Git branch where the changes were pushed. This field uses the full branch reference (`refs/heads/branch-name`).
+  - Example: `"refs/heads/main"`
+
+- **`commit_message` (string)**:
+  - The message provided by the user describing the commit.
+  - Example: `"Added new functionality for site-level schema"`
+
+- **`commit_author` (string)**:
+  - The name of the user who authored the commit.
+  - Example: `"Bill Evans"`
+
+- **`files_changed` (array)**:
+  - A list of objects that detail every file affected in the commit. Each object represents a single file.
+
+#### Nested Fields in `files_changed`:
+Each object in the `files_changed` array has the following attributes:
+- **`file` (string)**:
+  - The relative path of the file modified during the commit. The path is relative to the repository root.
+  - Example: `"includes/engine/core-site-entities.php"`
+
+- **`status` (string)**:
+  - The status of the file in this commit. Possible values:
+    - `"A"`: File was added.
+    - `"M"`: File was modified.
+    - `"D"`: File was deleted.
+  - Example: `"M"`
+
+### Example Entry:
+Here is an example of a single commit entry from the `BE_SEO-Commit_Log.js` file:
+```json
+{
+  "timestamp": "2025-12-06T14:32:00Z",
+  "branch": "refs/heads/main",
+  "commit_message": "Fixed bug in breadcrumb schema",
+  "commit_author": "Bill Evans",
+  "files_changed": [
+    {
+      "file": "includes/engine/core-breadcrumbs.php",
+      "status": "M"
+    },
+    {
+      "file": "README.md",
+      "status": "A"
+    },
+    {
+      "file": "old_code/legacy-config.php",
+      "status": "D"
+    }
+  ]
+}
+```
+
+### How to Parse and Use the Data:
+1. **Locate the Log File**:
+   - Always use the GitHub Raw URL to fetch the latest version of the log:
+     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
+
+2. **Iterate Through the Entries**:
+   - Each object in the top-level JSON array represents a commit. Start by parsing the file as an array, then iterate over each commit object.
+
+3. **Key Insights Per Commit**:
+   - **Determine What Changed**: Iterate through the `files_changed` array to access each `file` and its `status`.
+   - **Verify Commit Message**: Use `commit_message` to understand the purpose of the commit.
+   - **Identify Branch**: Use `branch` to confirm where the changes were made.
+
+4. **Actionable Updates for ChatGPT**:
+   - Use the `files_changed` field to download the latest version of modified (or added) files listed in this commit.
+   - For deleted files (`status = "D"`), remove the corresponding file from ChatGPT's knowledge of the codebase.
+
+5. **Validate Against Expectations**:
+   - Compare the `files_changed` and commit metadata with the changes ChatGPT previously suggested.
+   - If discrepancies arise (e.g., unexpected edits or unwarranted deletions), seek clarification from the user.
+
+### Applications:
+- **Synchronize Knowledge**:
+  - Always use the latest entries from the log to stay up-to-date with the codebase.
+- **Trace Changes Over Time**:
+  - Older entries can help establish a history of changes to a particular file or functionality.
+- **Detect Significant Updates**:
+  - Monitor commits with large numbers of file changes or impactful commit messages (e.g., "Refactor entire module") and adjust architectural understanding accordingly.
+
+-------------------------------------------------------------------------------
+## Section III: Directory Structure
+-------------------------------------------------------------------------------
+
+be-schema-engine.php  		[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/be-schema-engine.php]					// main plugin bootstrap (now "BE SEO" in WP UI)
+
+/includes/admin/	
+    admin-menu.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/admin-menu.php]
+    page-dashboard.php		[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-dashboard.php]
+    page-schema.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-schema.php]			// "Schema" submenu
+    page-social-media.php	[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-social-media.php] 	// "Social Media" submenu
+    page-tools.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/admin/page-tools.php]			// "Tools" submenu
 
 /includes/engine/
-    core-breadcrumbs.php	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-breadcrumbs.php ]	// BreadcrumbList for non-front pages
-    core-debug.php              [ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-debug.php ]		// debug collector + shutdown logger
-    core-elementor.php        [ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-elementor.php ]		// Elementor integration: page settings, widget schema
-    core-helpers.php            [ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-helpers.php ]		// text/image helpers, default image, eligibility, per-page checks
-    core-posts.php		[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-posts.php ]		// BlogPosting / single post schema
-    core-site-entities.php	[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-site-entities.php ]	// Person, Organisation, WebSite, Publisher, Logo, graph nodes
-    core-social.php		[ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-social.php ]		// OpenGraph + Twitter Cards front-end engine
-    core-special-pages.php  [ https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-special-pages.php ]	// Home, ContactPage, AboutPage, Privacy, Accessibility
+    core-breadcrumbs.php	[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-breadcrumbs.php]	// BreadcrumbList for non-front pages
+    core-debug.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-debug.php]			// debug collector + shutdown logger
+    core-elementor.php		[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-elementor.php]		// Elementor integration
+    core-helpers.php		[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-helpers.php]		// text/image helpers
+    core-posts.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-posts.php]			// BlogPosting schema
+    core-site-entities.php	[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-site-entities.php]	// Site-level entities
+    core-social.php			[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-social.php]			// OpenGraph + Twitter Cards
+    core-special-pages.php	[https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/be-schema-engine/includes/engine/core-special-pages.php]	// Special page schema
 
 --------------------------------------------------
-3. High-level goals
+IV: High-level goals
 --------------------------------------------------
 
 - Provide a single, safe source of JSON-LD schema for:
@@ -104,7 +210,7 @@ be-schema-engine.php	{ONTOLOGY: TRUE}	  	[ https://raw.githubusercontent.com/rea
 
 
 --------------------------------------------------
-4. File layout / Includes
+V: File layout / Includes
 --------------------------------------------------
 
 Includes:
@@ -298,7 +404,7 @@ Admin:
 
 
 --------------------------------------------------
-5. Schema design rules (high-level)
+VI: Schema design rules (high-level)
 --------------------------------------------------
 
 Site-level entities:
@@ -466,7 +572,7 @@ Social / OpenGraph & Twitter:
 
 
 --------------------------------------------------
-6. Admin UX principles
+VII: Admin UX principles
 --------------------------------------------------
 
 - All destructive behavior (e.g., uninstall cleanup) is explicit and opt-in.
@@ -484,7 +590,7 @@ Social / OpenGraph & Twitter:
 
 
 --------------------------------------------------
-7. Debug & safety
+VIII: Debug & safety
 --------------------------------------------------
 
 - Schema debug:
@@ -509,7 +615,7 @@ Social / OpenGraph & Twitter:
 
 
 --------------------------------------------------
-8. Versioning & packaging
+IX: Versioning & packaging
 --------------------------------------------------
 
 - Plugin folder:
@@ -527,7 +633,7 @@ Social / OpenGraph & Twitter:
   → Increment plugin version and document changes in a separate changelog file or section.
 
 --------------------------------------------------
-9. Future ideas / parking lot
+X: Future ideas / parking lot
 --------------------------------------------------
 
 - Per-post OG/Twitter overrides:
