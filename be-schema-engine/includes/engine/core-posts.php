@@ -24,22 +24,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *      featured image (full URL) if set,
  *      else site logo URL (org_logo) if available
  * - author:
- *      if site Person entity exists → { "@id": "#person" }
- *      else inline Person with name = post author display name
+ *      Person#person
  * - publisher:
- *      if site publisher entity exists → { "@id": publisher_id }
- *      else if Organisation exists     → { "@id": "#organization" }
- *
- * Output:
- * - Single <script type="application/ld+json"> with:
- *   {
- *     "@context": "https://schema.org",
- *     "@graph": [
- *       Person?, Organisation?, publisher node?, logo?, publisher_logo?, BlogPosting
- *     ]
- *   }
+ *      Publisher (custom), Organisation, or Person, depending on site entities.
  */
-function be_schema_output_post_schema() {
+function be_add_post_schema() {
     if ( be_schema_globally_disabled() ) {
         return;
     }
@@ -56,23 +45,18 @@ function be_schema_output_post_schema() {
         return;
     }
 
-    // Avoid output in feeds / REST / embeds as an extra safeguard.
-    if ( is_feed() || is_robots() || is_embed() ) {
-        return;
-    }
-
     $post = get_post();
-    if ( ! $post ) {
+    if ( ! $post instanceof WP_Post ) {
         return;
     }
 
     $post_id   = $post->ID;
-    $permalink = get_permalink( $post );
+    $permalink = get_permalink( $post_id );
     if ( ! $permalink ) {
         return;
     }
 
-    $site_url  = trailingslashit( home_url() );
+    // Site/global entities.
     $entities  = be_schema_get_site_entities();
     $settings  = be_schema_engine_get_settings();
 
@@ -111,9 +95,33 @@ function be_schema_output_post_schema() {
         }
     }
 
-    // Dates in ISO 8601 (UTC).
-    $date_published = get_post_time( 'c', true, $post );          // GMT = true
-    $date_modified  = get_post_modified_time( 'c', true, $post ); // GMT = true
+    // Dates.
+    $date_published = get_post_time( 'c', true, $post );
+    $date_modified  = get_post_modified_time( 'c', true, $post );
+
+    // Author: Person#person if available.
+    $author = null;
+    if ( ! empty( $entities['person'] ) && is_array( $entities['person'] ) && ! empty( $entities['person']['@id'] ) ) {
+        $author = array(
+            '@id' => $entities['person']['@id'],
+        );
+    }
+
+    // Publisher reference: Publisher node, Organization, or Person.
+    $publisher_ref = null;
+    if ( ! empty( $entities['publisher'] ) && is_array( $entities['publisher'] ) && ! empty( $entities['publisher']['@id'] ) ) {
+        $publisher_ref = array(
+            '@id' => $entities['publisher']['@id'],
+        );
+    } elseif ( ! empty( $entities['organization'] ) && is_array( $entities['organization'] ) && ! empty( $entities['organization']['@id'] ) ) {
+        $publisher_ref = array(
+            '@id' => $entities['organization']['@id'],
+        );
+    } elseif ( ! empty( $entities['person'] ) && is_array( $entities['person'] ) && ! empty( $entities['person']['@id'] ) ) {
+        $publisher_ref = array(
+            '@id' => $entities['person']['@id'],
+        );
+    }
 
     // Image: featured or site logo.
     $image_url = '';
@@ -129,46 +137,10 @@ function be_schema_output_post_schema() {
     }
 
     if ( ! $image_url && ! empty( $settings['org_logo'] ) ) {
-        $image_url = $settings['org_logo'];
-    }
-
-    // Author: prefer site-level Person entity, else inline Person.
-    $author = null;
-
-    if ( isset( $entities['person'] ) && is_array( $entities['person'] ) && isset( $entities['person']['@id'] ) ) {
-        $author = array(
-            '@id' => $entities['person']['@id'],
-        );
-    } else {
-        $author_name = get_the_author_meta( 'display_name', $post->post_author );
-        if ( '' === $author_name ) {
-            $author_name = get_bloginfo( 'name', 'display' );
+        $img_node = be_schema_engine_build_image_object( $settings['org_logo'], '#logo' );
+        if ( $img_node && ! empty( $img_node['contentUrl'] ) ) {
+            $image_url = $img_node['contentUrl'];
         }
-
-        $author = array(
-            '@type' => 'Person',
-            'name'  => $author_name,
-        );
-    }
-
-    // Publisher: use site-level publisher if defined, else Organisation.
-    $publisher_ref      = null;
-    $publisher_fullnode = null;
-
-    if ( isset( $entities['publisher'] ) && is_array( $entities['publisher'] ) ) {
-        if ( isset( $entities['publisher']['@id'] ) ) {
-            $publisher_ref = array( '@id' => $entities['publisher']['@id'] );
-        }
-
-        // If this is a full node (custom publisher Organisation with @type),
-        // we’ll include it in the @graph as well.
-        if ( isset( $entities['publisher']['@type'] ) ) {
-            $publisher_fullnode = $entities['publisher'];
-        }
-    } elseif ( isset( $entities['organization'] ) && is_array( $entities['organization'] ) && isset( $entities['organization']['@id'] ) ) {
-        $publisher_ref = array(
-            '@id' => $entities['organization']['@id'],
-        );
     }
 
     // Build BlogPosting @id and WebPage mainEntityOfPage.
@@ -184,6 +156,12 @@ function be_schema_output_post_schema() {
             '@id'   => $webpage_id,
         ),
     );
+
+    // Language (if available).
+    $language = get_bloginfo( 'language' );
+    if ( $language ) {
+        $blogposting['inLanguage'] = $language;
+    }
 
     if ( $description !== '' ) {
         $blogposting['description'] = $description;
@@ -212,8 +190,8 @@ function be_schema_output_post_schema() {
     /**
      * Filter the BlogPosting node before it is added to the @graph.
      *
-     * @param array  $blogposting The BlogPosting node.
-     * @param WP_Post $post       The post object.
+     * @param array   $blogposting The BlogPosting node.
+     * @param WP_Post $post        The post object.
      */
     $blogposting = apply_filters( 'be_schema_blogposting_node', $blogposting, $post );
 
@@ -227,45 +205,51 @@ function be_schema_output_post_schema() {
      * - Publisher node (if distinct full node)
      * - logo (#logo)
      * - publisher_logo (#publisher-logo)
+     * - WebSite
      * - BlogPosting
      */
-
     $graph = array();
 
-    // Person node.
-    if ( isset( $entities['person'] ) && is_array( $entities['person'] ) && ! empty( $entities['person'] ) ) {
+    // Person and Person image.
+    if ( ! empty( $entities['person'] ) && is_array( $entities['person'] ) ) {
         $graph[] = $entities['person'];
     }
+    if ( ! empty( $entities['person_image'] ) && is_array( $entities['person_image'] ) ) {
+        $graph[] = $entities['person_image'];
+    }
 
-    // Organisation node.
-    if ( isset( $entities['organization'] ) && is_array( $entities['organization'] ) && ! empty( $entities['organization'] ) ) {
+    // Organisation.
+    if ( ! empty( $entities['organization'] ) && is_array( $entities['organization'] ) ) {
         $graph[] = $entities['organization'];
     }
 
-    // Logo (#logo).
-    if ( isset( $entities['logo'] ) && is_array( $entities['logo'] ) && ! empty( $entities['logo'] ) ) {
+    // Logo.
+    if ( ! empty( $entities['logo'] ) && is_array( $entities['logo'] ) ) {
         $graph[] = $entities['logo'];
     }
 
-    // Publisher logo (#publisher-logo).
-    if ( isset( $entities['publisher_logo'] ) && is_array( $entities['publisher_logo'] ) && ! empty( $entities['publisher_logo'] ) ) {
+    // Publisher logo and Publisher node.
+    if ( ! empty( $entities['publisher_logo'] ) && is_array( $entities['publisher_logo'] ) ) {
         $graph[] = $entities['publisher_logo'];
     }
-
-    // Publisher full node, only when it’s a distinct entity (custom publisher).
-    if ( $publisher_fullnode && is_array( $publisher_fullnode ) ) {
-        $graph[] = $publisher_fullnode;
+    if ( ! empty( $entities['publisher'] ) && is_array( $entities['publisher'] ) && isset( $entities['publisher']['@type'] ) ) {
+        $graph[] = $entities['publisher'];
     }
 
-    // Finally, the BlogPosting itself.
+    // WebSite.
+    if ( ! empty( $entities['website'] ) && is_array( $entities['website'] ) ) {
+        $graph[] = $entities['website'];
+    }
+
+    // Finally, the BlogPosting node.
     $graph[] = $blogposting;
 
     /**
-     * Allow final filtering of the entire BlogPosting @graph.
+     * Filter the final @graph for BlogPosting output.
      *
-     * @param array  $graph      The @graph nodes.
-     * @param WP_Post $post      The post object.
-     * @param array  $entities   Site entities from be_schema_get_site_entities().
+     * @param array  $graph     List of graph nodes.
+     * @param WP_Post $post     The post object.
+     * @param array  $entities  Site entities from be_schema_get_site_entities().
      */
     $graph = apply_filters( 'be_schema_blogposting_graph', $graph, $post, $entities );
 

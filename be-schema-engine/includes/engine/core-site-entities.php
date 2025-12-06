@@ -16,43 +16,124 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! function_exists( 'be_schema_engine_normalize_url_list' ) ) {
     function be_schema_engine_normalize_url_list( $urls ) {
         if ( ! is_array( $urls ) ) {
-            $urls = (array) $urls;
+            $urls = array( $urls );
         }
 
-        $normalized = array();
+        $clean = array();
 
         foreach ( $urls as $url ) {
             $url = trim( (string) $url );
             if ( '' === $url ) {
                 continue;
             }
-            $normalized[] = esc_url_raw( $url );
+            $url = esc_url_raw( $url );
+            if ( '' === $url ) {
+                continue;
+            }
+            $clean[ $url ] = true;
         }
 
-        $normalized = array_unique( array_filter( $normalized ) );
-
-        return array_values( $normalized );
+        return array_keys( $clean );
     }
 }
 
 /**
- * Build the site-level entities model for BE Schema Engine.
+ * Resolve a media attachment to an ImageObject-like array:
+ * - Accepts attachment ID or URL.
+ * - Returns:
+ *   array(
+ *     '@type'      => 'ImageObject',
+ *     '@id'        => '{url}#image',
+ *     'contentUrl' => '{url}',
+ *     'url'        => '{url}',
+ *     'width'      => int|null,
+ *     'height'     => int|null,
+ *     'description'=> string|null,
+ *   )
  *
- * Returns an associative array of nodes:
+ * @param int|string $image Media attachment ID or URL.
+ * @param string     $id_suffix Optional suffix for @id.
+ * @return array|null
+ */
+if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
+    function be_schema_engine_build_image_object( $image, $id_suffix = '#image' ) {
+        $url    = '';
+        $width  = null;
+        $height = null;
+
+        // Attachment ID.
+        if ( is_numeric( $image ) ) {
+            $attachment_id = (int) $image;
+            if ( $attachment_id > 0 ) {
+                $src = wp_get_attachment_image_src( $attachment_id, 'full' );
+                if ( is_array( $src ) && ! empty( $src[0] ) ) {
+                    $url    = esc_url_raw( $src[0] );
+                    $width  = isset( $src[1] ) ? (int) $src[1] : null;
+                    $height = isset( $src[2] ) ? (int) $src[2] : null;
+                }
+            }
+        } elseif ( is_string( $image ) ) {
+            $url = esc_url_raw( $image );
+        }
+
+        if ( ! $url ) {
+            return null;
+        }
+
+        $node = array(
+            '@type'      => 'ImageObject',
+            '@id'        => $url . $id_suffix,
+            'contentUrl' => $url,
+            'url'        => $url,
+        );
+
+        if ( $width ) {
+            $node['width'] = $width;
+        }
+
+        if ( $height ) {
+            $node['height'] = $height;
+        }
+
+        // Optional description from attachment caption or alt text.
+        if ( is_numeric( $image ) ) {
+            $attachment_id = (int) $image;
+            if ( $attachment_id > 0 ) {
+                $alt        = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+                $caption    = wp_get_attachment_caption( $attachment_id );
+                $candidate  = '';
+
+                if ( ! empty( $alt ) ) {
+                    $candidate = $alt;
+                } elseif ( ! empty( $caption ) ) {
+                    $candidate = $caption;
+                }
+
+                if ( $candidate ) {
+                    $candidate = wp_strip_all_tags( (string) $candidate );
+                    $candidate = preg_replace( '/\s+/', ' ', $candidate );
+                    $candidate = trim( $candidate );
+                    if ( '' !== $candidate ) {
+                        $node['description'] = $candidate;
+                    }
+                }
+            }
+        }
+
+        return $node;
+    }
+}
+
+/**
+ * Get the site-level entities model:
+ * - Person
+ * - Person image
+ * - Organisation
+ * - WebSite
+ * - Logo
+ * - Publisher (and logo)
  *
- * - person         => Person node (or null)
- * - person_image   => Person ImageObject (#person-image) or null
- * - organization   => Organization node (or null)
- * - website        => WebSite node (always present)
- * - logo           => shared ImageObject for site brand logo (#logo) or null
- * - publisher      => either:
- *                     - custom publisher Organization node, OR
- *                     - @id reference to Organisation/Person node, OR
- *                     - null if publisher disabled / not resolvable
- * - publisher_logo => ImageObject for custom publisher logo (#publisher-logo) or null
- *
- * This is purely a model builder; nothing is output here. Callers can decide
- * which nodes to include in @graph and in which contexts.
+ * Returns a structured array keyed by entity role.
  *
  * @return array
  */
@@ -86,34 +167,20 @@ function be_schema_get_site_entities() {
     $logo_node = null;
 
     if ( ! empty( $settings['org_logo'] ) ) {
-        $logo_id = $site_url . '#logo';
-
-        $logo_node = array(
-            '@type'      => 'ImageObject',
-            '@id'        => $logo_id,
-            'url'        => $settings['org_logo'],
-            'contentUrl' => $settings['org_logo'],
-        );
+        // Accept attachment ID or URL.
+        $logo_node = be_schema_engine_build_image_object( $settings['org_logo'], '#logo' );
     }
 
     /**
      * ---------------------------------------------------------------------
-     * Person entity (#person)
+     * Person (#person) and Person image (#person-image)
      * ---------------------------------------------------------------------
-     *
-     * Enabled when settings['person_enabled'] === '1'.
-     * - @id  = {site_url}#person
-     * - name = site name
-     * - honorificPrefix / honorificSuffix from settings
-     * - image:
-     *   - #person-image ImageObject if person_image_url is set, else
-     *   - #logo if available
-     * - sameAs from person_sameas_raw (one URL per line)
      */
-    $person_node       = null;
-    $person_image_node = null;
+    $person_node        = null;
+    $person_image_node  = null;
+    $person_enabled     = ! empty( $settings['person_enabled'] );
 
-    if ( isset( $settings['person_enabled'] ) && $settings['person_enabled'] === '1' ) {
+    if ( $person_enabled ) {
         $person_id = $site_url . '#person';
 
         $person_node = array(
@@ -131,70 +198,55 @@ function be_schema_get_site_entities() {
             $person_node['honorificSuffix'] = $settings['person_honorific_suffix'];
         }
 
-        // Person-specific profile image (#person-image) if configured.
-        if ( ! empty( $settings['person_image_url'] ) ) {
-            $person_image_id = $site_url . '#person-image';
+        // Person image.
+        if ( ! empty( $settings['person_image'] ) ) {
+            $person_image_node = be_schema_engine_build_image_object( $settings['person_image'], '#person-image' );
+        }
 
-            $person_image_node = array(
-                '@type'      => 'ImageObject',
-                '@id'        => $person_image_id,
-                'url'        => $settings['person_image_url'],
-                'contentUrl' => $settings['person_image_url'],
-            );
+        // Fallback person image from shared logo.
+        if ( ! $person_image_node && $logo_node ) {
+            // Use the same ImageObject but give it a distinct @id.
+            $person_image_node = $logo_node;
+            $person_image_node['@id'] = $logo_node['contentUrl'] . '#person-image';
+        }
 
+        if ( $person_image_node ) {
             $person_node['image'] = array(
-                '@id' => $person_image_id,
-            );
-        } elseif ( $logo_node ) {
-            // Fallback to shared site logo (#logo) if no person-specific image.
-            $person_node['image'] = array(
-                '@id' => $logo_node['@id'],
+                '@id' => $person_image_node['@id'],
             );
         }
 
-        // Person.sameAs from Person-specific settings (one URL per line).
-        if ( ! empty( $settings['person_sameas_raw'] ) ) {
-            $lines            = preg_split( '/[\r\n]+/', (string) $settings['person_sameas_raw'] );
-            $person_sameas    = be_schema_engine_normalize_url_list( $lines );
-            if ( ! empty( $person_sameas ) ) {
-                $person_node['sameAs'] = $person_sameas;
+        // Person sameAs: from textarea, one URL per line.
+        if ( ! empty( $settings['person_sameas'] ) ) {
+            $lines = preg_split( '/\r\n|\r|\n/', (string) $settings['person_sameas'] );
+            $urls  = be_schema_engine_normalize_url_list( $lines );
+            if ( ! empty( $urls ) ) {
+                $person_node['sameAs'] = $urls;
             }
         }
     }
 
     /**
      * ---------------------------------------------------------------------
-     * Organisation entity (#organization)
+     * Organisation (#organization)
      * ---------------------------------------------------------------------
-     *
-     * Enabled when settings['organization_enabled'] === '1'.
-     * - @id       = {site_url}#organization
-     * - name      = org_name or site name
-     * - legalName = org_legal_name (optional)
-     * - url       = org_url or {site_url}
-     * - logo      = #logo if available
-     * - sameAs    = from be_schema_sameas_urls filter (Organisation-only)
      */
-    $organization_node = null;
+    $organization_node  = null;
+    $organization_url   = ! empty( $settings['org_url'] ) ? esc_url_raw( $settings['org_url'] ) : $site_url;
+    $organization_name  = ! empty( $settings['org_name'] ) ? $settings['org_name'] : $site_name;
+    $organization_legal = ! empty( $settings['org_legal_name'] ) ? $settings['org_legal_name'] : '';
 
-    if ( isset( $settings['organization_enabled'] ) && $settings['organization_enabled'] === '1' ) {
-        $org_id   = $site_url . '#organization';
-        $org_name = isset( $settings['org_name'] ) && $settings['org_name'] !== ''
-            ? $settings['org_name']
-            : $site_name;
-
+    if ( ! empty( $settings['org_enabled'] ) ) {
         $organization_node = array(
             '@type' => 'Organization',
-            '@id'   => $org_id,
-            'name'  => $org_name,
+            '@id'   => $site_url . '#organization',
+            'name'  => $organization_name,
+            'url'   => $organization_url,
         );
 
-        if ( ! empty( $settings['org_legal_name'] ) ) {
-            $organization_node['legalName'] = $settings['org_legal_name'];
+        if ( $organization_legal ) {
+            $organization_node['legalName'] = $organization_legal;
         }
-
-        $org_url = ! empty( $settings['org_url'] ) ? $settings['org_url'] : $site_url;
-        $organization_node['url'] = $org_url;
 
         if ( $logo_node ) {
             $organization_node['logo'] = array(
@@ -202,10 +254,13 @@ function be_schema_get_site_entities() {
             );
         }
 
-        // Organisation.sameAs from global filter (backward compatible).
+        /**
+         * Organisation sameAs URLs can be provided by filters.
+         *
+         * This keeps the admin UI simpler and lets other plugins contribute.
+         */
         $org_sameas = apply_filters( 'be_schema_sameas_urls', array() );
         $org_sameas = be_schema_engine_normalize_url_list( $org_sameas );
-
         if ( ! empty( $org_sameas ) ) {
             $organization_node['sameAs'] = $org_sameas;
         }
@@ -213,101 +268,66 @@ function be_schema_get_site_entities() {
 
     /**
      * ---------------------------------------------------------------------
-     * Publisher model
+     * Publisher (#publisher and #publisher-logo)
      * ---------------------------------------------------------------------
      *
-     * Only used if settings['publisher_enabled'] === '1'.
-     *
-     * Paths:
-     * 1) Custom publisher:
-     *    - Requires publisher_custom_name (Organisation node #publisher).
-     *    - Optional publisher_custom_url (falls back to site_url).
-     *    - Optional publisher_custom_logo (ImageObject #publisher-logo).
-     *    - WebSite.publisher uses @id of #publisher.
-     *
-     * 2) Fallback publisher (no custom name):
-     *    - If Organisation exists: @id -> #organization
-     *    - Else if Person exists: @id -> #person
-     *
-     * Returned keys:
-     * - publisher_node  (custom Organisation) or null
-     * - publisher_ref   (@id reference for WebSite.publisher) or null
-     * - publisher_logo  (ImageObject #publisher-logo) or null
+     * The publisher can be:
+     * - A custom organisation (with its own logo), or
+     * - Fallback to Organisation/Person by @id.
      */
-    $publisher_enabled    = isset( $settings['publisher_enabled'] ) && $settings['publisher_enabled'] === '1';
-    $publisher_node       = null;
-    $publisher_ref        = null;
-    $publisher_logo_node  = null;
+    $publisher_node      = null;
+    $publisher_logo_node = null;
+    $publisher_ref       = null;
 
-    if ( $publisher_enabled ) {
-        $custom_name = isset( $settings['publisher_custom_name'] )
-            ? trim( (string) $settings['publisher_custom_name'] )
-            : '';
+    $publisher_enabled        = ! empty( $settings['publisher_enabled'] );
+    $publisher_use_custom_org = ! empty( $settings['publisher_use_custom_org'] );
 
-        if ( $custom_name !== '' ) {
-            // Custom publisher Organisation.
-            $publisher_id  = $site_url . '#publisher';
-            $publisher_url = ! empty( $settings['publisher_custom_url'] )
-                ? $settings['publisher_custom_url']
-                : $site_url;
+    if ( $publisher_enabled && $publisher_use_custom_org ) {
+        $publisher_name = ! empty( $settings['publisher_name'] ) ? $settings['publisher_name'] : $organization_name;
+        $publisher_url  = ! empty( $settings['publisher_url'] ) ? esc_url_raw( $settings['publisher_url'] ) : $organization_url;
 
-            $publisher_node = array(
-                '@type' => 'Organization',
-                '@id'   => $publisher_id,
-                'name'  => $custom_name,
-                'url'   => $publisher_url,
+        $publisher_node = array(
+            '@type' => 'Organization',
+            '@id'   => $site_url . '#publisher',
+            'name'  => $publisher_name,
+            'url'   => $publisher_url,
+        );
+
+        // Custom publisher logo.
+        if ( ! empty( $settings['publisher_logo'] ) ) {
+            $publisher_logo_node = be_schema_engine_build_image_object( $settings['publisher_logo'], '#publisher-logo' );
+        }
+
+        if ( $publisher_logo_node ) {
+            $publisher_node['logo'] = array(
+                '@id' => $publisher_logo_node['@id'],
             );
+        }
 
-            // Custom publisher logo (#publisher-logo).
-            if ( ! empty( $settings['publisher_custom_logo'] ) ) {
-                $publisher_logo_id = $site_url . '#publisher-logo';
-
-                $publisher_logo_node = array(
-                    '@type'      => 'ImageObject',
-                    '@id'        => $publisher_logo_id,
-                    'url'        => $settings['publisher_custom_logo'],
-                    'contentUrl' => $settings['publisher_custom_logo'],
-                );
-
-                $publisher_node['logo'] = array(
-                    '@id' => $publisher_logo_id,
-                );
-            }
-
-            $publisher_ref = array( '@id' => $publisher_id );
-
-        } else {
-            // Fallback publisher: Organisation > Person.
-            if ( $organization_node ) {
-                $publisher_ref = array(
-                    '@id' => $organization_node['@id'],
-                );
-            } elseif ( $person_node ) {
-                $publisher_ref = array(
-                    '@id' => $person_node['@id'],
-                );
-            }
+        $publisher_ref = array(
+            '@id' => $publisher_node['@id'],
+        );
+    } elseif ( $publisher_enabled ) {
+        // Fallback to Organization if available, otherwise Person.
+        if ( $organization_node ) {
+            $publisher_ref = array(
+                '@id' => $organization_node['@id'],
+            );
+        } elseif ( $person_node ) {
+            $publisher_ref = array(
+                '@id' => $person_node['@id'],
+            );
         }
     }
 
     /**
      * ---------------------------------------------------------------------
-     * WebSite entity (#website)
+     * WebSite (#website)
      * ---------------------------------------------------------------------
-     *
-     * Always emitted:
-     * - @id         = {site_url}#website
-     * - url         = {site_url}
-     * - name        = site name
-     * - description = site description (if any)
-     * - logo        = #logo (if available)
-     * - publisher   = publisher_ref (if any)
-     * - about       = #organization if exists; else #person if exists
      */
-    $website_id   = $site_url . '#website';
     $website_node = array(
         '@type' => 'WebSite',
-        '@id'   => $website_id,
+        '@id'   => $site_url . '#website',
         'url'   => $site_url,
         'name'  => $site_name,
     );
@@ -322,10 +342,7 @@ function be_schema_get_site_entities() {
         );
     }
 
-    if ( $publisher_ref ) {
-        $website_node['publisher'] = $publisher_ref;
-    }
-
+    // about: Organisation first, otherwise Person.
     if ( $organization_node ) {
         $website_node['about'] = array(
             '@id' => $organization_node['@id'],
@@ -334,6 +351,15 @@ function be_schema_get_site_entities() {
         $website_node['about'] = array(
             '@id' => $person_node['@id'],
         );
+    }
+
+    // publisher: custom Publisher, or Organisation/Person fallback.
+    if ( $publisher_node ) {
+        $website_node['publisher'] = array(
+            '@id' => $publisher_node['@id'],
+        );
+    } elseif ( $publisher_ref ) {
+        $website_node['publisher'] = $publisher_ref;
     }
 
     /**
@@ -349,14 +375,26 @@ function be_schema_get_site_entities() {
         'publisher_logo' => $publisher_logo_node,
     );
 
+    /**
+     * Filter the assembled site entities model.
+     *
+     * @param array $cached   Site entities keyed array.
+     * @param array $settings Raw plugin settings used to build entities.
+     */
+    $cached = apply_filters( 'be_schema_site_entities', $cached, $settings );
+
     return $cached;
 }
 
 /**
- * Convenience helper: return a flat list of nodes suitable for @graph,
- * including only those entities that actually exist.
- *
- * This is handy when building the homepage @graph.
+ * Get the flat list of site entities suitable for @graph:
+ * - Person
+ * - Person image
+ * - Organisation
+ * - WebSite
+ * - logo
+ * - Publisher
+ * - Publisher logo
  *
  * @return array
  */

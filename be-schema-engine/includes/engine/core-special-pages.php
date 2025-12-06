@@ -14,22 +14,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Not disabled for current page (be_schema_is_disabled_for_current_page() === false)
  *
  * Output:
- * - @graph with:
+ * - @graph of:
  *   - Person (if enabled)
- *   - Organization (if enabled)
- *   - publisher node (if custom publisher)
- *   - logo (brand ImageObject, if any)
- *   - publisher_logo (if any)
+ *   - Person image (if available)
+ *   - Organisation (if enabled)
  *   - WebSite
- *   - WebPage for home:
- *       @id   = {site_url}#webpage
- *       url   = {site_url}
- *       name  = site name
- *       isPartOf -> #website
- *       about     -> matches WebSite.about (Person/Org)
- *       primaryImageOfPage -> #logo if present.
+ *   - logo
+ *   - Publisher (if enabled)
+ *   - Publisher logo (if enabled)
+ *   - WebPage for the homepage.
  */
-function be_schema_output_homepage_schema() {
+function be_add_homepage_schema() {
     if ( be_schema_globally_disabled() ) {
         return;
     }
@@ -38,30 +33,38 @@ function be_schema_output_homepage_schema() {
         return;
     }
 
-    // If the front page is a static page, apply per-page safety.
     if ( be_schema_is_disabled_for_current_page() ) {
         return;
     }
 
-    $entities    = be_schema_get_site_entities();
-    $graph_nodes = be_schema_get_site_entity_graph_nodes();
+    $entities     = be_schema_get_site_entities();
+    $graph_nodes  = array();
+    $site_url     = trailingslashit( home_url() );
+    $site_name    = get_bloginfo( 'name', 'display' );
+    $site_tagline = get_bloginfo( 'description', 'display' );
 
-    $site_url  = trailingslashit( home_url() );
-    $site_name = get_bloginfo( 'name', 'display' );
+    // Base site entities.
+    $site_entity_nodes = be_schema_get_site_entity_graph_nodes();
+    foreach ( $site_entity_nodes as $node ) {
+        $graph_nodes[] = $node;
+    }
 
-    // Home WebPage node.
+    // Build WebPage node for homepage.
     $webpage_id = $site_url . '#webpage';
-    $website    = isset( $entities['website'] ) && is_array( $entities['website'] ) ? $entities['website'] : null;
 
-    $webpage = array(
-        '@type'    => 'WebPage',
-        '@id'      => $webpage_id,
-        'url'      => $site_url,
-        'name'     => $site_name,
-        'isPartOf' => $website && isset( $website['@id'] )
-            ? array( '@id' => $website['@id'] )
-            : array( '@id' => $site_url . '#website' ),
+    $website   = isset( $entities['website'] ) && is_array( $entities['website'] ) ? $entities['website'] : null;
+    $webpage   = array(
+        '@type' => 'WebPage',
+        '@id'   => $webpage_id,
+        'url'   => $site_url,
+        'name'  => $site_name,
     );
+
+    // Use site tagline as description if available.
+    $site_desc_clean = trim( wp_strip_all_tags( (string) $site_tagline ) );
+    if ( $site_desc_clean !== '' ) {
+        $webpage['description'] = $site_desc_clean;
+    }
 
     // Mirror WebSite.about onto WebPage.about.
     if ( $website && isset( $website['about'] ) && is_array( $website['about'] ) ) {
@@ -85,7 +88,7 @@ function be_schema_output_homepage_schema() {
      */
     $graph_nodes = apply_filters( 'be_schema_homepage_graph_nodes', $graph_nodes, $entities );
 
-    // Debug collector: store nodes for @graph logging.
+    // Collect for debug.
     be_schema_debug_collect( $graph_nodes );
 
     $output = array(
@@ -117,13 +120,8 @@ function be_schema_output_homepage_schema() {
  * - be_schema_page_override_enable (switcher):
  *   - If 'yes' and be_schema_page_description set → use normalized description.
  *   - If 'yes' and be_schema_page_image set      → use that image URL.
- *
- * Fallback description:
- * - Post excerpt
- * - OR site description (WebSite.description) if no override and no excerpt.
- *
- * Fallback image:
- * - Site brand logo URL (org_logo) if no override image.
+ * - Otherwise:
+ *   - description falls back to excerpt or site description.
  *
  * Output:
  * - Single page node, not a full @graph:
@@ -168,22 +166,21 @@ function be_schema_output_special_page_schema() {
         return;
     }
 
-    $page_type = isset( $page_settings['be_schema_page_type'] ) ? $page_settings['be_schema_page_type'] : 'none';
+    $page_type = isset( $page_settings['be_schema_page_type'] ) ? $page_settings['be_schema_page_type'] : '';
 
-    // Map internal type to Schema.org @type.
+    // Map Elementor page type to schema.org type.
     $type_map = array(
-        'contact'               => 'ContactPage',
-        'about'                 => 'AboutPage',
-        'privacy-policy'        => 'WebPage',
-        'accessibility-statement' => 'WebPage',
+        'contact'                => 'ContactPage',
+        'about'                  => 'AboutPage',
+        'privacy-policy'         => 'WebPage',
+        'accessibility-statement'=> 'WebPage',
     );
 
     if ( ! isset( $type_map[ $page_type ] ) ) {
         return; // No special schema type selected.
     }
 
-    $schema_type = $type_map[ $page_type ];
-
+    $schema_type     = $type_map[ $page_type ];
     $site_url        = trailingslashit( home_url() );
     $page_url        = get_permalink( $post );
     $page_url        = $page_url ? $page_url : $site_url;
@@ -198,11 +195,19 @@ function be_schema_output_special_page_schema() {
     $site_desc_clean = $site_desc_clean !== '' ? $site_desc_clean : null;
 
     // Determine description.
-    $override_enabled   = isset( $page_settings['be_schema_page_override_enable'] ) && $page_settings['be_schema_page_override_enable'] === 'yes';
-    $override_desc_raw  = isset( $page_settings['be_schema_page_description'] ) ? (string) $page_settings['be_schema_page_description'] : '';
-    $override_desc      = $override_enabled ? be_schema_normalize_text( $override_desc_raw ) : '';
+    $override_enabled   = isset( $page_settings['be_schema_page_override_enable'] ) &&
+                          $page_settings['be_schema_page_override_enable'] === 'yes';
+    $override_desc_raw  = isset( $page_settings['be_schema_page_description'] )
+        ? (string) $page_settings['be_schema_page_description']
+        : '';
+    $override_desc      = $override_enabled && function_exists( 'be_schema_normalize_text' )
+        ? be_schema_normalize_text( $override_desc_raw )
+        : trim( $override_desc_raw );
+
     $post_excerpt       = has_excerpt( $post ) ? get_the_excerpt( $post ) : '';
-    $post_excerpt_clean = be_schema_normalize_text( $post_excerpt );
+    $post_excerpt_clean = function_exists( 'be_schema_normalize_text' )
+        ? be_schema_normalize_text( $post_excerpt )
+        : trim( wp_strip_all_tags( (string) $post_excerpt ) );
 
     if ( $override_enabled && $override_desc !== '' ) {
         $description = $override_desc;
@@ -214,10 +219,11 @@ function be_schema_output_special_page_schema() {
         $description = '';
     }
 
-    // Determine image URL.
+    // Determine image: override, else site logo.
+    $image_url         = '';
     $override_image_url = '';
 
-    if ( $override_enabled && ! empty( $page_settings['be_schema_page_image'] ) ) {
+    if ( $override_enabled && isset( $page_settings['be_schema_page_image'] ) && ! empty( $page_settings['be_schema_page_image'] ) ) {
         $image_setting = $page_settings['be_schema_page_image'];
 
         // New format: Elementor MEDIA control stores an array: [ 'id' => int, 'url' => string ].
@@ -248,6 +254,8 @@ function be_schema_output_special_page_schema() {
     }
 
     // Build the page node.
+    $language = get_bloginfo( 'language' );
+
     $node = array(
         '@context' => 'https://schema.org',
         '@type'    => $schema_type,
@@ -258,6 +266,10 @@ function be_schema_output_special_page_schema() {
             '@id' => $site_url . '#website',
         ),
     );
+
+    if ( $language ) {
+        $node['inLanguage'] = $language;
+    }
 
     if ( $description !== '' ) {
         $node['description'] = $description;
@@ -272,8 +284,45 @@ function be_schema_output_special_page_schema() {
         $node['about'] = $website['about'];
     }
 
+    /**
+     * Filter the special page schema node before output.
+     *
+     * @param array   $node      The special page schema node.
+     * @param WP_Post $post      The post object.
+     * @param string  $page_type The Elementor page type (contact/about/privacy-policy/accessibility-statement).
+     */
+    $node = apply_filters( 'be_schema_special_page_node', $node, $post, $page_type );
+
     // Collect into debug graph (just the node).
     be_schema_debug_collect( $node );
 
     echo '<script type="application/ld+json">' . wp_json_encode( $node ) . '</script>' . "\n";
+}
+
+/**
+ * Normalize free-text descriptions:
+ * - Strip tags
+ * - Collapse whitespace
+ * - Trim to a reasonable length.
+ *
+ * @param string $text Raw text.
+ * @param int    $max_length Max length (characters).
+ * @return string
+ */
+function be_schema_normalize_text( $text, $max_length = 320 ) {
+    $text = (string) $text;
+    $text = wp_strip_all_tags( $text );
+    $text = preg_replace( '/\s+/', ' ', $text );
+    $text = trim( $text );
+
+    if ( $max_length > 0 && strlen( $text ) > $max_length ) {
+        $text = substr( $text, 0, $max_length );
+        // Trim to last full word.
+        $last_space = strrpos( $text, ' ' );
+        if ( false !== $last_space && $last_space > 0 ) {
+            $text = substr( $text, 0, $last_space );
+        }
+    }
+
+    return $text;
 }
