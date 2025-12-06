@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '1.1.19' );
+    define( 'BE_SCHEMA_ENGINE_VERSION', '1.2.2' );
 }
 
 /**
@@ -21,10 +21,6 @@ if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
  * Core plugin constants
  * -------------------------------------------------------------------------
  */
-
-if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '1.2.0' );
-}
 
 if ( ! defined( 'BE_SCHEMA_ENGINE_PLUGIN_FILE' ) ) {
     define( 'BE_SCHEMA_ENGINE_PLUGIN_FILE', __FILE__ );
