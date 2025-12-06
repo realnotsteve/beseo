@@ -1,58 +1,64 @@
 <?php
+/**
+ * Admin menu registration for BE SEO.
+ *
+ * Top-level menu: "BE SEO"
+ * Submenus:
+ *  - Schema       (main configuration page)
+ *  - Social Media (OpenGraph & Twitter Cards)
+ *  - Tools        (placeholder for future utilities / validators)
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
- * Load individual admin pages.
+ * Bring in the admin page renderers.
  *
- * Each file defines one render_*() function:
- * - be_schema_engine_render_dashboard_page()
  * - be_schema_engine_render_schema_page()
  * - be_schema_engine_render_social_media_page()
- * - be_schema_engine_render_tools_page()
  */
-require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-dashboard.php';
-require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-schema.php';
-require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-social-media.php';
-require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-tools.php';
+if ( defined( 'BE_SCHEMA_ENGINE_PLUGIN_DIR' ) ) {
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-schema.php';
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-social-media.php';
+}
 
 /**
- * Hook admin menu.
- */
-add_action( 'admin_menu', 'be_schema_engine_register_admin_menu' );
-
-/**
- * Register BE Schema Engine admin menu + submenus.
+ * Register the BE SEO admin menu and submenus.
  */
 function be_schema_engine_register_admin_menu() {
-    $capability  = 'manage_options';
-    $parent_slug = 'be-schema-engine';
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
 
-    // Top-level menu.
+    $capability    = 'manage_options';
+    $top_level_slug = 'be-schema-engine';
+
+    // Top-level menu: BE SEO.
     add_menu_page(
-        __( 'BE Schema Engine', 'be-schema-engine' ),
-        __( 'BE Schema Engine', 'be-schema-engine' ),
-        $capability,
-        $parent_slug,
-        'be_schema_engine_render_dashboard_page',
-        'dashicons-editor-code',
-        80
+        __( 'BE SEO', 'be-schema-engine' ),          // Page title.
+        __( 'BE SEO', 'be-schema-engine' ),          // Menu title.
+        $capability,                                 // Capability.
+        $top_level_slug,                             // Menu slug.
+        'be_schema_engine_render_schema_page',       // Callback.
+        'dashicons-chart-area',                      // Icon.
+        58                                           // Position (near SEO-ish tools).
     );
 
-    // Submenu: Schema.
+    // "Schema" submenu (points to the same slug as the top-level).
     add_submenu_page(
-        $parent_slug,
-        __( 'Schema', 'be-schema-engine' ),
-        __( 'Schema', 'be-schema-engine' ),
-        $capability,
-        'be-schema-engine-schema',
-        'be_schema_engine_render_schema_page'
+        $top_level_slug,                             // Parent slug.
+        __( 'Schema', 'be-schema-engine' ),          // Page title.
+        __( 'Schema', 'be-schema-engine' ),          // Menu title.
+        $capability,                                 // Capability.
+        $top_level_slug,                             // Menu slug (same as top-level).
+        'be_schema_engine_render_schema_page'        // Callback.
     );
 
-    // Submenu: Social Media.
+    // "Social Media" submenu.
     add_submenu_page(
-        $parent_slug,
+        $top_level_slug,
         __( 'Social Media', 'be-schema-engine' ),
         __( 'Social Media', 'be-schema-engine' ),
         $capability,
@@ -60,13 +66,46 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_social_media_page'
     );
 
-    // Submenu: Tools.
+    // "Tools" submenu (simple placeholder for now).
     add_submenu_page(
-        $parent_slug,
+        $top_level_slug,
         __( 'Tools', 'be-schema-engine' ),
         __( 'Tools', 'be-schema-engine' ),
         $capability,
         'be-schema-engine-tools',
         'be_schema_engine_render_tools_page'
     );
+}
+add_action( 'admin_menu', 'be_schema_engine_register_admin_menu' );
+
+/**
+ * Render the "Tools" admin page.
+ *
+ * Currently a lightweight placeholder, intended for:
+ *  - Links to external validators (Rich Results Test, OG Debugger, etc.).
+ *  - Future debug/inspection utilities.
+ */
+function be_schema_engine_render_tools_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    ?>
+    <div class="wrap be-schema-engine-wrap be-schema-tools-wrap">
+        <h1><?php esc_html_e( 'BE SEO – Tools', 'be-schema-engine' ); ?></h1>
+
+        <p class="description">
+            <?php esc_html_e(
+                'This page is reserved for future tools, such as quick links to schema and social validators, and internal debug helpers.',
+                'be-schema-engine'
+            ); ?>
+        </p>
+
+        <p>
+            <?php esc_html_e(
+                'For now, use the Schema and Social Media pages to configure JSON-LD and OpenGraph/Twitter output. Debug logs are written to the PHP error log when debug is enabled.',
+                'be-schema-engine'
+            ); ?>
+        </p>
+    </div>
+    <?php
 }

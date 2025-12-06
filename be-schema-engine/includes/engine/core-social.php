@@ -1,4 +1,13 @@
 <?php
+/**
+ * Core Social Meta Engine
+ *
+ * Responsible for emitting OpenGraph and Twitter Card meta tags based on
+ * settings from the Social Media admin page and the current page context.
+ *
+ * This file does NOT emit JSON-LD schema or canonical tags.
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -38,7 +47,9 @@ function be_schema_social_debug_enabled() {
  * Get Social Media settings for OG/Twitter.
  *
  * NOTE: Keep defaults in sync with:
- * includes/admin/page-social-media.php -> be_schema_engine_get_social_settings().
+ * - includes/admin/page-social-media.php -> be_schema_engine_get_social_settings().
+ *
+ * Option name: be_schema_social_settings
  *
  * @return array
  */

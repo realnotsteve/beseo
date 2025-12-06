@@ -1,12 +1,23 @@
 <?php
+/**
+ * Social Media Admin Page
+ *
+ * Submenu: BE SEO → Social Media
+ *
+ * Tabs:
+ * - Settings  (global toggles + global default image)
+ * - Facebook  (OG defaults)
+ * - Twitter   (Twitter Card defaults)
+ *
+ * Stores settings in the be_schema_social_settings option.
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
  * Get Social Media settings for OG/Twitter (admin side).
- *
- * Option name: be_schema_social_settings
  *
  * Keep defaults in sync with:
  * - includes/engine/core-social.php -> be_schema_social_get_settings()
@@ -114,14 +125,6 @@ function be_schema_engine_save_social_settings() {
 
 /**
  * Render the "Social Media" admin page.
- *
- * Tabs:
- * - Settings
- * - Facebook
- * - Twitter
- *
- * This panel only stores settings for OpenGraph & Twitter Cards.
- * It does not output any tags itself.
  */
 function be_schema_engine_render_social_media_page() {
 
@@ -153,11 +156,11 @@ function be_schema_engine_render_social_media_page() {
     $twitter_notes         = isset( $settings['twitter_notes'] ) ? $settings['twitter_notes'] : '';
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-social-wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Social Media', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Social Media', 'be-schema-engine' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
-                'This section controls OpenGraph and Twitter Card defaults. It does not emit any tags by itself; the front-end engine reads these settings when building og:* and twitter:* meta tags.',
+                'Configure global defaults for OpenGraph and Twitter Cards. This panel only controls social meta tags and does not change JSON-LD schema.',
                 'be-schema-engine'
             ); ?>
         </p>
@@ -237,7 +240,31 @@ function be_schema_engine_render_social_media_page() {
                 padding: 2px;
                 background: #fff;
             }
+
+            .be-schema-social-status-pill {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                margin-right: 6px;
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-social-status-pill.off {
+                background: #fbeaea;
+                color: #8a1f11;
+            }
         </style>
+
+        <p>
+            <span class="be-schema-social-status-pill <?php echo $social_enable_og ? '' : 'off'; ?>">
+                <?php echo $social_enable_og ? esc_html__( 'OpenGraph: ON', 'be-schema-engine' ) : esc_html__( 'OpenGraph: OFF', 'be-schema-engine' ); ?>
+            </span>
+            <span class="be-schema-social-status-pill <?php echo $social_enable_twitter ? '' : 'off'; ?>">
+                <?php echo $social_enable_twitter ? esc_html__( 'Twitter Cards: ON', 'be-schema-engine' ) : esc_html__( 'Twitter Cards: OFF', 'be-schema-engine' ); ?>
+            </span>
+        </p>
 
         <form method="post">
             <?php wp_nonce_field( 'be_schema_social_save_settings', 'be_schema_social_settings_nonce' ); ?>
@@ -292,7 +319,7 @@ function be_schema_engine_render_social_media_page() {
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'When enabled, the engine outputs OpenGraph tags using these settings as defaults. Per-page overrides can be added later.',
+                                            'When enabled, the Social engine outputs OpenGraph tags using these settings as defaults. Per-page overrides can be added in a future version.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -316,7 +343,7 @@ function be_schema_engine_render_social_media_page() {
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'When enabled, the engine outputs Twitter Card meta tags using these settings as defaults.',
+                                            'When enabled, the Social engine outputs Twitter Card meta tags using these settings as defaults.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -439,7 +466,7 @@ function be_schema_engine_render_social_media_page() {
                                            class="regular-text" />
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. If set, the engine can emit fb:app_id in OpenGraph meta for better integration with Facebook tools.',
+                                            'Optional. If set, the social engine can emit fb:app_id in OpenGraph meta for better integration with Facebook tools.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -486,7 +513,7 @@ function be_schema_engine_render_social_media_page() {
                                            style="max-width: 240px; margin-left: 4px;" />
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Optional. Your Twitter username without the @. The engine can use this to populate twitter:site and twitter:creator.',
+                                            'Optional. Your Twitter username without the @. The social engine can use this to populate twitter:site and twitter:creator.',
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
@@ -543,7 +570,7 @@ function be_schema_engine_render_social_media_page() {
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-social-image-clear"
-                                                data-target-input="be_schema_twitter_default_image"
+                                                data-target_input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
                                             <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
                                         </button>
