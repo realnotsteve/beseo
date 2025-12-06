@@ -1,76 +1,82 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configuration via env:
-# LOGS_REPO (owner/repo) - required
-# LOGS_BRANCH (branch name) - default "main"
-# LOGS_PAT (personal access token with repo push access to LOGS_REPO) - required
-# GITHUB_BEFORE, GITHUB_AFTER, GITHUB_ACTOR, GITHUB_REF, GITHUB_REPOSITORY - provided by workflow
+# Ensure git won't fail due to ownership checks on runner
+git config --global --add safe.directory "$PWD" || true
 
-LOGS_REPO="${LOGS_REPO:?LOGS_REPO is required (owner/repo)}"
-LOGS_BRANCH="${LOGS_BRANCH:-main}"
-LOGS_PAT="${LOGS_PAT:?LOGS_PAT secret is required}"
+LOGFILE="logs/beseo.jsonl"
+BES_DIR="beseo"
 
 SRC_BEFORE="${GITHUB_BEFORE:-}"
-SRC_AFTER="${GITHUB_AFTER:-HEAD}"
+SRC_AFTER="${GITHUB_AFTER:-}"
+# fallback if GITHUB_AFTER empty
+if [ -z "$SRC_AFTER" ]; then
+  SRC_AFTER="$(git rev-parse --verify HEAD)"
+fi
+
 ACTOR="${GITHUB_ACTOR:-unknown}"
 REPO="${GITHUB_REPOSITORY:-unknown}"
 REF="${GITHUB_REF:-refs/heads/unknown}"
 
-# Ensure we have history to diff
+# Ensure enough history to diff (unshallow if needed)
 git fetch --no-tags --prune --unshallow >/dev/null 2>&1 || true
 
-# Determine changed files
+# Determine name-status diff (handles A,M,D,R)
 if [ -z "$SRC_BEFORE" ] || [[ "$SRC_BEFORE" =~ ^0+$ ]]; then
-  changed_files=$(git diff-tree --no-commit-id --name-only -r "$SRC_AFTER" || true)
+  # new branch or unknown before — inspect the single commit if available
+  if git rev-parse --verify "$SRC_AFTER" >/dev/null 2>&1; then
+    name_status="$(git diff-tree --no-commit-id --name-status -r "$SRC_AFTER" || true)"
+  else
+    name_status=""
+  fi
 else
-  changed_files=$(git diff --name-only "$SRC_BEFORE" "$SRC_AFTER" || true)
+  if git rev-parse --verify "$SRC_BEFORE" >/dev/null 2>&1; then
+    name_status="$(git diff --name-status "$SRC_BEFORE" "$SRC_AFTER" || true)"
+  else
+    name_status="$(git diff --name-status "$SRC_AFTER"^ "$SRC_AFTER" || true)"
+  fi
 fi
 
-# Filter for "beseo" path
-matched=()
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  if [[ "$f" == "beseo" || "$f" == beseo/* ]]; then
-    matched+=("$f")
+# Build list of matched events (action<TAB>path)
+mapfile -t events < <(printf '%s\n' "$name_status" | while IFS=$'\t' read -r status p1 p2; do
+  [ -z "$status" ] && continue
+  status_char="${status:0:1}"
+  case "$status_char" in
+    A) action="added"; path="$p1" ;;
+    M) action="modified"; path="$p1" ;;
+    D) action="deleted"; path="$p1" ;;
+    R) action="renamed"; path="$p2" ;; # use new name
+    *) action="unknown"; path="$p1" ;;
+  esac
+  if [ "$path" = "$BES_DIR" ] || [[ "$path" == "$BES_DIR/"* ]]; then
+    printf '%s\t%s\n' "$action" "$path"
   fi
-done <<< "$changed_files"
+done)
 
-if [ "${#matched[@]}" -eq 0 ]; then
-  echo "No changes under 'beseo' detected. Exiting."
+if [ "${#events[@]}" -eq 0 ]; then
+  echo "No changes under '$BES_DIR' detected. Exiting."
   exit 0
 fi
 
 timestamp() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 
-# Prepare temporary workdir
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-
-# Clone the central logs repo using PAT
-echo "Cloning logs repo $LOGS_REPO (branch $LOGS_BRANCH)"
-git -c http.extraHeader="Authorization: bearer $LOGS_PAT" clone --single-branch --branch "$LOGS_BRANCH" "https://github.com/$LOGS_REPO.git" "$tmpdir/logs-repo"
-
-LOGFILE="$tmpdir/logs-repo/logs/beseo.jsonl"
 mkdir -p "$(dirname "$LOGFILE")"
 touch "$LOGFILE"
 
-# Append entries (JSONL). Do not include file contents.
-for path in "${matched[@]}"; do
-  cat >> "$LOGFILE" <<EOF
-{"ts":"$(timestamp)","repo":"$REPO","branch":"$REF","sha":"$SRC_AFTER","actor":"$ACTOR","path":"$path","action":"modified"}
-EOF
-  echo "Appended log for $path"
+for ev in "${events[@]}"; do
+  action="${ev%%$'\t'*}"
+  path="${ev#*$'\t'}"
+  printf '%s\n' "{\"ts\":\"$(timestamp)\",\"repo\":\"$REPO\",\"branch\":\"$REF\",\"sha\":\"$SRC_AFTER\",\"actor\":\"$ACTOR\",\"path\":\"$path\",\"action\":\"$action\"}" >> "$LOGFILE"
+  echo "Appended: $action $path"
 done
 
-cd "$tmpdir/logs-repo"
-git add "$LOGFILE"
-git commit -m "chore: append beseo events from $REPO @ $SRC_AFTER" || {
-  echo "No changes to commit in logs repo."
-  exit 0
-}
-
-# Push using the same http.extraHeader auth
-git -c http.extraHeader="Authorization: bearer $LOGS_PAT" push origin "$LOGS_BRANCH"
-
-echo "Pushed logs to $LOGS_REPO:$LOGS_BRANCH"
+# If the log file changed, commit & push back to the current ref
+if git status --porcelain | grep -q "$(printf "%s" "$LOGFILE")"; then
+  git add "$LOGFILE"
+  git commit -m "chore: append beseo events (${#events[@]} event(s))"
+  # push to the current branch (HEAD) - this uses checkout's persisted credentials
+  git push
+  echo "Pushed $LOGFILE"
+else
+  echo "No changes to $LOGFILE to commit."
+fi
