@@ -4,7 +4,7 @@
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
  * Version:           1.2.1
- * Author:            Bill Evans
+ * Author:            William Evans
  * Author URI:        https://billevans.be/
  * Text Domain:       be-schema-engine
  * Requires at least: 5.8
