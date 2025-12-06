@@ -1,65 +1,37 @@
-#!/usr/bin/env bash
-set -euo pipefail
+name: Append beseo events to public JSONL log
 
-LOGFILE="logs/beseo.jsonl"
-BES_DIR="beseo"
+on:
+  push:
+    paths:
+      - 'beseo/**'
+      - 'beseo'
 
-SRC_BEFORE="${GITHUB_BEFORE:-}"
-SRC_AFTER="${GITHUB_AFTER:-HEAD}"
-ACTOR="${GITHUB_ACTOR:-unknown}"
-REPO="${GITHUB_REPOSITORY:-unknown}"
-REF="${GITHUB_REF:-refs/heads/unknown}"
+permissions:
+  contents: write
 
-# Ensure enough history to diff
-git fetch --no-tags --prune --unshallow >/dev/null 2>&1 || true
+jobs:
+  append-log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
-# Determine name-status diff (handles A,M,D,R)
-if [ -z "$SRC_BEFORE" ] || [[ "$SRC_BEFORE" =~ ^0+$ ]]; then
-  name_status="$(git diff-tree --no-commit-id --name-status -r "$SRC_AFTER" || true)"
-else
-  name_status="$(git diff --name-status "$SRC_BEFORE" "$SRC_AFTER" || true)"
-fi
+      - name: Make script executable
+        run: chmod +x .github/scripts/log-beseo-public.sh
 
-# Build list of matched events
-mapfile -t events < <(printf '%s\n' "$name_status" | while IFS=$'\t' read -r status p1 p2; do
-  if [ -z "$status" ]; then
-    continue
-  fi
-  status_char="${status:0:1}"
-  case "$status_char" in
-    A) action="added"; path="$p1" ;;
-    M) action="modified"; path="$p1" ;;
-    D) action="deleted"; path="$p1" ;;
-    R) action="renamed"; path="$p2" ;;
-    *) action="unknown"; path="$p1" ;;
-  esac
-  if [ "$path" = "$BES_DIR" ] || [[ "$path" == "$BES_DIR/"* ]]; then
-    printf '%s\t%s\n' "$action" "$path"
-  fi
-done)
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-if [ "${#events[@]}" -eq 0 ]; then
-  echo "No changes under '$BES_DIR' detected. Exiting."
-  exit 0
-fi
-
-timestamp() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
-
-mkdir -p "$(dirname "$LOGFILE")"
-touch "$LOGFILE"
-
-for ev in "${events[@]}"; do
-  action="${ev%%$'\t'*}"
-  path="${ev#*$'\t'}"
-  printf '%s\n' "{\"ts\":\"$(timestamp)\",\"repo\":\"$REPO\",\"branch\":\"$REF\",\"sha\":\"$SRC_AFTER\",\"actor\":\"$ACTOR\",\"path\":\"$path\",\"action\":\"$action\"}" >> "$LOGFILE"
-  echo "Appended: $action $path"
-done
-
-if git status --porcelain | grep -q "$(printf "%s" "$LOGFILE")"; then
-  git add "$LOGFILE"
-  git commit -m "chore: append beseo events (${#events[@]} event(s))"
-  git push
-  echo "Pushed $LOGFILE"
-else
-  echo "No changes to $LOGFILE to commit."
-fi
+      - name: Run logger
+        env:
+          GITHUB_BEFORE: ${{ github.event.before }}
+          GITHUB_AFTER: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+        run: .github/scripts/log-beseo-public.sh
