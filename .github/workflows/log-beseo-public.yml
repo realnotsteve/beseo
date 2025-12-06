@@ -1,11 +1,54 @@
-{
-  "timestamp": "2025-12-06T14:32:00Z",
-  "branch": "refs/heads/main",
-  "commit_message": "Fix bug in authentication",
-  "commit_author": "realnotsteve",
-  "files_changed": [
-    { "file": "src/main.py", "status": "M" },
-    { "file": "src/utils/logger.py", "status": "A" },
-    { "file": "src/old_code.py", "status": "D" }
-  ]
-}
+name: Log Pushes to BE_SEO-Commit_Log.js
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  log-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Initialize `BE_SEO-Commit_Log.js` if it doesn't exist
+      run: |
+        if [ ! -f BE_SEO-Commit_Log.js ]; then
+          echo "[]" > BE_SEO-Commit_Log.js
+        fi
+
+    - name: Append JSON log of this change
+      run: |
+        # Generate a new JSON entry for the push
+        NEW_LOG=$(cat <<EOF
+        {
+          "timestamp": "$(date --iso-8601=seconds)",
+          "branch": "${{ github.ref }}",
+          "commit_message": "${{ github.event.head_commit.message }}",
+          "commit_author": "${{ github.event.head_commit.committer.name }}",
+          "files_changed": [
+        EOF
+        )
+
+        # List the files that were added, modified, or deleted in this push
+        git fetch origin
+        git diff --name-status HEAD^ HEAD | while read -r status file; do
+          NEW_LOG+="    {\"file\": \"${file}\", \"status\": \"${status}\"},"
+        done
+
+        # Close array
+        NEW_LOG=$(echo "$NEW_LOG" | sed '$s/,$/]/')")"
+        NEW_LOG+="}"
+
+        # Append the new log entry to the historical JSON file
+        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.js > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.js
+
+    - name: Save updated log to repository
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add BE_SEO-Commit_Log.js
+        git commit -m "Update commit log (BE_SEO-Commit_Log.js)"
+        git push origin HEAD
