@@ -3,7 +3,9 @@ name: Update Commit Log
 on:
   push:
     branches:
-      - '**'
+      - '**'  # Trigger on pushes to any branch
+    paths-ignore:
+      - 'BE_SEO-Commit_Log.json'  # Exclude the log file from triggering the workflow
 
 jobs:
   log-push:
@@ -18,11 +20,7 @@ jobs:
         if [ ! -f BE_SEO-Commit_Log.json ] || ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
           echo "Log file is missing or invalid. Initializing as an empty JSON array."
           echo "[]" > BE_SEO-Commit_Log.json
-        else
-          echo "Log file exists and is valid."
         fi
-        echo "Contents of the log file after initialization:"
-        cat BE_SEO-Commit_Log.json
 
     - name: Generate a New JSON Entry for the Push
       env:
@@ -30,50 +28,29 @@ jobs:
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
         GITHUB_AUTHOR: ${{ github.event.head_commit.committer.name }}
       run: |
-        if git rev-parse HEAD^ >/dev/null 2>&1; then
-          FILE_DIFF=$(git diff HEAD^ HEAD --name-status | jq -R 'split("\t") | {file: .[1], status: .[0]}')
-        else
-          FILE_DIFF="[]"
-        fi
-
         NEW_LOG=$(cat <<EOF
         {
           "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
           "branch": "${GITHUB_REF}",
           "commit_message": "${GITHUB_MESSAGE}",
-          "commit_author": "${GITHUB_AUTHOR}",
-          "files_changed": $FILE_DIFF
+          "commit_author": "${GITHUB_AUTHOR}"
         }
         EOF
         )
         echo "Generated NEW_LOG:"
-        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry. Exiting." && exit 1)
+        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry. Exiting workflow." && exit 1)
 
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
-    - name: Debug Log File After Append
-      run: |
-        echo "Log file contents after jq append:"
+        echo "Log file contents after update:"
         cat BE_SEO-Commit_Log.json
 
-    - name: Check for Changes in Log File
-      id: check_changes
-      run: |
-        git add BE_SEO-Commit_Log.json
-        if git diff --cached --quiet BE_SEO-Commit_Log.json; then
-          echo "No changes detected in the log file. Exiting successfully."
-          exit 0
-        else
-          echo "Changes detected in BE_SEO-Commit_Log.json."
-          echo "::set-output name=changes_detected::true"
-        fi
-
     - name: Commit and Push Updated Commit Log
-      if: steps.check_changes.outputs.changes_detected == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
+        git add BE_SEO-Commit_Log.json
         git commit -m "Update Commit Log"
         git push origin HEAD
