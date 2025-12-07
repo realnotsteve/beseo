@@ -4,13 +4,12 @@ on:
   push:
     branches:
       - '**'
-    # Only run this workflow when these paths change:
+    # Only run this workflow when these paths change.
+    # Commits that ONLY change BE_SEO-Commit_Log.json will NOT trigger this,
+    # so the infinite loop is prevented automatically.
     paths:
       - 'BE_SEO-Dev_Notes.txt'
       - 'be-schema-engine/**'
-    # And do NOT trigger when only the log file itself changes
-    paths-ignore:
-      - 'BE_SEO-Commit_Log.json'
 
 jobs:
   log-commit:
@@ -20,7 +19,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        # Full history so HEAD^ and diffs are reliable if you ever add them
         fetch-depth: 0
 
     - name: Ensure commit log file exists and is valid JSON
