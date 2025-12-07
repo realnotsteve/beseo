@@ -59,4 +59,30 @@ jobs:
         echo "Contents of the log file after appending:"
         cat BE_SEO-Commit_Log.json
 
-    - name
+    - name: Check for Changes in Log File
+      id: check_changes
+      run: |
+        if git diff --quiet BE_SEO-Commit_Log.json; then
+          echo "No changes detected in the log file. Exiting successfully."
+          exit 0
+        else
+          echo "Changes detected in BE_SEO-Commit_Log.json."
+          echo "::set-output name=changes_detected::true"
+        fi
+
+    - name: Debug Git Status
+      if: always() # Always run this step for debugging
+      run: |
+        echo "Git status before attempting commit:"
+        git status
+
+    - name: Commit and Push Updated Commit Log
+      if: steps.check_changes.outputs.changes_detected == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add BE_SEO-Commit_Log.json
+        git commit -m "Update Commit Log"
+        git push origin HEAD
