@@ -4,13 +4,12 @@ on:
   push:
     branches:
       - '**'
-    # Only run this workflow when these paths change:
+    # 1. SYNTAX FIX: We ONLY use 'paths'.
+    # This automatically ignores changes to BE_SEO-Commit_Log.json,
+    # preventing the infinite loop error.
     paths:
       - 'BE_SEO-Dev_Notes.txt'
       - 'be-schema-engine/**'
-    # And do NOT trigger when only the log file itself changes
-    paths-ignore:
-      - 'BE_SEO-Commit_Log.json'
 
 jobs:
   log-commit:
@@ -34,29 +33,26 @@ jobs:
           fi
         fi
 
-        echo "=== Log file AFTER initialization ==="
-        cat BE_SEO-Commit_Log.json || echo "(could not read log file)"
-
     - name: Build new log entry and append to log file
       env:
         GITHUB_REF: ${{ github.ref }}
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
         GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
       run: |
-        # Use jq to construct the JSON object safely. 
-        # This avoids quoting issues regardless of what characters are in the message.
+        # 2. JSON FIX: Use jq --arg to safely build the JSON object.
+        # This handles quotes and special characters automatically.
         NEW_LOG=$(jq -n \
           --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
           --arg branch "$GITHUB_REF" \
           --arg msg "$GITHUB_MESSAGE" \
           --arg author "$GITHUB_AUTHOR" \
-          '{timestamp: $timestamp, branch: $branch, commit_message: $msg, commit_author: $author}'
+          '{timestamp: $timestamp, branch: $branch, commit_message: $msg, commit_author: $author}' \
         )
 
-        echo "=== NEW_LOG (created) ==="
+        echo "=== NEW_LOG (jq-generated) ==="
         echo "$NEW_LOG"
 
-        # Append NEW_LOG to the existing JSON array in BE_SEO-Commit_Log.json
+        # Append NEW_LOG to the existing JSON array
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
           && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.json
 
@@ -70,14 +66,9 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-        echo "=== git status BEFORE add ==="
-        git status
-
         git add BE_SEO-Commit_Log.json
 
-        echo "=== git status AFTER add ==="
-        git status
-
+        # Try to commit; if there's nothing to commit, don't fail the job
         if git commit -m "Update BE_SEO commit log"; then
           echo "Commit created, pushing..."
           git push origin HEAD
