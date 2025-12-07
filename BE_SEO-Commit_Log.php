@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 [
   {
     "timestamp": "2025-12-07T04:15:25Z",
@@ -7,3 +12,5 @@
     "files_changed": []
   }
 ]
+
+?>
