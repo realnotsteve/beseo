@@ -4,12 +4,13 @@ on:
   push:
     branches:
       - '**'
-    # Only run this workflow when these paths change.
-    # Commits that ONLY change BE_SEO-Commit_Log.json will NOT trigger this,
-    # so the infinite loop is prevented automatically.
+    # Only run this workflow when these paths change:
     paths:
       - 'BE_SEO-Dev_Notes.txt'
       - 'be-schema-engine/**'
+    # And do NOT trigger when only the log file itself changes
+    paths-ignore:
+      - 'BE_SEO-Commit_Log.json'
 
 jobs:
   log-commit:
@@ -27,7 +28,6 @@ jobs:
           echo "Log file missing. Initializing as empty JSON array."
           echo "[]" > BE_SEO-Commit_Log.json
         else
-          # If the file is blank or invalid JSON, reset it to []
           if ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
             echo "Log file invalid JSON. Re-initializing as empty JSON array."
             echo "[]" > BE_SEO-Commit_Log.json
@@ -43,22 +43,18 @@ jobs:
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
         GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
       run: |
-        # Build NEW_LOG as a JSON object. ${var@Q} safely quotes strings for JSON.
-        NEW_LOG=$(cat <<EOF
-        {
-          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-          "branch": "${GITHUB_REF}",
-          "commit_message": ${GITHUB_MESSAGE@Q},
-          "commit_author": ${GITHUB_AUTHOR@Q}
-        }
-        EOF
+        # Use jq to construct the JSON object safely. 
+        # This avoids quoting issues regardless of what characters are in the message.
+        NEW_LOG=$(jq -n \
+          --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+          --arg branch "$GITHUB_REF" \
+          --arg msg "$GITHUB_MESSAGE" \
+          --arg author "$GITHUB_AUTHOR" \
+          '{timestamp: $timestamp, branch: $branch, commit_message: $msg, commit_author: $author}'
         )
 
-        echo "=== NEW_LOG (raw) ==="
+        echo "=== NEW_LOG (created) ==="
         echo "$NEW_LOG"
-
-        echo "=== NEW_LOG (jq-validated) ==="
-        echo "$NEW_LOG" | jq . || (echo "NEW_LOG is invalid JSON, aborting." && exit 1)
 
         # Append NEW_LOG to the existing JSON array in BE_SEO-Commit_Log.json
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
@@ -82,7 +78,6 @@ jobs:
         echo "=== git status AFTER add ==="
         git status
 
-        # Try to commit; if there's nothing to commit, don't fail the job
         if git commit -m "Update BE_SEO commit log"; then
           echo "Commit created, pushing..."
           git push origin HEAD
