@@ -15,7 +15,6 @@ jobs:
 
     - name: Ensure Commit Log File Exists and Is Valid
       run: |
-        # Check if the file exists and is valid JSON
         if [ ! -f BE_SEO-Commit_Log.json ] || ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
           echo "Log file is missing or invalid. Initializing as an empty JSON array."
           echo "[]" > BE_SEO-Commit_Log.json
@@ -31,14 +30,12 @@ jobs:
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
         GITHUB_AUTHOR: ${{ github.event.head_commit.committer.name }}
       run: |
-        # Check for file changes using git diff
         if git rev-parse HEAD^ >/dev/null 2>&1; then
           FILE_DIFF=$(git diff HEAD^ HEAD --name-status | jq -R 'split("\t") | {file: .[1], status: .[0]}')
         else
           FILE_DIFF="[]"
         fi
 
-        # Create the JSON entry
         NEW_LOG=$(cat <<EOF
         {
           "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
@@ -49,32 +46,27 @@ jobs:
         }
         EOF
         )
-
         echo "Generated NEW_LOG:"
         echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry. Exiting." && exit 1)
 
-        # Append the JSON entry to the log
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
-        echo "Contents of the log file after appending:"
+    - name: Debug Log File After Append
+      run: |
+        echo "Log file contents after jq append:"
         cat BE_SEO-Commit_Log.json
 
     - name: Check for Changes in Log File
       id: check_changes
       run: |
-        if git diff --quiet BE_SEO-Commit_Log.json; then
+        git add BE_SEO-Commit_Log.json
+        if git diff --cached --quiet BE_SEO-Commit_Log.json; then
           echo "No changes detected in the log file. Exiting successfully."
           exit 0
         else
           echo "Changes detected in BE_SEO-Commit_Log.json."
           echo "::set-output name=changes_detected::true"
         fi
-
-    - name: Debug Git Status
-      if: always() # Always run this step for debugging
-      run: |
-        echo "Git status before attempting commit:"
-        git status
 
     - name: Commit and Push Updated Commit Log
       if: steps.check_changes.outputs.changes_detected == 'true'
@@ -83,6 +75,5 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add BE_SEO-Commit_Log.json
         git commit -m "Update Commit Log"
         git push origin HEAD
