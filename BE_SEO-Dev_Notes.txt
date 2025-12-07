@@ -1,6 +1,6 @@
 # BE SEO Engine – Development Notes
 
-## Author: William "The Dudeeeeeeeeeeddddddddddddddddddddddd" Evans, PhD
+## Author: William "The Dudeeeeeeeeeedddddddddddddddddddddddddddd" Evans, PhD
 ### Plugin: BE Schema Engine
 ### Purpose: Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
 
