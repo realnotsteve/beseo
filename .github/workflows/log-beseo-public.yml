@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - '**'
-    # Only run when these source files change.
     paths:
-      - 'BE_SEO-Dev_Notes.txt'
+      - 'BE_SEO-Dev_Notes.js'      # Updated to .js
       - 'be-schema-engine/**'
 
 jobs:
@@ -23,13 +22,13 @@ jobs:
 
     - name: Ensure commit log file exists and is valid JSON
       run: |
-        # Check for .js file instead of .json
+        # Using .js extension now, but content remains valid JSON array
         if [ ! -f BE_SEO-Commit_Log.js ]; then
           echo "Log file missing. Creating []"
           echo "[]" > BE_SEO-Commit_Log.js
         fi
         
-        # Validate that the .js file contains a valid JSON array
+        # Check validity
         if ! jq -e 'if type=="array" then . else error("Not an array") end' BE_SEO-Commit_Log.js > /dev/null 2>&1; then
           echo "Log file is invalid. Resetting to []"
           echo "[]" > BE_SEO-Commit_Log.js
@@ -64,7 +63,7 @@ jobs:
            }'
         )
 
-        # 3. Append to .js file
+        # 3. Append to the .js file
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.js > BE_SEO-Commit_Log.tmp \
           && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.js
 
