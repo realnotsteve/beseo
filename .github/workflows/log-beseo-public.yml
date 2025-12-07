@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '**'
+    # Only run when these source files change.
     paths:
       - 'BE_SEO-Dev_Notes.txt'
       - 'be-schema-engine/**'
@@ -22,13 +23,16 @@ jobs:
 
     - name: Ensure commit log file exists and is valid JSON
       run: |
-        if [ ! -f BE_SEO-Commit_Log.json ]; then
+        # Check for .js file instead of .json
+        if [ ! -f BE_SEO-Commit_Log.js ]; then
           echo "Log file missing. Creating []"
-          echo "[]" > BE_SEO-Commit_Log.json
+          echo "[]" > BE_SEO-Commit_Log.js
         fi
-        if ! jq -e 'if type=="array" then . else error("Not an array") end' BE_SEO-Commit_Log.json > /dev/null 2>&1; then
+        
+        # Validate that the .js file contains a valid JSON array
+        if ! jq -e 'if type=="array" then . else error("Not an array") end' BE_SEO-Commit_Log.js > /dev/null 2>&1; then
           echo "Log file is invalid. Resetting to []"
-          echo "[]" > BE_SEO-Commit_Log.json
+          echo "[]" > BE_SEO-Commit_Log.js
         fi
 
     - name: Build new log entry and append to log file
@@ -38,16 +42,13 @@ jobs:
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
         GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
       run: |
-        # 1. Get the list of changed files (Status + Filename)
-        # git diff-tree returns lines like: "M    src/file.js"
-        # We transform this into a JSON array: [{"status": "M", "file": "src/file.js"}, ...]
-        
+        # 1. Get the list of changed files
         FILES_JSON=$(git diff-tree --no-commit-id --name-status -r $GITHUB_SHA | \
           while read status file; do
             echo "{\"status\": \"$status\", \"file\": \"$file\"}"
           done | jq -s '.' || echo "[]")
 
-        # 2. Build the main JSON object safely
+        # 2. Build the main JSON object
         NEW_LOG=$(jq -n \
           --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
           --arg branch "$GITHUB_REF" \
@@ -63,9 +64,9 @@ jobs:
            }'
         )
 
-        # 3. Append to file
-        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
-          && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.json
+        # 3. Append to .js file
+        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.js > BE_SEO-Commit_Log.tmp \
+          && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.js
 
     - name: Commit and push updated log
       env:
@@ -74,7 +75,7 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-        git add -f BE_SEO-Commit_Log.json
+        git add -f BE_SEO-Commit_Log.js
 
         if git diff --staged --quiet; then
           echo "No changes to commit."
