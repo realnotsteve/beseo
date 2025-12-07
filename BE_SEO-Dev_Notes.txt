@@ -31,11 +31,11 @@ This file is the authoritative reference for the **BE Schema Engine** developmen
      - Architecture or functionality.
      - The directory structure.
      - File organization or URLs.
-   - The `BE_SEO-Commit_Log.js` should be checked after each push to verify modifications.
+   - The `BE_SEO-Commit_Log.json` should be checked after each push to verify modifications.
 
 5. **Pushed Changes**:
    - After user confirms "Pushed":
-     - Cross-check the actual changes in `BE_SEO-Commit_Log.js` against what was suggested.
+     - Cross-check the actual changes in `BE_SEO-Commit_Log.json` against what was suggested.
      - Access the updated files and adjust knowledge as needed.
 
 6. **Debugging Assistance**:
@@ -47,12 +47,12 @@ This file is the authoritative reference for the **BE Schema Engine** developmen
   - Available at: [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.txt]
 
 2. **Commit Log File**:
-  - Name: `BE_SEO-Commit_Log.js`
-  - Available at: [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
+  - Name: `BE_SEO-Commit_Log.json`
+  - Available at: [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json]
 
 ### Workflows:
 #### Log Push Activity as JSON:
-Whenever a push is made to the `origin` repository, GitHub Actions automatically updates the commit log (`BE_SEO-Commit_Log.js`). The action’s steps are as follows:
+Whenever a push is made to the `origin` repository, GitHub Actions automatically updates the commit log (`BE_SEO-Commit_Log.json`). The action’s steps are as follows:
 1. Check if the log file exists; otherwise, initialize it as an empty JSON array.
 2. Append detailed information about the latest push, including:
    - Timestamp.
@@ -67,10 +67,10 @@ Whenever a push is made to the `origin` repository, GitHub Actions automatically
 -------------------------------------------------------------------------------
 
 ### Overview:
-The `BE_SEO-Commit_Log.js` file contains a historical log of all codebase changes, detailing each commit that was made to the repository. Each entry in the file records metadata about the commit, such as the timestamp, branch, commit message, files affected, and the status of each file. This section explains how ChatGPT can parse and use this JSON data to verify changes and update its knowledge of the codebase.
+The `BE_SEO-Commit_Log.json` file contains a historical log of all codebase changes, detailing each commit that was made to the repository. Each entry in the file records metadata about the commit, such as the timestamp, branch, commit message, files affected, and the status of each file. This section explains how ChatGPT can parse and use this JSON data to verify changes and update its knowledge of the codebase.
 
 ### JSON Schema:
-The `BE_SEO-Commit_Log.js` file is structured as a JSON array, where each object in the array represents a single commit. The log file may grow indefinitely, maintaining a record of every push. Below is the structure of each JSON object:
+The `BE_SEO-Commit_Log.json` file is structured as a JSON array, where each object in the array represents a single commit. The log file may grow indefinitely, maintaining a record of every push. Below is the structure of each JSON object:
 
 #### Top-Level Fields:
 - **`timestamp` (string)**:
@@ -106,7 +106,7 @@ Each object in the `files_changed` array has the following attributes:
   - Example: `"M"`
 
 ### Example Entry:
-Here is an example of a single commit entry from the `BE_SEO-Commit_Log.js` file:
+Here is an example of a single commit entry from the `BE_SEO-Commit_Log.json` file:
 ```json
 {
   "timestamp": "2025-12-06T14:32:00Z",
@@ -133,7 +133,7 @@ Here is an example of a single commit entry from the `BE_SEO-Commit_Log.js` file
 ### How to Parse and Use the Data:
 1. **Locate the Log File**:
    - Always use the GitHub Raw URL to fetch the latest version of the log:
-     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js]
+     [https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json]
 
 2. **Iterate Through the Entries**:
    - Each object in the top-level JSON array represents a commit. Start by parsing the file as an array, then iterate over each commit object.
