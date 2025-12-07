@@ -6,13 +6,31 @@
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
     "dev_notes_txt_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.txt",
     "commit_log_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json",
-    "repo_root": "be-schema-engine/"
+    "repo_root": "be-schema-engine/",
+    "github_fetch_policy": {
+      "prefer_contents_api": true,
+      "contents_api_template": "https://api.github.com/repos/realnotsteve/beseo/contents/{path}?ref={ref}",
+      "default_ref": "main",
+      "fallback_to_raw": true,
+      "raw_template": "https://raw.githubusercontent.com/realnotsteve/beseo/{ref}/{path}",
+      "fallback_conditions": [
+        "Contents API returns a non-200 HTTP status",
+        "Contents API response lacks a 'content' field",
+        "Contents API 'encoding' is not 'base64'"
+      ],
+      "manual_fallback": {
+        "allow_user_paste": true,
+        "allow_user_upload": true,
+        "description": "If both Contents API and raw endpoints fail or return clearly incorrect data (for example, zero-length files or obviously stale content), ChatGPT should ask the user to paste or upload the file content and treat that as canonical."
+      },
+      "rationale": "Raw GitHub URLs (raw.githubusercontent.com) can sometimes serve stale or zero-length file bodies due to caching or propagation quirks. The GitHub Contents API is more reliable for retrieving the exact file content and metadata for a given path + ref in this repo."
+    }
   },
   "workflows": {
     "after_push": {
       "must_read_commit_log": true,
       "must_refetch_changed_files": true,
-      "description": "After the user confirms a push, ChatGPT should read BE_SEO-Commit_Log.json, identify changed files, and refetch their raw contents."
+      "description": "After the user confirms a push, ChatGPT should read BE_SEO-Commit_Log.json, identify changed files, and refetch their contents using the GitHub Contents API as the primary source (via the github_fetch_policy), falling back to raw URLs or user-provided content only if needed."
     },
     "debug": {
       "schema_debug_requires_wp_debug": true,
