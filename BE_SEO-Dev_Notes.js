@@ -2,7 +2,7 @@
   "meta": {
     "project_name": "BE Schema Engine",
     "alias": "BE SEO Engine",
-    "author": "William Evans, PhD",
+    "author": "Bill Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
     "dev_notes_txt_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.json",
     "commit_log_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json",
