@@ -3,7 +3,7 @@ name: Update Commit Log
 on:
   push:
     branches:
-      - '**' # Listen for pushes to all branches
+      - '**'
 
 jobs:
   log-push:
@@ -13,13 +13,19 @@ jobs:
     - name: Checkout the repository
       uses: actions/checkout@v3
 
-    - name: Ensure Commit Log File Exists
+    - name: Ensure Commit Log File Exists and Is Valid
       run: |
-        if [ ! -f BE_SEO-Commit_Log.json ]; then
+        # Check if the file exists and is valid JSON
+        if [ ! -f BE_SEO-Commit_Log.json ] || ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
+          echo "Log file is missing or invalid. Initializing as an empty JSON array."
           echo "[]" > BE_SEO-Commit_Log.json
+        else
+          echo "Log file exists and is valid."
         fi
+        echo "Contents of the log file after initialization:"
+        cat BE_SEO-Commit_Log.json
 
-    - name: Generate a new JSON entry for the push
+    - name: Generate a New JSON Entry for the Push
       env:
         GITHUB_REF: ${{ github.ref }}
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
@@ -43,36 +49,14 @@ jobs:
         }
         EOF
         )
-        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry, stopping workflow" && exit 1)
+
+        echo "Generated NEW_LOG:"
+        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry. Exiting." && exit 1)
 
         # Append the JSON entry to the log
         jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
 
-    - name: Check for Changes in Log File
-      id: check_changes
-      run: |
-        if git diff --quiet BE_SEO-Commit_Log.json; then
-          echo "No changes detected. Exiting successfully."
-          exit 0  # Graceful exit if no changes
-        else
-          echo "::set-output name=changes_detected::true"
-        fi
-
-    - name: Debug Log File and Git Status
-      if: always() # Always run this step for debugging
-      run: |
-        echo "Contents of BE_SEO-Commit_Log.json:"
+        echo "Contents of the log file after appending:"
         cat BE_SEO-Commit_Log.json
-        echo "Unstaged changes:"
-        git status
 
-    - name: Commit and Push Updated Commit Log
-      if: steps.check_changes.outputs.changes_detected == 'true' # Run only if changes are detected
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add BE_SEO-Commit_Log.json
-        git commit -m "Update Commit Log"
-        git push origin HEAD
+    - name
