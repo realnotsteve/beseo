@@ -1,56 +1,91 @@
-name: Update Commit Log
+name: BE_SEO Commit Log
 
 on:
   push:
     branches:
-      - '**'  # Trigger on pushes to any branch
+      - '**'
+    # Prevent infinite loop: ignore commits that only touch the log file
     paths-ignore:
-      - 'BE_SEO-Commit_Log.json'  # Exclude the log file from triggering the workflow
+      - 'BE_SEO-Commit_Log.json'
 
 jobs:
-  log-push:
+  log-commit:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Ensure we have full history so git diff / HEAD^ work reliably
+        fetch-depth: 0
 
-    - name: Ensure Commit Log File Exists and Is Valid
+    - name: Ensure commit log file exists and is valid JSON
       run: |
-        if [ ! -f BE_SEO-Commit_Log.json ] || ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
-          echo "Log file is missing or invalid. Initializing as an empty JSON array."
+        if [ ! -f BE_SEO-Commit_Log.json ]; then
+          echo "Log file missing. Initializing as empty JSON array."
           echo "[]" > BE_SEO-Commit_Log.json
+        else
+          # If file is invalid JSON (including blank), re-init to []
+          if ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
+            echo "Log file invalid JSON. Re-initializing as empty JSON array."
+            echo "[]" > BE_SEO-Commit_Log.json
+          fi
         fi
 
-    - name: Generate a New JSON Entry for the Push
+        echo "=== Log file AFTER initialization ==="
+        cat BE_SEO-Commit_Log.json || echo "(could not read log file)"
+
+    - name: Build new log entry and append to log file
       env:
         GITHUB_REF: ${{ github.ref }}
         GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
-        GITHUB_AUTHOR: ${{ github.event.head_commit.committer.name }}
+        GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
       run: |
+        # Build NEW_LOG as a JSON object
         NEW_LOG=$(cat <<EOF
         {
           "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
           "branch": "${GITHUB_REF}",
-          "commit_message": "${GITHUB_MESSAGE}",
-          "commit_author": "${GITHUB_AUTHOR}"
+          "commit_message": ${GITHUB_MESSAGE@Q},
+          "commit_author": ${GITHUB_AUTHOR@Q}
         }
         EOF
         )
-        echo "Generated NEW_LOG:"
-        echo "$NEW_LOG" | jq . || (echo "Invalid JSON entry. Exiting workflow." && exit 1)
 
-        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > tmp-log.json && mv tmp-log.json BE_SEO-Commit_Log.json
+        echo "=== NEW_LOG (raw) ==="
+        echo "$NEW_LOG"
 
-        echo "Log file contents after update:"
+        echo "=== NEW_LOG (jq-validated) ==="
+        echo "$NEW_LOG" | jq . || (echo "NEW_LOG is invalid JSON, aborting." && exit 1)
+
+        # Append NEW_LOG to the existing JSON array in BE_SEO-Commit_Log.json
+        # We use a temp file to avoid partial writes
+        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
+          && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.json
+
+        echo "=== Log file AFTER append ==="
         cat BE_SEO-Commit_Log.json
 
-    - name: Commit and Push Updated Commit Log
+    - name: Commit and push updated log (if there are changes)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
+
+        # Show status before staging
+        echo "=== git status BEFORE add ==="
+        git status
+
         git add BE_SEO-Commit_Log.json
-        git commit -m "Update Commit Log"
-        git push origin HEAD
+
+        echo "=== git status AFTER add ==="
+        git status
+
+        # Try to commit; if there's nothing to commit, do not fail the job
+        if git commit -m "Update BE_SEO commit log"; then
+          echo "Commit created, pushing..."
+          git push origin HEAD
+        else
+          echo "No changes to commit (working tree clean). Nothing to push."
+        fi
