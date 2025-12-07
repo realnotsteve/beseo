@@ -2,10 +2,10 @@
   "meta": {
     "project_name": "BE Schema Engine",
     "alias": "BE SEO Engine",
-    "author": "Bill Evans, PhD",
+    "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "dev_notes_txt_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.json",
-    "commit_log_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.json",
+    "dev_notes_txt_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Dev_Notes.js",
+    "commit_log_url": "https://raw.githubusercontent.com/realnotsteve/beseo/refs/heads/main/BE_SEO-Commit_Log.js",
     "repo_root": "be-schema-engine/",
     "github_fetch_policy": {
       "prefer_contents_api": true,
@@ -30,7 +30,7 @@
     "after_push": {
       "must_read_commit_log": true,
       "must_refetch_changed_files": true,
-      "description": "After the user confirms a push, ChatGPT should read BE_SEO-Commit_Log.json, identify changed files, and refetch their contents using the GitHub Contents API as the primary source (via the github_fetch_policy), falling back to raw URLs or user-provided content only if needed."
+      "description": "After the user confirms a push, ChatGPT should read BE_SEO-Commit_Log.js, identify changed files, and refetch their contents using the GitHub Contents API as the primary source (via the github_fetch_policy), falling back to raw URLs or user-provided content only if needed."
     },
     "debug": {
       "schema_debug_requires_wp_debug": true,
