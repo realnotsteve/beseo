@@ -1,31 +1,89 @@
-    - name: Commit and push updated log
+name: BE_SEO Commit Log
+
+on:
+  push:
+    branches:
+      - '**'
+    # Only run when these source files change.
+    # The log file is NOT in this list, preventing infinite loops.
+    paths:
+      - 'BE_SEO-Dev_Notes.txt'
+      - 'be-schema-engine/**'
+
+jobs:
+  log-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push changes
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Prepare and Validate Log File
+      run: |
+        # 1. Ensure file exists
+        if [ ! -f BE_SEO-Commit_Log.json ]; then
+          echo "File missing. Creating empty array."
+          echo "[]" > BE_SEO-Commit_Log.json
+        fi
+
+        # 2. Ensure it is a valid JSON array
+        if ! jq -e 'if type=="array" then . else error("Not an array") end' BE_SEO-Commit_Log.json > /dev/null 2>&1; then
+          echo "File is invalid JSON or not an array. Resetting to []"
+          echo "[]" > BE_SEO-Commit_Log.json
+        fi
+
+    - name: Append New Entry
+      env:
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
+        GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
+      run: |
+        echo "=== DEBUG: Hash BEFORE update ==="
+        md5sum BE_SEO-Commit_Log.json
+
+        # Build new object safely
+        NEW_ENTRY=$(jq -n \
+          --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+          --arg branch "$GITHUB_REF" \
+          --arg msg "$GITHUB_MESSAGE" \
+          --arg author "$GITHUB_AUTHOR" \
+          '{timestamp: $timestamp, branch: $branch, commit_message: $msg, commit_author: $author}'
+        )
+
+        # Append to file
+        jq ". + [$NEW_ENTRY]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
+          && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.json
+
+        echo "=== DEBUG: Hash AFTER update ==="
+        md5sum BE_SEO-Commit_Log.json
+        
+        echo "=== DEBUG: File Content Head (Last 5 lines) ==="
+        tail -n 5 BE_SEO-Commit_Log.json
+
+    - name: Force Commit and Push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-        echo "=== DEBUG: File Content on Disk ==="
-        cat BE_SEO-Commit_Log.json
+        # FORCE ADD: This overrides .gitignore if the file is ignored
+        git add --force BE_SEO-Commit_Log.json
 
-        echo "=== DEBUG: Staging File ==="
-        git add -f BE_SEO-Commit_Log.json
-
+        # Check status verbosely
         echo "=== DEBUG: Git Status ==="
         git status
 
-        echo "=== DEBUG: Git Diff (Staged vs HEAD) ==="
-        git diff --staged
-
-        # Check if there are staged changes
-        if git diff --staged --quiet; then
-          echo "⚠️ CRITICAL: Git thinks there are no changes."
-          echo "Checking if file is ignored..."
-          git check-ignore -v BE_SEO-Commit_Log.json || echo "File is not ignored."
-        else
-          echo "✅ Changes detected. Committing..."
-          git commit -m "Update BE_SEO commit log [skip ci]"
-          
-          echo "Pushing changes to $GITHUB_REF..."
+        # Commit
+        if git commit -m "Update BE_SEO commit log [skip ci]"; then
+          echo "Commit successful. Pushing..."
           git push origin HEAD:$GITHUB_REF
+        else
+          echo "!!! ERROR: Git returned 'nothing to commit' even though we updated the file."
+          echo "This implies the file content generated matches exactly what is already in the repo."
+          exit 1
         fi
