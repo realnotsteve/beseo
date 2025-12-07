@@ -1,66 +1,3 @@
-name: BE_SEO Commit Log
-
-on:
-  push:
-    branches:
-      - '**'
-    # Trigger ONLY on these paths.
-    # Because 'BE_SEO-Commit_Log.json' is NOT in this list, 
-    # the workflow will NOT trigger itself (infinite loop prevented).
-    paths:
-      - 'BE_SEO-Dev_Notes.txt'
-      - 'be-schema-engine/**'
-
-jobs:
-  log-commit:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Explicitly allow the workflow to push changes
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Ensure commit log file exists and is valid JSON
-      run: |
-        if [ ! -f BE_SEO-Commit_Log.json ]; then
-          echo "Log file missing. Initializing as empty JSON array."
-          echo "[]" > BE_SEO-Commit_Log.json
-        else
-          # Check if valid JSON. If not, reset to [].
-          if ! jq empty BE_SEO-Commit_Log.json > /dev/null 2>&1; then
-            echo "Log file invalid JSON. Re-initializing as empty JSON array."
-            echo "[]" > BE_SEO-Commit_Log.json
-          fi
-        fi
-
-    - name: Build new log entry and append to log file
-      env:
-        GITHUB_REF: ${{ github.ref }}
-        GITHUB_MESSAGE: ${{ github.event.head_commit.message }}
-        GITHUB_AUTHOR: ${{ github.event.head_commit.author.name }}
-      run: |
-        # Use jq to build the JSON object. This is safer than manual string building.
-        NEW_LOG=$(jq -n \
-          --arg timestamp "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-          --arg branch "$GITHUB_REF" \
-          --arg msg "$GITHUB_MESSAGE" \
-          --arg author "$GITHUB_AUTHOR" \
-          '{timestamp: $timestamp, branch: $branch, commit_message: $msg, commit_author: $author}'
-        )
-
-        echo "=== New Entry Created ==="
-        echo "$NEW_LOG"
-
-        # Append to the log file safely
-        jq ". + [$NEW_LOG]" BE_SEO-Commit_Log.json > BE_SEO-Commit_Log.tmp \
-          && mv BE_SEO-Commit_Log.tmp BE_SEO-Commit_Log.json
-
-        echo "=== Log File Content After Append ==="
-        cat BE_SEO-Commit_Log.json
-
     - name: Commit and push updated log
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,15 +5,27 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-        # Force add in case the file is in .gitignore
+        echo "=== DEBUG: File Content on Disk ==="
+        cat BE_SEO-Commit_Log.json
+
+        echo "=== DEBUG: Staging File ==="
         git add -f BE_SEO-Commit_Log.json
 
+        echo "=== DEBUG: Git Status ==="
+        git status
+
+        echo "=== DEBUG: Git Diff (Staged vs HEAD) ==="
+        git diff --staged
+
+        # Check if there are staged changes
         if git diff --staged --quiet; then
-          echo "No changes to commit. This is unexpected if the log was appended."
+          echo "⚠️ CRITICAL: Git thinks there are no changes."
+          echo "Checking if file is ignored..."
+          git check-ignore -v BE_SEO-Commit_Log.json || echo "File is not ignored."
         else
+          echo "✅ Changes detected. Committing..."
           git commit -m "Update BE_SEO commit log [skip ci]"
           
-          # Explicitly push to the current branch ref to avoid 'Detached HEAD' issues
           echo "Pushing changes to $GITHUB_REF..."
           git push origin HEAD:$GITHUB_REF
         fi
