@@ -17,28 +17,22 @@ function be_schema_engine_render_overview_page() {
         return;
     }
     $hero_image_url = plugins_url( 'assets/images/admin/be_seo-landing_image.webp', BE_SCHEMA_ENGINE_PLUGIN_FILE );
-    $changelog_paths = array(
-        trailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . 'CHANGELOG.md',            // Inside plugin folder.
-        trailingslashit( dirname( untrailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) ) ) . 'CHANGELOG.md', // Repo root.
-    );
-    $changelog_path = '';
-    foreach ( $changelog_paths as $candidate ) {
-        if ( file_exists( $candidate ) && is_readable( $candidate ) ) {
-            $changelog_path = $candidate;
-            break;
-        }
-    }
 
     $changelog_text = '';
+    $changelog_path = trailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . '../CHANGELOG.md';
+    $real_path      = realpath( $changelog_path );
 
-    if ( $changelog_path ) {
-        $raw = file_get_contents( $changelog_path );
+    if ( $real_path && file_exists( $real_path ) && is_readable( $real_path ) ) {
+        $raw = file_get_contents( $real_path );
         if ( false !== $raw ) {
             // Keep it short to avoid an overly tall hero area.
             $changelog_text = substr( $raw, 0, 1200 );
         }
     }
-    $changelog_text = $changelog_text ? $changelog_text : __( 'Changelog not available.', 'be-schema-engine' );
+
+    if ( '' === $changelog_text ) {
+        $changelog_text = __( 'Changelog not available.', 'be-schema-engine' );
+    }
 
     /**
      * Render a small subset of Markdown into safe HTML for the hero preview.
