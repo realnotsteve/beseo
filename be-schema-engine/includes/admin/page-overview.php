@@ -17,10 +17,21 @@ function be_schema_engine_render_overview_page() {
         return;
     }
     $hero_image_url = plugins_url( 'assets/images/admin/be_seo-landing_image.webp', BE_SCHEMA_ENGINE_PLUGIN_FILE );
-    $changelog_path = trailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . 'CHANGELOG.md';
+    $changelog_paths = array(
+        trailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . 'CHANGELOG.md',            // Inside plugin folder.
+        trailingslashit( dirname( untrailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) ) ) . 'CHANGELOG.md', // Repo root.
+    );
+    $changelog_path = '';
+    foreach ( $changelog_paths as $candidate ) {
+        if ( file_exists( $candidate ) && is_readable( $candidate ) ) {
+            $changelog_path = $candidate;
+            break;
+        }
+    }
+
     $changelog_text = '';
 
-    if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
+    if ( $changelog_path ) {
         $raw = file_get_contents( $changelog_path );
         if ( false !== $raw ) {
             // Keep it short to avoid an overly tall hero area.
