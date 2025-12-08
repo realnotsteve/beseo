@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.10] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/prepare-commit-msg
+
 ## [1.3.9] - 2025-12-08
 - Bump type: patch
 - Files:

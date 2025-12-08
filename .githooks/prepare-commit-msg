@@ -2,13 +2,18 @@
 set -euo pipefail
 
 # Args: $1 = commit message file
-msg_file="$1"
+msg_file="${1:-}"
 
-# If a message already exists (excluding comments/blank lines), respect it.
-if grep -vq '^\s*$' "$msg_file" | grep -vq '^#' "$msg_file"; then
-    exit 0
+# If no file was provided, bail.
+if [[ -z "$msg_file" ]] || [[ ! -f "$msg_file" ]]; then
+  exit 0
+fi
+
+# If a non-comment, non-blank line already exists, leave it.
+if grep -Eq '^[[:space:]]*[^#[:space:]]+' "$msg_file"; then
+  exit 0
 fi
 
 # Default human-centered message (override with BESEO_COMMIT_MSG env if desired).
-default_msg="${BESEO_COMMIT_MSG:-"BESEO: streamline overview UX and tooling"}"
+default_msg="${BESEO_COMMIT_MSG:-BESEO: streamline overview UX and tooling}"
 printf '%s\n' "$default_msg" > "$msg_file"
