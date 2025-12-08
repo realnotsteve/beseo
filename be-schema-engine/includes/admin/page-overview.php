@@ -18,20 +18,20 @@ function be_schema_engine_render_overview_page() {
     }
     $hero_image_url = plugins_url( 'assets/images/admin/be_seo-landing_image.webp', BE_SCHEMA_ENGINE_PLUGIN_FILE );
 
-    $changelog_text  = '';
-    $changelog_paths = array(
-        dirname( dirname( dirname( __DIR__ ) ) ) . '/CHANGELOG.md',                  // ../../.. from includes/admin -> repo root.
-        dirname( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . '/CHANGELOG.md',                    // repo root if BE_SCHEMA_ENGINE_PLUGIN_DIR ends with /be-schema-engine/.
-        BE_SCHEMA_ENGINE_PLUGIN_DIR . 'CHANGELOG.md',                                // inside plugin dir (fallback).
-    );
+    $changelog_text = '';
 
-    foreach ( $changelog_paths as $path ) {
-        if ( $path && file_exists( $path ) && is_readable( $path ) ) {
-            $raw = file_get_contents( $path );
-            if ( false !== $raw ) {
-                $changelog_text = substr( $raw, 0, 1200 ); // keep preview short.
-                break;
-            }
+    // Prefer packaged changelog inside the plugin; fall back to BE_SCHEMA_ENGINE_PLUGIN_DIR just in case.
+    $plugin_dir     = trailingslashit( dirname( dirname( __DIR__ ) ) ); // from includes/admin → plugin root.
+    $changelog_path = $plugin_dir . 'CHANGELOG.md';
+
+    if ( ! file_exists( $changelog_path ) || ! is_readable( $changelog_path ) ) {
+        $changelog_path = trailingslashit( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . 'CHANGELOG.md';
+    }
+
+    if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
+        $raw = file_get_contents( $changelog_path );
+        if ( false !== $raw ) {
+            $changelog_text = substr( $raw, 0, 1200 ); // keep preview short.
         }
     }
 

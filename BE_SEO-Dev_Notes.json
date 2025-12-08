@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "1.3.19",
+    "version": "1.3.20",
     "repo_root": "be-schema-engine/"
   },
   "workflows": {
@@ -49,6 +49,11 @@
       "path": "be-schema-engine/assets/images/admin/be_seo-landing_image.webp",
       "group": "assets",
       "role": "Hero background image for the Overview admin page."
+    },
+    {
+      "path": "be-schema-engine/CHANGELOG.md",
+      "group": "assets",
+      "role": "Packaged changelog copy used for the Overview hero preview."
     },
     {
       "path": "be-schema-engine/includes/admin/page-overview.php",

@@ -1,12 +1,5 @@
 # Changelog
 
-## [1.3.20] - 2025-12-08
-- Bump type: patch
-- Files:
-- BE_SEO-Dev_Notes.json
-- be-schema-engine/CHANGELOG.md
-- be-schema-engine/includes/admin/page-overview.php
-
 ## [1.3.19] - 2025-12-08
 - Bump type: patch
 - Files:
