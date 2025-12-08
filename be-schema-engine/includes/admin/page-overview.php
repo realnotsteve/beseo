@@ -167,8 +167,11 @@ function be_schema_engine_render_overview_page() {
             color: #000;
             text-decoration: underline;
         }
+        .description a {
+            text-decoration: none;
+        }
         .description a:hover {
-            color: DarkGray;
+            text-decoration: underline;
         }
     </style>
 
