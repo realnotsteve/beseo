@@ -124,6 +124,37 @@ function be_schema_debug_get_events() {
 }
 
 /**
+ * Collect an emitted schema graph for debugging.
+ *
+ * Stores the graph and logs immediately when debug is enabled.
+ *
+ * @param array $graph Graph payload (@graph or single node array).
+ * @return void
+ */
+function be_schema_debug_collect( array $graph ) {
+	if ( ! be_schema_is_debug_enabled() ) {
+		return;
+	}
+
+	// Store for shutdown summary visibility.
+	be_schema_debug_store(
+		'schema_graph_emitted',
+		array(
+			'graph' => $graph,
+		)
+	);
+
+	// Emit a lightweight log line for inspection.
+	error_log(
+		'BE_SCHEMA_DEBUG_GRAPH ' . wp_json_encode(
+			array(
+				'graph' => $graph,
+			)
+		)
+	);
+}
+
+/**
  * Helper: does the event name end with a given suffix?
  *
  * Compatible with PHP 7.4+ (no str_ends_with).

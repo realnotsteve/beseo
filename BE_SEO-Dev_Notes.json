@@ -4,6 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
+    "version": "1.3.4",
     "repo_root": "be-schema-engine/"
   },
   "workflows": {
@@ -14,7 +15,18 @@
     "debug": {
       "schema_debug_requires_wp_debug": true,
       "social_debug_requires_wp_debug": true,
-      "description": "Both schema and social debug logging require WP_DEBUG plus the plugin-level debug or BE_SCHEMA_DEBUG flag."
+      "description": "Both schema and social debug logging require WP_DEBUG plus the plugin-level debug or BE_SCHEMA_DEBUG flag.",
+      "collector_notes": "be_schema_debug_collect now stores emitted graphs and logs BE_SCHEMA_DEBUG_GRAPH payloads when debug is enabled."
+    },
+    "versioning": {
+      "description": "Project is called BESEO. When adding new features, increment the minor version. For other source changes, increment the patch version."
+    },
+    "pre_commit": {
+      "hook_path": ".githooks/pre-commit",
+      "enable_command": "git config core.hooksPath .githooks",
+      "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates be-schema-engine.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
+      "changelog": "CHANGELOG.md is auto-maintained by the pre-commit hook.",
+      "runtime": "Requires python3 (preferred) or python in PATH; hook exits if neither is available."
     }
   },
   "files": [
@@ -26,7 +38,17 @@
     {
       "path": "be-schema-engine/includes/admin/admin-menu.php",
       "group": "admin",
-      "role": "Registers top-level BE SEO admin menu and submenus (Schema, Social Media, Tools, Dashboard)."
+      "role": "Registers top-level BE SEO admin menu and submenus (Overview default, Schema, Social Media, Tools)."
+    },
+    {
+      "path": "be-schema-engine/assets/images/admin/be_seo-landing_image.webp",
+      "group": "assets",
+      "role": "Hero background image for the Overview admin page."
+    },
+    {
+      "path": "be-schema-engine/includes/admin/page-overview.php",
+      "group": "admin",
+      "role": "Overview landing page with hero background image (cover), centered frosted-glass hero content (title, version, GitHub and Bill's site links), and quick links to Schema, Social Media, and Tools."
     },
     {
       "path": "be-schema-engine/includes/admin/page-dashboard.php",

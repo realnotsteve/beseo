@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+BUMP="${BESEO_BUMP:-patch}"
+if [[ "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
+  echo "BESEO_BUMP must be 'minor' or 'patch' (default: patch)" >&2
+  exit 1
+fi
+
+VERSION_FILE="be-schema-engine/be-schema-engine.php"
+NOTES_FILE="BE_SEO-Dev_Notes.json"
+CHANGELOG_FILE="CHANGELOG.md"
+
+if [[ ! -f "$VERSION_FILE" ]]; then
+  echo "Version file missing: $VERSION_FILE" >&2
+  exit 1
+fi
+
+current_version="$(python - <<'PY'
+import sys, re
+path = sys.argv[1]
+text = open(path).read()
+m = re.search(r'Version:\s*([0-9]+\.[0-9]+\.[0-9]+)', text)
+if not m:
+    sys.exit(1)
+print(m.group(1))
+PY
+"$VERSION_FILE")" || { echo "Could not read current version" >&2; exit 1; }
+
+IFS=. read -r major minor patch <<<"$current_version"
+if [[ "$BUMP" == "minor" ]]; then
+  minor=$((minor + 1))
+  patch=0
+else
+  patch=$((patch + 1))
+fi
+new_version="${major}.${minor}.${patch}"
+
+python - <<'PY'
+import sys, re
+path, old, new = sys.argv[1], sys.argv[2], sys.argv[3]
+text = open(path).read()
+text_new = re.sub(r'(Version:\s*)' + re.escape(old), r'\1' + new, text, count=1)
+text_new = re.sub(r"(BE_SCHEMA_ENGINE_VERSION',\s*')" + re.escape(old) + "'", r"BE_SCHEMA_ENGINE_VERSION', '" + new + "'", text_new, count=1)
+if text == text_new:
+    sys.exit(1)
+open(path, 'w').write(text_new)
+PY
+"$VERSION_FILE" "$current_version" "$new_version" || { echo "Failed updating version" >&2; exit 1; }
+
+python - <<'PY'
+import json, sys
+path, new = sys.argv[1], sys.argv[2]
+try:
+    data = json.loads(open(path).read())
+except Exception:
+    data = {}
+if "meta" not in data:
+    data["meta"] = {}
+data["meta"]["version"] = new
+open(path, 'w').write(json.dumps(data, indent=2))
+PY
+"$NOTES_FILE" "$new_version" || true
+
+mapfile -t staged_files < <(git diff --cached --name-only)
+
+python - <<'PY'
+import sys, datetime, os
+path, version, bump = sys.argv[1], sys.argv[2], sys.argv[3]
+files = sys.argv[4:]
+header = "# Changelog"
+today = datetime.datetime.now().strftime("%Y-%m-%d")
+entry_lines = [f"## [{version}] - {today}", f"- Bump type: {bump}", "- Files:"]
+if files:
+    entry_lines += [f"- {f}" for f in files]
+else:
+    entry_lines.append("- (no staged files listed)")
+entry = "\n".join(entry_lines) + "\n\n"
+if os.path.exists(path):
+    existing = open(path).read()
+else:
+    existing = ""
+if existing.startswith(header):
+    rest = existing[len(header):].lstrip("\n")
+    new_content = header + "\n\n" + entry + rest
+else:
+    new_content = header + "\n\n" + entry + existing
+open(path, 'w').write(new_content)
+PY
+"$CHANGELOG_FILE" "$new_version" "$BUMP" "${staged_files[@]}"
+
+git add "$VERSION_FILE" "$NOTES_FILE" "$CHANGELOG_FILE"
+
+echo "BESEO pre-commit: bumped version to $new_version ($BUMP) and updated changelog."
