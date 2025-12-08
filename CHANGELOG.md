@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.17] - 2025-12-08
+- Bump type: patch
+- Files:
+- be-schema-engine.zip
+- be-schema-engine/includes/admin/page-overview.php
+
 ## [1.3.16] - 2025-12-08
 - Bump type: patch
 - Files:
