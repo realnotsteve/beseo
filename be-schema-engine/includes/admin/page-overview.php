@@ -19,8 +19,8 @@ function be_schema_engine_render_overview_page() {
     $hero_image_url = plugins_url( 'assets/images/admin/be_seo-landing_image.webp', BE_SCHEMA_ENGINE_PLUGIN_FILE );
 
     $changelog_text = '';
-    $plugin_root    = dirname( BE_SCHEMA_ENGINE_PLUGIN_DIR ); // One level up from plugin dir.
-    $changelog_path = $plugin_root . '/CHANGELOG.md';
+    $repo_root      = dirname( dirname( BE_SCHEMA_ENGINE_PLUGIN_DIR ) ); // One level above plugin dir (repo root).
+    $changelog_path = $repo_root . '/CHANGELOG.md';
 
     if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
         $raw = file_get_contents( $changelog_path );
