@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "1.3.4",
+    "version": "1.3.9",
     "repo_root": "be-schema-engine/"
   },
   "workflows": {
@@ -27,6 +27,11 @@
       "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates be-schema-engine.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
       "changelog": "CHANGELOG.md is auto-maintained by the pre-commit hook.",
       "runtime": "Requires python3 (preferred) or python in PATH; hook exits if neither is available."
+    },
+    "prepare_commit_msg": {
+      "hook_path": ".githooks/prepare-commit-msg",
+      "behavior": "If the commit message is empty, auto-fills a human-centered default. Override with BESEO_COMMIT_MSG env var or by typing your own message.",
+      "default_message": "BESEO: streamline overview UX and tooling"
     }
   },
   "files": [

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Args: $1 = commit message file
+msg_file="$1"
+
+# If a message already exists (excluding comments/blank lines), respect it.
+if grep -vq '^\s*$' "$msg_file" | grep -vq '^#' "$msg_file"; then
+    exit 0
+fi
+
+# Default human-centered message (override with BESEO_COMMIT_MSG env if desired).
+default_msg="${BESEO_COMMIT_MSG:-"BESEO: streamline overview UX and tooling"}"
+printf '%s\n' "$default_msg" > "$msg_file"

@@ -4,6 +4,16 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
+# Select Python executable (prefer python3, fallback to python).
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON=python
+else
+  echo "BESEO pre-commit: python3 or python not found in PATH" >&2
+  exit 1
+fi
+
 BUMP="${BESEO_BUMP:-patch}"
 if [[ "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
   echo "BESEO_BUMP must be 'minor' or 'patch' (default: patch)" >&2
@@ -19,7 +29,7 @@ if [[ ! -f "$VERSION_FILE" ]]; then
   exit 1
 fi
 
-current_version="$(python - <<'PY'
+current_version="$($PYTHON - "$VERSION_FILE" <<'PY'
 import sys, re
 path = sys.argv[1]
 text = open(path).read()
@@ -28,7 +38,7 @@ if not m:
     sys.exit(1)
 print(m.group(1))
 PY
-"$VERSION_FILE")" || { echo "Could not read current version" >&2; exit 1; }
+)" || { echo "Could not read current version" >&2; exit 1; }
 
 IFS=. read -r major minor patch <<<"$current_version"
 if [[ "$BUMP" == "minor" ]]; then
@@ -39,19 +49,18 @@ else
 fi
 new_version="${major}.${minor}.${patch}"
 
-python - <<'PY'
+$PYTHON - "$VERSION_FILE" "$current_version" "$new_version" <<'PY'
 import sys, re
 path, old, new = sys.argv[1], sys.argv[2], sys.argv[3]
 text = open(path).read()
-text_new = re.sub(r'(Version:\s*)' + re.escape(old), r'\1' + new, text, count=1)
-text_new = re.sub(r"(BE_SCHEMA_ENGINE_VERSION',\s*')" + re.escape(old) + "'", r"BE_SCHEMA_ENGINE_VERSION', '" + new + "'", text_new, count=1)
+text_new = re.sub(r'(Version:\s*)' + re.escape(old), r'\g<1>' + new, text, count=1)
+text_new = re.sub(r"(BE_SCHEMA_ENGINE_VERSION',\s*')" + re.escape(old) + "'", r"\g<1>" + new + "'", text_new, count=1)
 if text == text_new:
     sys.exit(1)
 open(path, 'w').write(text_new)
 PY
-"$VERSION_FILE" "$current_version" "$new_version" || { echo "Failed updating version" >&2; exit 1; }
 
-python - <<'PY'
+$PYTHON - "$NOTES_FILE" "$new_version" <<'PY'
 import json, sys
 path, new = sys.argv[1], sys.argv[2]
 try:
@@ -63,14 +72,16 @@ if "meta" not in data:
 data["meta"]["version"] = new
 open(path, 'w').write(json.dumps(data, indent=2))
 PY
-"$NOTES_FILE" "$new_version" || true
 
-mapfile -t staged_files < <(git diff --cached --name-only)
-
-python - <<'PY'
-import sys, datetime, os
+$PYTHON - "$CHANGELOG_FILE" "$new_version" "$BUMP" <<'PY'
+import sys, datetime, os, subprocess
 path, version, bump = sys.argv[1], sys.argv[2], sys.argv[3]
-files = sys.argv[4:]
+files = []
+try:
+    out = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True)
+    files = [line for line in out.splitlines() if line.strip()]
+except Exception:
+    files = []
 header = "# Changelog"
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 entry_lines = [f"## [{version}] - {today}", f"- Bump type: {bump}", "- Files:"]
@@ -90,7 +101,6 @@ else:
     new_content = header + "\n\n" + entry + existing
 open(path, 'w').write(new_content)
 PY
-"$CHANGELOG_FILE" "$new_version" "$BUMP" "${staged_files[@]}"
 
 git add "$VERSION_FILE" "$NOTES_FILE" "$CHANGELOG_FILE"
 

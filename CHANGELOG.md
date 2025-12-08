@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.3.9] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- be-schema-engine/be-schema-engine.php
+
+## [1.3.8] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- be-schema-engine/be-schema-engine.php
+
+## [1.3.7] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- be-schema-engine/be-schema-engine.php
+
+## [1.3.6] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- be-schema-engine/be-schema-engine.php
+
+## [1.3.5] - 2025-12-08
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+
 ## [1.3.4] - 2025-12-08
 - Bump type: patch
 - Files:
