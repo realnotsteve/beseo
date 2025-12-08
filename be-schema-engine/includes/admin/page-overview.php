@@ -18,15 +18,20 @@ function be_schema_engine_render_overview_page() {
     }
     $hero_image_url = plugins_url( 'assets/images/admin/be_seo-landing_image.webp', BE_SCHEMA_ENGINE_PLUGIN_FILE );
 
-    $changelog_text = '';
-    $repo_root      = dirname( dirname( BE_SCHEMA_ENGINE_PLUGIN_DIR ) ); // One level above plugin dir (repo root).
-    $changelog_path = $repo_root . '/CHANGELOG.md';
+    $changelog_text  = '';
+    $changelog_paths = array(
+        dirname( dirname( dirname( __DIR__ ) ) ) . '/CHANGELOG.md',                  // ../../.. from includes/admin -> repo root.
+        dirname( BE_SCHEMA_ENGINE_PLUGIN_DIR ) . '/CHANGELOG.md',                    // repo root if BE_SCHEMA_ENGINE_PLUGIN_DIR ends with /be-schema-engine/.
+        BE_SCHEMA_ENGINE_PLUGIN_DIR . 'CHANGELOG.md',                                // inside plugin dir (fallback).
+    );
 
-    if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
-        $raw = file_get_contents( $changelog_path );
-        if ( false !== $raw ) {
-            // Keep it short to avoid an overly tall hero area.
-            $changelog_text = substr( $raw, 0, 1200 );
+    foreach ( $changelog_paths as $path ) {
+        if ( $path && file_exists( $path ) && is_readable( $path ) ) {
+            $raw = file_get_contents( $path );
+            if ( false !== $raw ) {
+                $changelog_text = substr( $raw, 0, 1200 ); // keep preview short.
+                break;
+            }
         }
     }
 
