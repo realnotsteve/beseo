@@ -167,11 +167,8 @@ function be_schema_engine_render_overview_page() {
             color: #000;
             text-decoration: underline;
         }
-        .description a:link {
-            color: LightSteelBlue;
-        }
         .description a:hover {
-            color: Azure;
+            color: DarkGray;
         }
     </style>
 
@@ -192,11 +189,11 @@ function be_schema_engine_render_overview_page() {
                     </p>
 
                     <p class="description" style="margin-top: 12pt;">
-                        <a href="https://github.com/realnotsteve/beseo" target="_blank" rel="noopener noreferrer">GitHub <span class="dashicons dashicons-external"></span></a>
+                        <a href="https://github.com/realnotsteve/beseo" target="_blank" rel="noopener noreferrer">GitHub</a><span class="dashicons dashicons-external"></span>
                     </p>
 
                     <p class="description" style="margin-top: 12pt;">
-                        <a href="https://billevans.be" target="_blank" rel="noopener noreferrer">Bill's Site <span class="dashicons dashicons-external"></span></a>
+                        <a href="https://billevans.be" target="_blank" rel="noopener noreferrer">Bill's Site</a> <span class="dashicons dashicons-external"></span>
                     </p>
                 </div>
 
