@@ -43,14 +43,21 @@ function be_schema_engine_save_social_settings() {
 
     // SETTINGS TAB -------------------------------.
 
-    // Global enables.
-    $settings['og_enabled']      = isset( $_POST['be_schema_og_enabled'] ) ? '1' : '0';
-    $settings['twitter_enabled'] = isset( $_POST['be_schema_twitter_enabled'] ) ? '1' : '0';
+    // Global enables (must align with core-social.php defaults).
+    $settings['social_enable_og']      = isset( $_POST['be_schema_og_enabled'] ) ? '1' : '0';
+    $settings['social_enable_twitter'] = isset( $_POST['be_schema_twitter_enabled'] ) ? '1' : '0';
 
-    // Global default fallback image.
-    $settings['global_default_image'] = isset( $_POST['be_schema_global_default_image'] )
+    // Optional: keep legacy keys in sync if they existed before.
+    $settings['og_enabled']      = $settings['social_enable_og'];
+    $settings['twitter_enabled'] = $settings['social_enable_twitter'];
+
+    // Global default fallback image (must align with social_default_image).
+    $settings['social_default_image'] = isset( $_POST['be_schema_global_default_image'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_global_default_image'] ) )
         : '';
+
+    // Optional legacy alias for older code, if any.
+    $settings['global_default_image'] = $settings['social_default_image'];
 
     // FACEBOOK TAB ------------------------------.
 
@@ -119,11 +126,11 @@ function be_schema_engine_render_social_media_page() {
         }
     }
 
-    // Simple access helpers.
-    $og_enabled      = ! empty( $settings['og_enabled'] ) && '1' === $settings['og_enabled'];
-    $twitter_enabled = ! empty( $settings['twitter_enabled'] ) && '1' === $settings['twitter_enabled'];
+    // Simple access helpers (read the same keys core-social.php uses).
+    $og_enabled      = ! empty( $settings['social_enable_og'] ) && '1' === $settings['social_enable_og'];
+    $twitter_enabled = ! empty( $settings['social_enable_twitter'] ) && '1' === $settings['social_enable_twitter'];
 
-    $global_default_image   = isset( $settings['global_default_image'] ) ? $settings['global_default_image'] : '';
+    $global_default_image   = isset( $settings['social_default_image'] ) ? $settings['social_default_image'] : '';
     $facebook_page_url      = isset( $settings['facebook_page_url'] ) ? $settings['facebook_page_url'] : '';
     $facebook_default_image = isset( $settings['facebook_default_image'] ) ? $settings['facebook_default_image'] : '';
     $facebook_app_id        = isset( $settings['facebook_app_id'] ) ? $settings['facebook_app_id'] : '';

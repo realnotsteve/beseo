@@ -1,376 +1,522 @@
 <?php
 /**
- * Core Social Meta Engine
+ * BE Schema Engine - Social meta (OpenGraph + Twitter).
  *
- * Responsible for emitting OpenGraph and Twitter Card meta tags based on
- * settings from the Social Media admin page and the current page context.
+ * Responsibilities:
+ * - Output OpenGraph and Twitter Card <meta> tags.
+ * - Use conservative, automatic defaults:
+ *     - Title: wp_get_document_title()
+ *     - Description:
+ *          - Singular: excerpt → content snippet
+ *          - Non-singular: site tagline
+ *     - URL: canonical URL (cleaned) or permalink as fallback
+ *     - Images:
+ *          - Featured image (preferred)
+ *          - Social defaults from settings
+ *          - Global default image (if configured)
+ * - Provide structured debug snapshots when debug mode is enabled.
  *
- * This file does NOT emit JSON-LD schema or canonical tags.
+ * NOTE:
+ * - This module does NOT output JSON-LD.
+ * - This module does NOT manage canonical tags.
+ *
+ * @package BE_SEO
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
- * Determine if Social Media debug is enabled.
+ * Get Social settings with defaults.
  *
- * Follows the same spirit as the main schema debug:
- * - Requires WP_DEBUG to be true.
- * - Respects BE_SCHEMA_DEBUG constant if defined and true.
- * - Falls back to the plugin's "debug" setting if available.
- *
- * @return bool
- */
-function be_schema_social_debug_enabled() {
-    if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-        return false;
-    }
-
-    // Hard override via constant.
-    if ( defined( 'BE_SCHEMA_DEBUG' ) && BE_SCHEMA_DEBUG ) {
-        return true;
-    }
-
-    // Fallback to main plugin settings, if available.
-    if ( function_exists( 'be_schema_engine_get_settings' ) ) {
-        $settings = be_schema_engine_get_settings();
-        if ( ! empty( $settings['debug'] ) && '1' === (string) $settings['debug'] ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
- * Get Social Media settings for OG/Twitter.
- *
- * NOTE: Keep defaults in sync with:
- * - includes/admin/page-social-media.php -> be_schema_engine_get_social_settings().
- *
- * Option name: be_schema_social_settings
+ * Stored as be_schema_social_settings in the options table.
  *
  * @return array
  */
 function be_schema_social_get_settings() {
-    $defaults = array(
-        // Global settings.
-        'social_enable_og'       => '0',
-        'social_enable_twitter'  => '0',
-        'social_default_image'   => '',
+	static $cached = null;
 
-        // Facebook.
-        'facebook_page_url'      => '',
-        'facebook_default_image' => '',
-        'facebook_app_id'        => '',
-        'facebook_notes'         => '',
+	if ( null !== $cached ) {
+		return $cached;
+	}
 
-        // Twitter.
-        'twitter_handle'         => '',
-        'twitter_card_type'      => 'summary_large_image',
-        'twitter_default_image'  => '',
-        'twitter_notes'          => '',
-    );
+	$defaults = array(
+		// Master enable for social meta.
+		'enabled' => '0',
 
-    $saved = get_option( 'be_schema_social_settings', array() );
+		// Default images (attachment IDs or URLs depending on UI).
+		'default_facebook_image_id' => '',
+		'default_twitter_image_id'  => '',
+		'default_global_image_id'   => '',
 
-    if ( ! is_array( $saved ) ) {
-        $saved = array();
-    }
+		// Twitter handles (with or without @, we will normalize).
+		'twitter_site'    => '',
+		'twitter_creator' => '',
 
-    return wp_parse_args( $saved, $defaults );
+		// Card type: summary or summary_large_image.
+		'twitter_card_type' => 'summary_large_image',
+
+		// Optional Facebook app ID.
+		'facebook_app_id' => '',
+	);
+
+	$settings = get_option( 'be_schema_social_settings', array() );
+	$cached   = wp_parse_args( $settings, $defaults );
+
+	return $cached;
 }
 
 /**
- * Clean a URL for OG/Twitter usage.
+ * Determine whether social meta should be emitted at all.
  *
- * - Strips tracking params (utm_*, gclid, fbclid).
- * - Drops fragment (#...).
+ * This is independent from schema JSON-LD; social can be enabled/disabled
+ * separately from BE Schema Engine's core schema output.
  *
- * @param string $url Raw URL.
- * @return string Clean URL.
+ * @return bool
+ */
+function be_schema_social_is_enabled() {
+	$settings = be_schema_social_get_settings();
+
+	return ( isset( $settings['enabled'] ) && '1' === (string) $settings['enabled'] );
+}
+
+/**
+ * Clean a URL of tracking parameters and fragments.
+ *
+ * - Removes utm_* params
+ * - Removes gclid, fbclid
+ * - Strips URL fragment (#...)
+ *
+ * @param string $url URL to clean.
+ *
+ * @return string
  */
 function be_schema_social_clean_url( $url ) {
-    if ( ! $url ) {
-        return '';
-    }
+	$url = (string) $url;
+	if ( '' === $url ) {
+		return $url;
+	}
 
-    $parts = wp_parse_url( $url );
-    if ( false === $parts ) {
-        return $url;
-    }
+	$parts = wp_parse_url( $url );
+	if ( false === $parts ) {
+		return $url;
+	}
 
-    $scheme = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
-    $host   = isset( $parts['host'] ) ? $parts['host'] : '';
-    $port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
-    $path   = isset( $parts['path'] ) ? $parts['path'] : '';
+	$query = array();
+	if ( isset( $parts['query'] ) ) {
+		parse_str( $parts['query'], $query );
+	}
 
-    $query_string = '';
-    if ( ! empty( $parts['query'] ) ) {
-        parse_str( $parts['query'], $params );
+	if ( ! empty( $query ) ) {
+		foreach ( $query as $key => $value ) {
+			$key_lower = strtolower( $key );
 
-        if ( is_array( $params ) ) {
-            foreach ( $params as $key => $value ) {
-                if (
-                    0 === strpos( $key, 'utm_' ) ||
-                    'gclid' === $key ||
-                    'fbclid' === $key
-                ) {
-                    unset( $params[ $key ] );
-                }
-            }
+			// Drop tracking params.
+			if ( 0 === strpos( $key_lower, 'utm_' ) ) {
+				unset( $query[ $key ] );
+			} elseif ( in_array( $key_lower, array( 'gclid', 'fbclid' ), true ) ) {
+				unset( $query[ $key ] );
+			}
+		}
+	}
 
-            if ( ! empty( $params ) ) {
-                $query_string = '?' . http_build_query( $params );
-            }
-        }
-    }
+	$scheme   = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
+	$host     = isset( $parts['host'] ) ? $parts['host'] : '';
+	$port     = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+	$path     = isset( $parts['path'] ) ? $parts['path'] : '';
+	$querystr = ! empty( $query ) ? '?' . http_build_query( $query ) : '';
 
-    // Drop fragment for OG/Twitter.
-    return $scheme . $host . $port . $path . $query_string;
+	// Fragments are intentionally dropped.
+	$clean = $scheme . $host . $port . $path . $querystr;
+
+	return $clean;
 }
 
 /**
- * Output OpenGraph & Twitter Card meta tags.
+ * Resolve the canonical/primary URL for social meta.
  *
- * Driven entirely by be_schema_social_settings (Social Media admin page).
- * Does NOT output canonical tags or JSON-LD.
+ * - Prefer wp_get_canonical_url() when available.
+ * - Fallback to get_permalink() for singular.
+ * - Fallback to home_url() otherwise.
+ *
+ * All outputs are cleaned of tracking params and fragments.
+ *
+ * @return string
+ */
+function be_schema_social_get_url() {
+	$url = '';
+
+	if ( function_exists( 'wp_get_canonical_url' ) ) {
+		$url = wp_get_canonical_url();
+	}
+
+	if ( ! $url ) {
+		if ( is_singular() ) {
+			$url = get_permalink();
+		} else {
+			$url = home_url( add_query_arg( array(), '' ) );
+		}
+	}
+
+	return be_schema_social_clean_url( $url );
+}
+
+/**
+ * Resolve title for social meta.
+ *
+ * We use the same title WordPress would use for <title>.
+ *
+ * @return string
+ */
+function be_schema_social_get_title() {
+	if ( function_exists( 'wp_get_document_title' ) ) {
+		return wp_get_document_title();
+	}
+
+	// Fallback, very conservative.
+	return get_bloginfo( 'name', 'display' );
+}
+
+/**
+ * Resolve description for social meta.
+ *
+ * - Singular:
+ *     - Use excerpt.
+ *     - Fallback to content snippet.
+ * - Non-singular:
+ *     - Use site tagline (description).
+ *
+ * Always normalized with be_schema_normalize_text().
+ *
+ * @return string
+ */
+function be_schema_social_get_description() {
+	$max_length = 320;
+
+	if ( is_singular() ) {
+		$post = get_post();
+		if ( $post ) {
+			$excerpt = has_excerpt( $post ) ? $post->post_excerpt : '';
+			if ( $excerpt ) {
+				return be_schema_normalize_text( $excerpt, $max_length );
+			}
+
+			$content = isset( $post->post_content ) ? $post->post_content : '';
+			if ( $content ) {
+				return be_schema_normalize_text( $content, $max_length );
+			}
+		}
+	}
+
+	// Non-singular or no useful content: site tagline.
+	$tagline = get_bloginfo( 'description', 'display' );
+
+	return be_schema_normalize_text( $tagline, $max_length );
+}
+
+/**
+ * Get the featured image URL for the current post, if any.
+ *
+ * @return string Empty string if none available.
+ */
+function be_schema_social_get_featured_image_url() {
+	if ( ! is_singular() ) {
+		return '';
+	}
+
+	$post = get_post();
+	if ( ! $post || ! has_post_thumbnail( $post ) ) {
+		return '';
+	}
+
+	$image_id = get_post_thumbnail_id( $post );
+	if ( ! $image_id ) {
+		return '';
+	}
+
+	$src = wp_get_attachment_image_src( $image_id, 'full' );
+	if ( ! $src || empty( $src[0] ) ) {
+		return '';
+	}
+
+	return (string) $src[0];
+}
+
+/**
+ * Resolve a default image URL from an attachment ID stored in settings.
+ *
+ * @param string $id_key Option key name for the attachment ID.
+ *
+ * @return string
+ */
+function be_schema_social_get_default_image_url_from_settings( $id_key ) {
+	$settings = be_schema_social_get_settings();
+
+	if ( empty( $settings[ $id_key ] ) ) {
+		return '';
+	}
+
+	$attachment_id = (int) $settings[ $id_key ];
+	if ( ! $attachment_id ) {
+		return '';
+	}
+
+	$src = wp_get_attachment_image_src( $attachment_id, 'full' );
+	if ( ! $src || empty( $src[0] ) ) {
+		return '';
+	}
+
+	return (string) $src[0];
+}
+
+/**
+ * Resolve the best image URL for OpenGraph.
+ *
+ * Fallback chain:
+ *   1. Featured image (for singular).
+ *   2. Default Facebook image.
+ *   3. Default global image.
+ *
+ * @return string
+ */
+function be_schema_social_get_og_image_url() {
+	// 1. Featured image first.
+	$featured = be_schema_social_get_featured_image_url();
+	if ( $featured ) {
+		return $featured;
+	}
+
+	// 2. Default Facebook image.
+	$fb_default = be_schema_social_get_default_image_url_from_settings( 'default_facebook_image_id' );
+	if ( $fb_default ) {
+		return $fb_default;
+	}
+
+	// 3. Global default.
+	$global_default = be_schema_social_get_default_image_url_from_settings( 'default_global_image_id' );
+	if ( $global_default ) {
+		return $global_default;
+	}
+
+	return '';
+}
+
+/**
+ * Resolve the best image URL for Twitter.
+ *
+ * Fallback chain:
+ *   1. Featured image (for singular).
+ *   2. Default Twitter image.
+ *   3. Default global image.
+ *
+ * @return string
+ */
+function be_schema_social_get_twitter_image_url() {
+	// 1. Featured image first.
+	$featured = be_schema_social_get_featured_image_url();
+	if ( $featured ) {
+		return $featured;
+	}
+
+	// 2. Default Twitter image.
+	$tw_default = be_schema_social_get_default_image_url_from_settings( 'default_twitter_image_id' );
+	if ( $tw_default ) {
+		return $tw_default;
+	}
+
+	// 3. Global default.
+	$global_default = be_schema_social_get_default_image_url_from_settings( 'default_global_image_id' );
+	if ( $global_default ) {
+		return $global_default;
+	}
+
+	return '';
+}
+
+/**
+ * Normalize a Twitter handle to always have a leading '@'.
+ *
+ * @param string $handle Raw handle.
+ *
+ * @return string
+ */
+function be_schema_social_normalize_twitter_handle( $handle ) {
+	$handle = trim( (string) $handle );
+
+	if ( '' === $handle ) {
+		return '';
+	}
+
+	if ( '@' !== substr( $handle, 0, 1 ) ) {
+		$handle = '@' . $handle;
+	}
+
+	return $handle;
+}
+
+/**
+ * Determine OG type for the current context.
+ *
+ * - Singular posts/pages: article
+ * - Everything else: website
+ *
+ * @return string
+ */
+function be_schema_social_get_og_type() {
+	if ( is_singular() ) {
+		return 'article';
+	}
+
+	return 'website';
+}
+
+/**
+ * Determine the Twitter card type for the current context.
+ *
+ * - Uses plugin setting (default summary_large_image).
+ *
+ * @return string summary|summary_large_image
+ */
+function be_schema_social_get_twitter_card_type() {
+	$settings       = be_schema_social_get_settings();
+	$card_type      = isset( $settings['twitter_card_type'] ) ? $settings['twitter_card_type'] : 'summary_large_image';
+	$allowed_types  = array( 'summary', 'summary_large_image' );
+
+	if ( ! in_array( $card_type, $allowed_types, true ) ) {
+		$card_type = 'summary_large_image';
+	}
+
+	return $card_type;
+}
+
+/**
+ * Output OpenGraph + Twitter meta tags.
+ *
+ * Hooked into wp_head at priority 5.
+ *
+ * @return void
  */
 function be_schema_output_social_meta() {
-    // Do not run in non-frontend contexts.
-    if ( is_admin() || is_feed() ) {
-        return;
-    }
+	// Never output in admin, AJAX, feeds, or JSON endpoints.
+	if ( is_admin() || wp_doing_ajax() || is_feed() || ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ) {
+		return;
+	}
 
-    if ( function_exists( 'is_robots' ) && is_robots() ) {
-        return;
-    }
+	if ( ! be_schema_social_is_enabled() ) {
+		return;
+	}
 
-    if ( is_embed() ) {
-        return;
-    }
+	$url         = be_schema_social_get_url();
+	$title       = be_schema_social_get_title();
+	$description = be_schema_social_get_description();
+	$site_name   = get_bloginfo( 'name', 'display' );
 
-    if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) {
-        return;
-    }
+	$og_type      = be_schema_social_get_og_type();
+	$og_image_url = be_schema_social_get_og_image_url();
 
-    if ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
-        return;
-    }
+	$twitter_image_url = be_schema_social_get_twitter_image_url();
+	$twitter_card_type = be_schema_social_get_twitter_card_type();
 
-    if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-        return;
-    }
+	$settings      = be_schema_social_get_settings();
+	$twitter_site  = be_schema_social_normalize_twitter_handle( $settings['twitter_site'] );
+	$twitter_creator = be_schema_social_normalize_twitter_handle( $settings['twitter_creator'] );
+	$facebook_app_id = isset( $settings['facebook_app_id'] ) ? trim( (string) $settings['facebook_app_id'] ) : '';
 
-    $settings = be_schema_social_get_settings();
+	// Automatic values before any potential future overrides (for debug).
+	$automatic = array(
+		'title'       => $title,
+		'description' => $description,
+		'og_image'    => $og_image_url,
+		'tw_image'    => $twitter_image_url,
+	);
 
-    $enable_og      = ( isset( $settings['social_enable_og'] ) && '1' === $settings['social_enable_og'] );
-    $enable_twitter = ( isset( $settings['social_enable_twitter'] ) && '1' === $settings['social_enable_twitter'] );
+	// For now, "final" == "automatic"; no per-post overrides are implemented.
+	$final = $automatic;
 
-    // If both are disabled, do nothing.
-    if ( ! $enable_og && ! $enable_twitter ) {
-        return;
-    }
+	$og_enabled      = true;
+	$twitter_enabled = true;
 
-    global $post;
+	// Debug snapshot.
+	if ( function_exists( 'be_schema_is_debug_enabled' ) && be_schema_is_debug_enabled() ) {
+		$debug_snapshot = array(
+			'url'               => $url,
+			'title'             => $final['title'],
+			'description'       => $final['description'],
+			'site_name'         => $site_name,
+			'og_enabled'        => $og_enabled,
+			'twitter_enabled'   => $twitter_enabled,
+			'og_type'           => $og_type,
+			'twitter_card_type' => $twitter_card_type,
+			'resolved_images'   => array(
+				'og'      => $final['og_image'],
+				'twitter' => $final['tw_image'],
+			),
+			'handles'           => array(
+				'twitter_site'    => $twitter_site,
+				'twitter_creator' => $twitter_creator,
+			),
+			'automatic'         => $automatic,
+			'final'             => $final,
+		);
 
-    // Resolve page URL using canonical logic first.
-    $url = '';
-    if ( function_exists( 'wp_get_canonical_url' ) ) {
-        $url = wp_get_canonical_url();
-    }
+		error_log( 'BE_SOCIAL_DEBUG ' . wp_json_encode( $debug_snapshot ) );
+	}
 
-    if ( ! $url && is_singular() ) {
-        $current_post = $post instanceof WP_Post ? $post : get_post();
-        if ( $current_post ) {
-            $url = get_permalink( $current_post );
-        }
-    }
+	// Output OG tags.
+	echo "\n" . '<meta property="og:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
+	echo '<meta property="og:type" content="' . esc_attr( $og_type ) . '" />' . "\n";
+	echo '<meta property="og:url" content="' . esc_attr( $url ) . '" />' . "\n";
+	echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
 
-    if ( ! $url ) {
-        $url = home_url( '/' );
-    }
+	if ( $final['og_image'] ) {
+		echo '<meta property="og:image" content="' . esc_url( $final['og_image'] ) . '" />' . "\n";
+	}
 
-    $url = be_schema_social_clean_url( $url );
+	// Article extras for singular content.
+	if ( is_singular() && 'article' === $og_type ) {
+		$post = get_post();
+		if ( $post ) {
+			$published = get_the_date( DATE_W3C, $post );
+			$modified  = get_the_modified_date( DATE_W3C, $post );
 
-    // Site name.
-    $site_name = get_bloginfo( 'name' );
+			if ( $published ) {
+				echo '<meta property="article:published_time" content="' . esc_attr( $published ) . '" />' . "\n";
+			}
+			if ( $modified ) {
+				echo '<meta property="article:modified_time" content="' . esc_attr( $modified ) . '" />' . "\n";
+			}
 
-    // Title: use WP's document title.
-    $title = wp_get_document_title();
+			$author_name = get_the_author_meta( 'display_name', $post->post_author );
+			if ( $author_name ) {
+				echo '<meta property="article:author" content="' . esc_attr( $author_name ) . '" />' . "\n";
+			}
+		}
+	}
 
-    // Description.
-    $raw_description = '';
-    $current_post    = null;
+	// Optional Facebook app ID.
+	if ( $facebook_app_id ) {
+		echo '<meta property="fb:app_id" content="' . esc_attr( $facebook_app_id ) . '" />' . "\n";
+	}
 
-    if ( is_singular() ) {
-        $current_post = $post instanceof WP_Post ? $post : get_post();
+	// Twitter Card tags.
+	echo '<meta name="twitter:card" content="' . esc_attr( $twitter_card_type ) . '" />' . "\n";
+	echo '<meta name="twitter:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
+	echo '<meta name="twitter:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
 
-        if ( $current_post instanceof WP_Post ) {
-            if ( has_excerpt( $current_post ) ) {
-                $raw_description = get_the_excerpt( $current_post );
-            } else {
-                $raw_description = get_post_field( 'post_content', $current_post );
-            }
-        }
-    }
+	if ( $final['tw_image'] ) {
+		echo '<meta name="twitter:image" content="' . esc_url( $final['tw_image'] ) . '" />' . "\n";
+	}
 
-    if ( ! $raw_description ) {
-        $raw_description = get_bloginfo( 'description', 'display' );
-    }
+	if ( $twitter_site ) {
+		echo '<meta name="twitter:site" content="' . esc_attr( $twitter_site ) . '" />' . "\n";
+	}
 
-    if ( function_exists( 'be_schema_normalize_text' ) ) {
-        $description = be_schema_normalize_text( $raw_description, 300 );
-    } else {
-        $description = wp_strip_all_tags( $raw_description, true );
-        $description = trim( preg_replace( '/\s+/', ' ', $description ) );
-        if ( function_exists( 'mb_substr' ) && strlen( $description ) > 300 ) {
-            $description = mb_substr( $description, 0, 300 );
-        } elseif ( strlen( $description ) > 300 ) {
-            $description = substr( $description, 0, 300 );
-        }
-    }
-
-    // Images.
-    $featured_image         = '';
-    $global_default_image   = ! empty( $settings['social_default_image'] ) ? $settings['social_default_image'] : '';
-    $facebook_default_image = ! empty( $settings['facebook_default_image'] ) ? $settings['facebook_default_image'] : '';
-    $twitter_default_image  = ! empty( $settings['twitter_default_image'] ) ? $settings['twitter_default_image'] : '';
-
-    if ( $current_post instanceof WP_Post && has_post_thumbnail( $current_post ) ) {
-        $featured_image = get_the_post_thumbnail_url( $current_post, 'full' );
-    }
-
-    // OG image selection: featured → Facebook default → global default.
-    $og_image = $featured_image;
-    if ( ! $og_image && $facebook_default_image ) {
-        $og_image = $facebook_default_image;
-    }
-    if ( ! $og_image && $global_default_image ) {
-        $og_image = $global_default_image;
-    }
-
-    // Twitter image selection: featured → Twitter default → global default.
-    $twitter_image = $featured_image;
-    if ( ! $twitter_image && $twitter_default_image ) {
-        $twitter_image = $twitter_default_image;
-    }
-    if ( ! $twitter_image && $global_default_image ) {
-        $twitter_image = $global_default_image;
-    }
-
-    // OG type and article metadata.
-    $og_type                = 'website';
-    $article_published_time = '';
-    $article_modified_time  = '';
-    $article_author         = '';
-
-    if ( is_singular( 'post' ) && $current_post instanceof WP_Post ) {
-        $og_type                = 'article';
-        $article_published_time = get_post_time( 'c', true, $current_post );
-        $article_modified_time  = get_post_modified_time( 'c', true, $current_post );
-        $article_author         = get_the_author_meta( 'display_name', $current_post->post_author );
-    }
-
-    // Twitter handle and card type.
-    $twitter_handle = '';
-    if ( ! empty( $settings['twitter_handle'] ) ) {
-        $twitter_handle = ltrim( trim( $settings['twitter_handle'] ), '@' );
-    }
-
-    $allowed_card_types = array( 'summary', 'summary_large_image' );
-    $twitter_card_type  = 'summary_large_image';
-    if ( ! empty( $settings['twitter_card_type'] ) && in_array( $settings['twitter_card_type'], $allowed_card_types, true ) ) {
-        $twitter_card_type = $settings['twitter_card_type'];
-    }
-
-    $facebook_app_id = ! empty( $settings['facebook_app_id'] ) ? $settings['facebook_app_id'] : '';
-
-    // Debug snapshot.
-    if ( be_schema_social_debug_enabled() && function_exists( 'wp_json_encode' ) ) {
-        $debug_payload = array(
-            'context'     => 'social_meta',
-            'url'         => $url,
-            'title'       => $title,
-            'description' => $description,
-            'site_name'   => $site_name,
-            'og'          => array(
-                'enabled'           => $enable_og,
-                'type'              => $og_type,
-                'image'             => $og_image,
-                'article_published' => $article_published_time,
-                'article_modified'  => $article_modified_time,
-                'article_author'    => $article_author,
-                'facebook_app_id'   => $facebook_app_id,
-            ),
-            'twitter'     => array(
-                'enabled'    => $enable_twitter,
-                'card_type'  => $twitter_card_type,
-                'image'      => $twitter_image,
-                'handle'     => $twitter_handle,
-            ),
-            'images'      => array(
-                'featured'         => $featured_image,
-                'global_default'   => $global_default_image,
-                'facebook_default' => $facebook_default_image,
-                'twitter_default'  => $twitter_default_image,
-            ),
-        );
-
-        error_log( 'BE_SOCIAL_DEBUG: ' . wp_json_encode( $debug_payload ) );
-    }
-
-    // Output meta tags.
-    // We echo them directly to keep the function simple and fast.
-    if ( $enable_og ) :
-        ?>
-        <meta property="og:title" content="<?php echo esc_attr( $title ); ?>" />
-        <meta property="og:description" content="<?php echo esc_attr( $description ); ?>" />
-        <meta property="og:type" content="<?php echo esc_attr( $og_type ); ?>" />
-        <meta property="og:url" content="<?php echo esc_url( $url ); ?>" />
-        <meta property="og:site_name" content="<?php echo esc_attr( $site_name ); ?>" />
-        <?php if ( $og_image ) : ?>
-            <meta property="og:image" content="<?php echo esc_url( $og_image ); ?>" />
-        <?php endif; ?>
-
-        <?php if ( 'article' === $og_type ) : ?>
-            <?php if ( $article_published_time ) : ?>
-                <meta property="article:published_time" content="<?php echo esc_attr( $article_published_time ); ?>" />
-            <?php endif; ?>
-            <?php if ( $article_modified_time ) : ?>
-                <meta property="article:modified_time" content="<?php echo esc_attr( $article_modified_time ); ?>" />
-            <?php endif; ?>
-            <?php if ( $article_author ) : ?>
-                <meta property="article:author" content="<?php echo esc_attr( $article_author ); ?>" />
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php if ( $facebook_app_id ) : ?>
-            <meta property="fb:app_id" content="<?php echo esc_attr( $facebook_app_id ); ?>" />
-        <?php endif; ?>
-        <?php
-    endif;
-
-    if ( $enable_twitter ) :
-        ?>
-        <meta name="twitter:card" content="<?php echo esc_attr( $twitter_card_type ); ?>" />
-        <meta name="twitter:title" content="<?php echo esc_attr( $title ); ?>" />
-        <meta name="twitter:description" content="<?php echo esc_attr( $description ); ?>" />
-        <?php if ( $twitter_image ) : ?>
-            <meta name="twitter:image" content="<?php echo esc_url( $twitter_image ); ?>" />
-        <?php endif; ?>
-        <?php if ( $twitter_handle ) : ?>
-            <meta name="twitter:site" content="@<?php echo esc_attr( $twitter_handle ); ?>" />
-            <meta name="twitter:creator" content="@<?php echo esc_attr( $twitter_handle ); ?>" />
-        <?php endif; ?>
-        <?php
-    endif;
+	if ( $twitter_creator ) {
+		echo '<meta name="twitter:creator" content="' . esc_attr( $twitter_creator ) . '" />' . "\n";
+	}
 }
 
-/**
- * Hook output into wp_head.
- *
- * Priority 5 to run early but after most core setup.
- */
+// Hook social meta into the head early, but after core WordPress pieces.
 add_action( 'wp_head', 'be_schema_output_social_meta', 5 );

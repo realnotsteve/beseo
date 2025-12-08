@@ -1,328 +1,445 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
-
 /**
- * -------------------------------------------------------------------------
- * Homepage schema
- * -------------------------------------------------------------------------
+ * BE Schema Engine - Special pages (homepage + Contact/About/Privacy/Accessibility).
  *
- * Conditions:
- * - Global schema enabled (be_schema_globally_disabled() === false)
- * - is_front_page()
- * - Not disabled for current page (be_schema_is_disabled_for_current_page() === false)
+ * Responsibilities:
+ * - Emit JSON-LD for:
+ *     - Homepage WebPage node, linking to site-level entities by @id.
+ *     - Special pages: ContactPage, AboutPage, PrivacyPolicy, WebPage (accessibility).
+ * - Respect global disable and per-page/Elementor gating rules.
+ * - Use Elementor page type meta (be_schema_page_type) to identify special pages.
+ * - Emit structured debug events and reason-coded skips.
  *
- * Output:
- * - @graph of:
- *   - Person (if enabled)
- *   - Person image (if available)
- *   - Organisation (if enabled)
- *   - WebSite
- *   - logo
- *   - Publisher (if enabled)
- *   - Publisher logo (if enabled)
- *   - WebPage for the homepage.
+ * @package BE_SEO
  */
-function be_add_homepage_schema() {
-    if ( be_schema_globally_disabled() ) {
-        return;
-    }
 
-    if ( ! is_front_page() ) {
-        return;
-    }
-
-    if ( be_schema_is_disabled_for_current_page() ) {
-        return;
-    }
-
-    $entities     = be_schema_get_site_entities();
-    $graph_nodes  = array();
-    $site_url     = trailingslashit( home_url() );
-    $site_name    = get_bloginfo( 'name', 'display' );
-    $site_tagline = get_bloginfo( 'description', 'display' );
-
-    // Base site entities.
-    $site_entity_nodes = be_schema_get_site_entity_graph_nodes();
-    foreach ( $site_entity_nodes as $node ) {
-        $graph_nodes[] = $node;
-    }
-
-    // Build WebPage node for homepage.
-    $webpage_id = $site_url . '#webpage';
-
-    $website   = isset( $entities['website'] ) && is_array( $entities['website'] ) ? $entities['website'] : null;
-    $webpage   = array(
-        '@type' => 'WebPage',
-        '@id'   => $webpage_id,
-        'url'   => $site_url,
-        'name'  => $site_name,
-    );
-
-    // Use site tagline as description if available.
-    $site_desc_clean = trim( wp_strip_all_tags( (string) $site_tagline ) );
-    if ( $site_desc_clean !== '' ) {
-        $webpage['description'] = $site_desc_clean;
-    }
-
-    // Mirror WebSite.about onto WebPage.about.
-    if ( $website && isset( $website['about'] ) && is_array( $website['about'] ) ) {
-        $webpage['about'] = $website['about'];
-    }
-
-    // primaryImageOfPage -> #logo, if any.
-    if ( isset( $entities['logo'] ) && is_array( $entities['logo'] ) && isset( $entities['logo']['@id'] ) ) {
-        $webpage['primaryImageOfPage'] = array(
-            '@id' => $entities['logo']['@id'],
-        );
-    }
-
-    $graph_nodes[] = $webpage;
-
-    /**
-     * Filter the homepage @graph nodes before output.
-     *
-     * @param array $graph_nodes List of nodes to be emitted.
-     * @param array $entities    Site entities model from be_schema_get_site_entities().
-     */
-    $graph_nodes = apply_filters( 'be_schema_homepage_graph_nodes', $graph_nodes, $entities );
-
-    // Collect for debug.
-    be_schema_debug_collect( $graph_nodes );
-
-    $output = array(
-        '@context' => 'https://schema.org',
-        '@graph'   => $graph_nodes,
-    );
-
-    echo '<script type="application/ld+json">' . wp_json_encode( $output ) . '</script>' . "\n";
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
- * -------------------------------------------------------------------------
- * Special page schema (Contact/About/Privacy/Accessibility)
- * -------------------------------------------------------------------------
+ * Helper: get Elementor page settings for a post.
  *
- * Conditions:
- * - Global schema enabled.
- * - is_singular().
- * - Not disabled for current page (page-level safety).
- * - Elementor page settings exist and:
- *   - be_schema_page_type is one of:
- *       contact              → ContactPage
- *       about                → AboutPage
- *       privacy-policy       → WebPage
- *       accessibility-statement → WebPage
- *   - be_schema_enable_page must be 'yes'.
+ * @param int $post_id Post ID.
  *
- * Overrides (Elementor page settings):
- * - be_schema_page_override_enable (switcher):
- *   - If 'yes' and be_schema_page_description set → use normalized description.
- *   - If 'yes' and be_schema_page_image set      → use that image URL.
- * - Otherwise:
- *   - description falls back to excerpt or site description.
+ * @return array
+ */
+function be_schema_get_elementor_page_settings( $post_id ) {
+	$settings = get_post_meta( $post_id, '_elementor_page_settings', true );
+	if ( empty( $settings ) || ! is_array( $settings ) ) {
+		return array();
+	}
+
+	return $settings;
+}
+
+/**
+ * Helper: get the Elementor page type for a post.
  *
- * Output:
- * - Single page node, not a full @graph:
- *   {
- *     "@context": "https://schema.org",
- *     "@type": ...,
- *     "@id": "{page_url}#webpage",
- *     "url": page_url,
- *     "name": post_title,
- *     "isPartOf": { "@id": "{site_url}#website" },
- *     "description": ...,
- *     "image": "https://...",
- *     "about": WebSite.about (Person/Org)
- *   }
+ * Expected values:
+ *   - 'contact'
+ *   - 'about'
+ *   - 'privacy-policy'
+ *   - 'accessibility-statement'
+ *
+ * @param int $post_id Post ID.
+ *
+ * @return string Empty string if none set.
+ */
+function be_schema_get_elementor_page_type( $post_id ) {
+	$settings = be_schema_get_elementor_page_settings( $post_id );
+	if ( empty( $settings ) ) {
+		return '';
+	}
+
+	if ( empty( $settings['be_schema_page_type'] ) ) {
+		return '';
+	}
+
+	return (string) $settings['be_schema_page_type'];
+}
+
+/**
+ * Helper: get the primary image URL for a given page (special page / homepage).
+ *
+ * For now, we conservatively use:
+ *   - Featured image, if one exists.
+ *
+ * @param int $post_id Post ID.
+ *
+ * @return string Empty string if none.
+ */
+function be_schema_get_page_primary_image_url( $post_id ) {
+	$post_id = (int) $post_id;
+	if ( $post_id <= 0 ) {
+		return '';
+	}
+
+	if ( ! has_post_thumbnail( $post_id ) ) {
+		return '';
+	}
+
+	$src = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'full' );
+	if ( ! $src || empty( $src[0] ) ) {
+		return '';
+	}
+
+	return (string) $src[0];
+}
+
+/**
+ * Build a WebPage-like node for a given post and schema.org type.
+ *
+ * For special pages, we use specific subtypes:
+ *   - ContactPage
+ *   - AboutPage
+ *   - PrivacyPolicy
+ *   - WebPage (for accessibility statement or generic)
+ *
+ * For the homepage, we build a WebPage that links to the WebSite and
+ * site entities by @id.
+ *
+ * @param int    $post_id   Post ID (0 for homepage when not a static page).
+ * @param string $schema_type Schema.org WebPage subtype.
+ * @param array  $args      Additional arguments:
+ *     - 'use_home_url' (bool) force URL to home_url().
+ *     - 'id_suffix'    (string) suffix for be_schema_id() if non-empty.
+ *
+ * @return array WebPage node.
+ */
+function be_schema_build_webpage_node( $post_id, $schema_type, array $args = array() ) {
+	$post_id     = (int) $post_id;
+	$schema_type = $schema_type ? (string) $schema_type : 'WebPage';
+
+	$use_home_url = ! empty( $args['use_home_url'] );
+	$id_suffix    = isset( $args['id_suffix'] ) ? (string) $args['id_suffix'] : '';
+
+	if ( $use_home_url ) {
+		$url = home_url( '/' );
+	} elseif ( $post_id > 0 ) {
+		$url = get_permalink( $post_id );
+	} else {
+		$url = home_url( add_query_arg( array(), '' ) );
+	}
+
+	$name = '';
+	if ( $post_id > 0 ) {
+		$post = get_post( $post_id );
+		if ( $post ) {
+			$name = get_the_title( $post );
+		}
+	}
+	if ( '' === $name ) {
+		$name = get_bloginfo( 'name', 'display' );
+	}
+
+	$description = '';
+	if ( $post_id > 0 ) {
+		$post = get_post( $post_id );
+		if ( $post ) {
+			$excerpt = has_excerpt( $post ) ? $post->post_excerpt : '';
+			if ( $excerpt ) {
+				$description = be_schema_normalize_text( $excerpt, 320 );
+			} elseif ( ! empty( $post->post_content ) ) {
+				$description = be_schema_normalize_text( $post->post_content, 320 );
+			}
+		}
+	}
+	if ( '' === $description ) {
+		// Fallback to site tagline if nothing useful exists on the page.
+		$description = be_schema_normalize_text( get_bloginfo( 'description', 'display' ), 320 );
+	}
+
+	$image_url = '';
+	if ( $post_id > 0 ) {
+		$image_url = be_schema_get_page_primary_image_url( $post_id );
+	}
+
+	// Build @id.
+	if ( '' !== $id_suffix ) {
+		$id = be_schema_id( $id_suffix );
+	} elseif ( $post_id > 0 ) {
+		// Use the permalink with a #webpage suffix for stability.
+		$id = trailingslashit( $url ) . '#webpage';
+	} else {
+		$id = be_schema_id( 'webpage' );
+	}
+
+	$webpage = array(
+		'@type' => $schema_type,
+		'@id'   => $id,
+		'url'   => $url,
+		'name'  => $name,
+	);
+
+	if ( $description ) {
+		$webpage['description'] = $description;
+	}
+
+	// Link homepage/special pages back to the site WebSite node, using a stable @id.
+	$webpage['isPartOf'] = array(
+		'@id' => be_schema_id( 'website' ),
+	);
+
+	// For home and special pages, we can point about → Organisation / Person by @id.
+	$webpage['about'] = array(
+		array( '@id' => be_schema_id( 'organisation' ) ),
+		array( '@id' => be_schema_id( 'person' ) ),
+	);
+
+	if ( $image_url ) {
+		$webpage['primaryImageOfPage'] = array(
+			'@type' => 'ImageObject',
+			'url'   => $image_url,
+		);
+	}
+
+	return $webpage;
+}
+
+/**
+ * Output homepage schema.
+ *
+ * Emits a WebPage node for the front page, linking to the WebSite and
+ * other site-level entities by @id. Site entities themselves are expected
+ * to be emitted by core-site-entities.php.
+ *
+ * Respects:
+ * - Global disable.
+ * - Per-page disable for static front pages (but does NOT require Elementor).
+ *
+ * @return void
+ */
+function be_schema_output_homepage_schema() {
+	// Never emit schema in admin, AJAX, feeds, or JSON endpoints.
+	if ( is_admin() || wp_doing_ajax() || is_feed() || ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ) {
+		return;
+	}
+
+	if ( function_exists( 'be_schema_globally_disabled' ) && be_schema_globally_disabled() ) {
+		if ( function_exists( 'be_schema_debug_event' ) ) {
+			be_schema_debug_event(
+				'homepage_schema_skipped',
+				array(
+					'reason' => 'global_disabled',
+					'url'    => home_url( '/' ),
+				)
+			);
+		}
+		return;
+	}
+
+	if ( ! is_front_page() ) {
+		if ( function_exists( 'be_schema_debug_event' ) ) {
+			be_schema_debug_event(
+				'homepage_schema_skipped',
+				array(
+					'reason' => 'not_front_page',
+					'url'    => home_url( '/' ),
+				)
+			);
+		}
+		return;
+	}
+
+	if ( function_exists( 'be_schema_debug_event' ) ) {
+		be_schema_debug_event(
+			'schema_graph_attempt',
+			array(
+				'context' => 'homepage',
+				'url'     => home_url( '/' ),
+			)
+		);
+	}
+
+	// If the front page is a static page, respect a per-page disable meta.
+	$post_id = 0;
+	if ( is_singular() ) {
+		$post = get_post();
+		if ( $post ) {
+			$post_id = (int) $post->ID;
+
+			$disable_meta = get_post_meta( $post_id, '_be_schema_disable', true );
+			if ( (string) $disable_meta === '1' ) {
+				if ( function_exists( 'be_schema_debug_event' ) ) {
+					be_schema_debug_event(
+						'homepage_schema_skipped',
+						array(
+							'reason'  => 'per_page_disabled',
+							'post_id' => $post_id,
+							'url'     => get_permalink( $post_id ),
+						)
+					);
+				}
+				return;
+			}
+		}
+	}
+
+	// Build homepage WebPage node.
+	$webpage = be_schema_build_webpage_node(
+		$post_id,
+		'WebPage',
+		array(
+			'use_home_url' => true,
+			'id_suffix'    => 'homepage',
+		)
+	);
+
+	$graph = array(
+		$webpage,
+	);
+
+	$payload = array(
+		'@context' => 'https://schema.org',
+		'@graph'   => $graph,
+	);
+
+	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $payload ) . '</script>' . "\n";
+
+	if ( function_exists( 'be_schema_debug_event' ) ) {
+		be_schema_debug_event(
+			'schema_graph_emitted',
+			array(
+				'context' => 'homepage',
+				'url'     => home_url( '/' ),
+			)
+		);
+	}
+}
+
+/**
+ * Output schema for special pages:
+ *
+ * - ContactPage
+ * - AboutPage
+ * - PrivacyPolicy
+ * - Accessibility (generic WebPage)
+ *
+ * Detection is based on Elementor page type meta:
+ *   be_schema_page_type in _elementor_page_settings.
+ *
+ * Respects:
+ * - Global disable.
+ * - Per-page + Elementor gating via be_schema_is_disabled_for_current_page().
+ *
+ * @return void
  */
 function be_schema_output_special_page_schema() {
-    if ( be_schema_globally_disabled() ) {
-        return;
-    }
+	// Never emit schema in admin, AJAX, feeds, or JSON endpoints.
+	if ( is_admin() || wp_doing_ajax() || is_feed() || ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) ) {
+		return;
+	}
 
-    if ( ! is_singular() ) {
-        return;
-    }
+	if ( function_exists( 'be_schema_globally_disabled' ) && be_schema_globally_disabled() ) {
+		if ( function_exists( 'be_schema_debug_event' ) ) {
+			be_schema_debug_event(
+				'special_page_schema_skipped',
+				array(
+					'reason' => 'global_disabled',
+					'url'    => home_url( add_query_arg( array(), '' ) ),
+				)
+			);
+		}
+		return;
+	}
 
-    if ( be_schema_is_disabled_for_current_page() ) {
-        return;
-    }
+	if ( ! is_singular() ) {
+		// Special pages are always singular.
+		return;
+	}
 
-    $post = get_post();
-    if ( ! $post ) {
-        return;
-    }
+	$post = get_post();
+	if ( ! $post ) {
+		return;
+	}
 
-    $page_settings = get_post_meta( $post->ID, '_elementor_page_settings', true );
-    if ( empty( $page_settings ) || ! is_array( $page_settings ) ) {
-        return;
-    }
+	$post_id = (int) $post->ID;
 
-    // Page must be explicitly enabled at the Elementor level.
-    $enable_page = isset( $page_settings['be_schema_enable_page'] ) ? $page_settings['be_schema_enable_page'] : '';
-    if ( $enable_page !== 'yes' ) {
-        return;
-    }
+	if ( function_exists( 'be_schema_is_disabled_for_current_page' ) && be_schema_is_disabled_for_current_page() ) {
+		if ( function_exists( 'be_schema_debug_event' ) ) {
+			be_schema_debug_event(
+				'special_page_schema_skipped',
+				array(
+					'reason'  => 'per_page_or_elementor_disabled',
+					'post_id' => $post_id,
+					'url'     => get_permalink( $post_id ),
+				)
+			);
+		}
+		return;
+	}
 
-    $page_type = isset( $page_settings['be_schema_page_type'] ) ? $page_settings['be_schema_page_type'] : '';
+	$page_type = be_schema_get_elementor_page_type( $post_id );
 
-    // Map Elementor page type to schema.org type.
-    $type_map = array(
-        'contact'                => 'ContactPage',
-        'about'                  => 'AboutPage',
-        'privacy-policy'         => 'WebPage',
-        'accessibility-statement'=> 'WebPage',
-    );
+	// Map Elementor page_type values to schema.org types.
+	$type_map = array(
+		'contact'                => 'ContactPage',
+		'about'                  => 'AboutPage',
+		'privacy-policy'         => 'PrivacyPolicy',
+		'accessibility-statement'=> 'WebPage',
+	);
 
-    if ( ! isset( $type_map[ $page_type ] ) ) {
-        return; // No special schema type selected.
-    }
+	if ( empty( $page_type ) || ! isset( $type_map[ $page_type ] ) ) {
+		if ( function_exists( 'be_schema_debug_event' ) ) {
+			be_schema_debug_event(
+				'special_page_schema_skipped',
+				array(
+					'reason'   => 'no_special_page_type',
+					'post_id'  => $post_id,
+					'url'      => get_permalink( $post_id ),
+					'metadata' => array(
+						'page_type' => $page_type,
+					),
+				)
+			);
+		}
+		return;
+	}
 
-    $schema_type     = $type_map[ $page_type ];
-    $site_url        = trailingslashit( home_url() );
-    $page_url        = get_permalink( $post );
-    $page_url        = $page_url ? $page_url : $site_url;
-    $page_id         = $page_url . '#webpage';
-    $page_name       = get_the_title( $post ) ?: get_bloginfo( 'name', 'display' );
-    $entities        = be_schema_get_site_entities();
-    $website         = isset( $entities['website'] ) && is_array( $entities['website'] ) ? $entities['website'] : null;
-    $settings        = be_schema_engine_get_settings();
-    $site_logo_url   = ! empty( $settings['org_logo'] ) ? $settings['org_logo'] : '';
-    $site_tagline    = get_bloginfo( 'description', 'display' );
-    $site_desc_clean = trim( wp_strip_all_tags( (string) $site_tagline ) );
-    $site_desc_clean = $site_desc_clean !== '' ? $site_desc_clean : null;
+	if ( function_exists( 'be_schema_debug_event' ) ) {
+		be_schema_debug_event(
+			'schema_graph_attempt',
+			array(
+				'context'   => 'special_page',
+				'page_type' => $page_type,
+				'post_id'   => $post_id,
+				'url'       => get_permalink( $post_id ),
+			)
+		);
+	}
 
-    // Determine description.
-    $override_enabled   = isset( $page_settings['be_schema_page_override_enable'] ) &&
-                          $page_settings['be_schema_page_override_enable'] === 'yes';
-    $override_desc_raw  = isset( $page_settings['be_schema_page_description'] )
-        ? (string) $page_settings['be_schema_page_description']
-        : '';
-    $override_desc      = $override_enabled && function_exists( 'be_schema_normalize_text' )
-        ? be_schema_normalize_text( $override_desc_raw )
-        : trim( $override_desc_raw );
+	$schema_type = $type_map[ $page_type ];
 
-    $post_excerpt       = has_excerpt( $post ) ? get_the_excerpt( $post ) : '';
-    $post_excerpt_clean = function_exists( 'be_schema_normalize_text' )
-        ? be_schema_normalize_text( $post_excerpt )
-        : trim( wp_strip_all_tags( (string) $post_excerpt ) );
+	$webpage = be_schema_build_webpage_node(
+		$post_id,
+		$schema_type,
+		array(
+			'use_home_url' => false,
+			'id_suffix'    => 'page-' . $post_id,
+		)
+	);
 
-    if ( $override_enabled && $override_desc !== '' ) {
-        $description = $override_desc;
-    } elseif ( $post_excerpt_clean !== '' ) {
-        $description = $post_excerpt_clean;
-    } elseif ( $site_desc_clean ) {
-        $description = $site_desc_clean;
-    } else {
-        $description = '';
-    }
+	$graph = array(
+		$webpage,
+	);
 
-    // Determine image: override, else site logo.
-    $image_url         = '';
-    $override_image_url = '';
+	$payload = array(
+		'@context' => 'https://schema.org',
+		'@graph'   => $graph,
+	);
 
-    if ( $override_enabled && isset( $page_settings['be_schema_page_image'] ) && ! empty( $page_settings['be_schema_page_image'] ) ) {
-        $image_setting = $page_settings['be_schema_page_image'];
+	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $payload ) . '</script>' . "\n";
 
-        // New format: Elementor MEDIA control stores an array: [ 'id' => int, 'url' => string ].
-        if ( is_array( $image_setting ) ) {
-            // Prefer explicit URL if present.
-            if ( ! empty( $image_setting['url'] ) ) {
-                $override_image_url = esc_url_raw( $image_setting['url'] );
-            } elseif ( ! empty( $image_setting['id'] ) ) {
-                // Fall back to resolving attachment ID to full-size image URL.
-                $src = wp_get_attachment_image_src( (int) $image_setting['id'], 'full' );
-                if ( is_array( $src ) && ! empty( $src[0] ) ) {
-                    $override_image_url = esc_url_raw( $src[0] );
-                }
-            }
-        }
-        // Backward compatibility: if it somehow ended up as a bare string URL.
-        elseif ( is_string( $image_setting ) ) {
-            $override_image_url = esc_url_raw( $image_setting );
-        }
-    }
-
-    if ( $override_image_url ) {
-        $image_url = $override_image_url;
-    } elseif ( $site_logo_url ) {
-        $image_url = $site_logo_url;
-    } else {
-        $image_url = '';
-    }
-
-    // Build the page node.
-    $language = get_bloginfo( 'language' );
-
-    $node = array(
-        '@context' => 'https://schema.org',
-        '@type'    => $schema_type,
-        '@id'      => $page_id,
-        'url'      => $page_url,
-        'name'     => $page_name,
-        'isPartOf' => array(
-            '@id' => $site_url . '#website',
-        ),
-    );
-
-    if ( $language ) {
-        $node['inLanguage'] = $language;
-    }
-
-    if ( $description !== '' ) {
-        $node['description'] = $description;
-    }
-
-    if ( $image_url !== '' ) {
-        $node['image'] = $image_url;
-    }
-
-    // about -> mirror WebSite.about if present (Person/Org).
-    if ( $website && isset( $website['about'] ) && is_array( $website['about'] ) ) {
-        $node['about'] = $website['about'];
-    }
-
-    /**
-     * Filter the special page schema node before output.
-     *
-     * @param array   $node      The special page schema node.
-     * @param WP_Post $post      The post object.
-     * @param string  $page_type The Elementor page type (contact/about/privacy-policy/accessibility-statement).
-     */
-    $node = apply_filters( 'be_schema_special_page_node', $node, $post, $page_type );
-
-    // Collect into debug graph (just the node).
-    be_schema_debug_collect( $node );
-
-    echo '<script type="application/ld+json">' . wp_json_encode( $node ) . '</script>' . "\n";
-}
-
-/**
- * Normalize free-text descriptions:
- * - Strip tags
- * - Collapse whitespace
- * - Trim to a reasonable length.
- *
- * @param string $text Raw text.
- * @param int    $max_length Max length (characters).
- * @return string
- */
-function be_schema_normalize_text( $text, $max_length = 320 ) {
-    $text = (string) $text;
-    $text = wp_strip_all_tags( $text );
-    $text = preg_replace( '/\s+/', ' ', $text );
-    $text = trim( $text );
-
-    if ( $max_length > 0 && strlen( $text ) > $max_length ) {
-        $text = substr( $text, 0, $max_length );
-        // Trim to last full word.
-        $last_space = strrpos( $text, ' ' );
-        if ( false !== $last_space && $last_space > 0 ) {
-            $text = substr( $text, 0, $last_space );
-        }
-    }
-
-    return $text;
+	if ( function_exists( 'be_schema_debug_event' ) ) {
+		be_schema_debug_event(
+			'schema_graph_emitted',
+			array(
+				'context'   => 'special_page',
+				'page_type' => $page_type,
+				'post_id'   => $post_id,
+				'url'       => get_permalink( $post_id ),
+			)
+		);
+	}
 }

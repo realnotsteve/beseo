@@ -5,11 +5,8 @@
  * Submenu: BE SEO → Schema
  *
  * Tabs:
- *  - Settings  (global plugin toggles, Elementor toggle, debug, snapshot)
+ *  - Settings  (global plugin toggles, Elementor toggle, debug, snapshot, site identity, health check)
  *  - Website   (site entities: Global / Person / Organisation / Publisher)
- *
- * User testyherethereanyTHdddssssdddddsdasdasd
- *sddssdsdsdsfdfsdfsddsf
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -44,6 +41,19 @@ function be_schema_engine_save_settings() {
     $settings['enabled']           = isset( $_POST['be_schema_enabled'] ) ? '1' : '0';
     $settings['elementor_enabled'] = isset( $_POST['be_schema_elementor_enabled'] ) ? '1' : '0';
     $settings['debug']             = isset( $_POST['be_schema_debug'] ) ? '1' : '0';
+
+    // Mirror debug into a dedicated debug_enabled key for engine helpers.
+    $settings['debug_enabled'] = $settings['debug'];
+
+    // Site identity mode (person / organisation / mixed).
+    if ( isset( $_POST['be_schema_site_identity_mode'] ) ) {
+        $mode    = sanitize_text_field( wp_unslash( $_POST['be_schema_site_identity_mode'] ) );
+        $allowed = array( 'person', 'organisation', 'mixed' );
+        if ( ! in_array( $mode, $allowed, true ) ) {
+            $mode = 'mixed';
+        }
+        $settings['site_identity_mode'] = $mode;
+    }
 
     // Person.
     $settings['person_enabled'] = isset( $_POST['be_schema_person_enabled'] ) ? '1' : '0';
@@ -164,6 +174,14 @@ function be_schema_engine_render_schema_page() {
     $elementor_enabled = ! empty( $settings['elementor_enabled'] ) && '1' === $settings['elementor_enabled'];
     $debug_enabled     = ! empty( $settings['debug'] ) && '1' === $settings['debug'];
 
+    // Ensure debug_enabled mirrors debug for consistency in code.
+    if ( isset( $settings['debug'] ) ) {
+        $settings['debug_enabled'] = $settings['debug'];
+    }
+
+    // Site identity mode.
+    $site_identity_mode = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'mixed';
+
     // Person.
     $person_enabled          = ! empty( $settings['person_enabled'] ) && '1' === $settings['person_enabled'];
     $person_image_url        = isset( $settings['person_image_url'] ) ? $settings['person_image_url'] : '';
@@ -198,6 +216,13 @@ function be_schema_engine_render_schema_page() {
     $const_disable_all       = defined( 'BE_SCHEMA_DISABLE_ALL' ) && BE_SCHEMA_DISABLE_ALL;
     $const_disable_elementor = defined( 'BE_SCHEMA_DISABLE_ELEMENTOR' ) && BE_SCHEMA_DISABLE_ELEMENTOR;
     $const_debug             = defined( 'BE_SCHEMA_DEBUG' ) && BE_SCHEMA_DEBUG;
+
+    // Health check: Person & Organisation.
+    $person_name_effective = get_bloginfo( 'name', 'display' ); // Person name defaults to site title.
+    $person_image_ok       = ! empty( $person_image_url );
+
+    $org_name_trim = trim( (string) $org_name );
+    $org_logo_ok   = ! empty( $org_logo );
 
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-schema-wrap">
@@ -394,6 +419,30 @@ function be_schema_engine_render_schema_page() {
             .be-schema-settings-snapshot-value {
                 width: 68%;
             }
+
+            /* Health check table */
+            .be-schema-health-table {
+                max-width: 800px;
+                margin-top: 16px;
+            }
+
+            .be-schema-health-table table {
+                border-collapse: collapse;
+                width: 100%;
+                background: #fff;
+            }
+
+            .be-schema-health-table th,
+            .be-schema-health-table td {
+                border: 1px solid #e2e4e7;
+                padding: 4px 6px;
+                font-size: 12px;
+            }
+
+            .be-schema-health-table th {
+                background: #f3f4f5;
+                text-align: left;
+            }
         </style>
 
         <p>
@@ -568,6 +617,43 @@ function be_schema_engine_render_schema_page() {
                                     </p>
                                 </td>
                             </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <?php esc_html_e( 'Site identity mode', 'be-schema-engine' ); ?>
+                                </th>
+                                <td>
+                                    <fieldset>
+                                        <label>
+                                            <input type="radio"
+                                                   name="be_schema_site_identity_mode"
+                                                   value="person"
+                                                   <?php checked( 'person', $site_identity_mode ); ?> />
+                                            <?php esc_html_e( 'Person-first (personal brand)', 'be-schema-engine' ); ?>
+                                        </label><br />
+                                        <label>
+                                            <input type="radio"
+                                                   name="be_schema_site_identity_mode"
+                                                   value="organisation"
+                                                   <?php checked( 'organisation', $site_identity_mode ); ?> />
+                                            <?php esc_html_e( 'Organisation-first (company / organisation)', 'be-schema-engine' ); ?>
+                                        </label><br />
+                                        <label>
+                                            <input type="radio"
+                                                   name="be_schema_site_identity_mode"
+                                                   value="mixed"
+                                                   <?php checked( 'mixed', $site_identity_mode ); ?> />
+                                            <?php esc_html_e( 'Mixed (site about a person, published by an organisation)', 'be-schema-engine' ); ?>
+                                        </label>
+                                    </fieldset>
+                                    <p class="description be-schema-description">
+                                        <?php esc_html_e(
+                                            'Controls how the WebSite and publisher entities prioritise Person vs Organisation in the graph.',
+                                            'be-schema-engine'
+                                        ); ?>
+                                    </p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
 
@@ -620,6 +706,77 @@ function be_schema_engine_render_schema_page() {
                         <?php else : ?>
                             <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'be-schema-engine' ); ?></em></p>
                         <?php endif; ?>
+                    </div>
+
+                    <!-- Schema Health Check -->
+                    <div class="be-schema-health-table">
+                        <h2><?php esc_html_e( 'Schema Health Check', 'be-schema-engine' ); ?></h2>
+                        <p class="description be-schema-description">
+                            <?php esc_html_e(
+                                'A quick, read-only summary of core site entities used by the schema engine.',
+                                'be-schema-engine'
+                            ); ?>
+                        </p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e( 'Entity', 'be-schema-engine' ); ?></th>
+                                    <th><?php esc_html_e( 'Enabled', 'be-schema-engine' ); ?></th>
+                                    <th><?php esc_html_e( 'Name', 'be-schema-engine' ); ?></th>
+                                    <th><?php esc_html_e( 'Image / Logo', 'be-schema-engine' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><?php esc_html_e( 'Person', 'be-schema-engine' ); ?></td>
+                                    <td><?php echo $person_enabled ? '✅' : '⛔'; ?></td>
+                                    <td>
+                                        <?php
+                                        if ( $person_name_effective ) {
+                                            printf(
+                                                /* translators: %s: site title used as person name */
+                                                esc_html__( 'Site title: %s', 'be-schema-engine' ),
+                                                esc_html( $person_name_effective )
+                                            );
+                                        } else {
+                                            echo '⚠ ' . esc_html__( 'No effective name resolved', 'be-schema-engine' );
+                                        }
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        if ( $person_image_ok ) {
+                                            echo '✅';
+                                        } else {
+                                            echo esc_html__( 'Not set (allowed; logo fallback may be used)', 'be-schema-engine' );
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e( 'Organisation', 'be-schema-engine' ); ?></td>
+                                    <td><?php echo $organization_enabled ? '✅' : '⛔'; ?></td>
+                                    <td>
+                                        <?php
+                                        if ( $org_name_trim ) {
+                                            echo esc_html( $org_name_trim );
+                                        } else {
+                                            echo '⚠ ' . esc_html__( 'Missing organisation name', 'be-schema-engine' );
+                                        }
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        if ( $org_logo_ok ) {
+                                            echo '✅';
+                                        } else {
+                                            echo esc_html__( 'Not set (allowed)', 'be-schema-engine' );
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
