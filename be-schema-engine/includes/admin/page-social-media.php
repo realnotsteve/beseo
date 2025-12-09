@@ -378,7 +378,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Global default image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Global Default Image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -391,7 +391,7 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_global_default_image"
                                                 data-target-preview="be_schema_global_default_image_preview">
-                                            <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
@@ -419,7 +419,7 @@ function be_schema_engine_render_social_media_page() {
 
                     <!-- Tiny "what image did we pick?" style summary -->
                     <div class="be-schema-social-mini-summary">
-                        <h3><?php esc_html_e( 'Image selection summary', 'be-schema-engine' ); ?></h3>
+                        <h3><?php esc_html_e( 'Image Selection Summary', 'be-schema-engine' ); ?></h3>
                         <p class="be-schema-social-description">
                             <?php esc_html_e(
                                 'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
@@ -441,7 +441,7 @@ function be_schema_engine_render_social_media_page() {
 
                         <div class="be-schema-social-mini-summary-images">
                             <div>
-                                <strong><?php esc_html_e( 'Global fallback image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Global Fallback Image', 'be-schema-engine' ); ?></strong>
                                 <?php if ( $global_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
@@ -453,7 +453,7 @@ function be_schema_engine_render_social_media_page() {
                             </div>
 
                             <div>
-                                <strong><?php esc_html_e( 'Facebook default OG image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Facebook Default OG Image', 'be-schema-engine' ); ?></strong>
                                 <?php if ( $facebook_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
@@ -465,7 +465,7 @@ function be_schema_engine_render_social_media_page() {
                             </div>
 
                             <div>
-                                <strong><?php esc_html_e( 'Twitter default card image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'be-schema-engine' ); ?></strong>
                                 <?php if ( $twitter_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
@@ -512,7 +512,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default Facebook OG image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Facebook OG Image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -525,7 +525,7 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_facebook_default_image"
                                                 data-target-preview="be_schema_facebook_default_image_preview">
-                                            <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
@@ -569,7 +569,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes (admin-only)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (Admin-Only)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <textarea
@@ -596,7 +596,7 @@ function be_schema_engine_render_social_media_page() {
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Twitter handle (without @)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Twitter Handle (Without @)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <input type="text"
@@ -614,7 +614,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default card type', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Card Type', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <select name="be_schema_twitter_card_type">
@@ -638,7 +638,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default Twitter card image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Twitter Card Image', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -651,7 +651,7 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
-                                            <?php esc_html_e( 'Select image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
@@ -677,7 +677,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes (admin-only)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (Admin-Only)', 'be-schema-engine' ); ?>
                                 </th>
                                 <td>
                                     <textarea
@@ -743,7 +743,7 @@ function be_schema_engine_render_social_media_page() {
                     }
 
                     var frame = wp.media({
-                        title: '<?php echo esc_js( __( 'Select image', 'be-schema-engine' ) ); ?>',
+                        title: '<?php echo esc_js( __( 'Select Image', 'be-schema-engine' ) ); ?>',
                         multiple: false
                     });
 

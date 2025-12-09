@@ -1,8 +1,8 @@
 <?php
 /**
- * Overview Admin Page
+ * Home Admin Page
  *
- * Submenu: BE SEO → Overview (default landing)
+ * Submenu: BE SEO → Home (default landing)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Render the "Overview" admin page.
+ * Render the "Home" admin page.
  */
 function be_schema_engine_render_overview_page() {
     if ( ! current_user_can( 'manage_options' ) ) {

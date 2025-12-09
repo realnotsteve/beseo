@@ -4,7 +4,7 @@
  *
  * Top-level menu: "BE SEO"
  * Submenus:
- *  - Overview     (default landing)
+ *  - Home         (default landing)
  *  - Schema       (main configuration page)
  *  - Social Media (OpenGraph & Twitter Cards)
  *  - Tools        (placeholder for future utilities / validators)
@@ -49,11 +49,11 @@ function be_schema_engine_register_admin_menu() {
         58                                               // Position (near SEO-ish tools).
     );
 
-    // "Overview" submenu (same slug as top-level, becomes default).
+    // "Home" submenu (same slug as top-level, becomes default).
     add_submenu_page(
         $top_level_slug,                                 // Parent slug.
-        __( 'Overview', 'be-schema-engine' ),            // Page title.
-        __( 'Overview', 'be-schema-engine' ),            // Menu title.
+        __( 'Home', 'be-schema-engine' ),                // Page title.
+        __( 'Home', 'be-schema-engine' ),                // Menu title.
         $capability,                                     // Capability.
         $top_level_slug,                                 // Menu slug (same as top-level).
         'be_schema_engine_render_overview_page'          // Callback.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.22] - 2025-12-09
+- Bump type: patch
+- Files:
+- be-schema-engine/includes/admin/admin-menu.php
+- be-schema-engine/includes/admin/page-overview.php
+- be-schema-engine/includes/admin/page-schema.php
+- be-schema-engine/includes/admin/page-social-media.php
+
 ## [1.3.21] - 2025-12-08
 - Bump type: patch
 - Files:
