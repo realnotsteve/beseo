@@ -20,7 +20,7 @@ if [[ "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
   exit 1
 fi
 
-VERSION_FILE="be-schema-engine/be-schema-engine.php"
+VERSION_FILE="beseo.php"
 NOTES_FILE="BE_SEO-Dev_Notes.json"
 CHANGELOG_FILE="CHANGELOG.md"
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.29] - 2025-12-09
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- CHANGELOG.md
+- be-schema-engine/be-schema-engine.php
+- beseo.php
+
+## [1.3.28] - 2025-12-09
+- Bump type: patch
+- Files:
+- .githooks/pre-commit
+- be-schema-engine/be-schema-engine.php
+
 ## [1.3.28] - 2025-12-09
 - Bump type: patch
 - Files:
