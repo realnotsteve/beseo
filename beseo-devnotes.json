@@ -5,7 +5,7 @@
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
     "version": "1.3.30",
-    "repo_root": "be-schema-engine/"
+    "repo_root": "beseo/"
   },
   "workflows": {
     "after_push": {
@@ -24,7 +24,7 @@
     "pre_commit": {
       "hook_path": ".githooks/pre-commit",
       "enable_command": "git config core.hooksPath .githooks",
-      "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates be-schema-engine.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
+      "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates beseo.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
       "changelog": "CHANGELOG.md is auto-maintained by the pre-commit hook.",
       "runtime": "Requires python3 (preferred) or python in PATH; hook exits if neither is available."
     },
@@ -36,87 +36,87 @@
   },
   "files": [
     {
-      "path": "be-schema-engine/be-schema-engine.php",
+      "path": "beseo.php",
       "group": "bootstrap",
       "role": "Main plugin bootstrap; defines constants, loads includes, registers core hooks."
     },
     {
-      "path": "be-schema-engine/includes/admin/admin-menu.php",
+      "path": "includes/admin/admin-menu.php",
       "group": "admin",
       "role": "Registers top-level BE SEO admin menu and submenus (Overview default, Schema, Social Media, Tools)."
     },
     {
-      "path": "be-schema-engine/assets/images/admin/be_seo-landing_image.webp",
+      "path": "assets/images/admin/be_seo-landing_image.webp",
       "group": "assets",
       "role": "Hero background image for the Overview admin page."
     },
     {
-      "path": "be-schema-engine/CHANGELOG.md",
+      "path": "CHANGELOG.md",
       "group": "assets",
       "role": "Packaged changelog copy used for the Overview hero preview."
     },
     {
-      "path": "be-schema-engine/includes/admin/page-overview.php",
+      "path": "includes/admin/page-overview.php",
       "group": "admin",
       "role": "Overview landing page with hero background image (cover), row-based hero content (title, version, GitHub and Bill's site links) plus inline rendered changelog preview."
     },
     {
-      "path": "be-schema-engine/includes/admin/page-dashboard.php",
+      "path": "includes/admin/page-dashboard.php",
       "group": "admin",
       "role": "Dashboard/overview page for the BE SEO plugin (if used)."
     },
     {
-      "path": "be-schema-engine/includes/admin/page-schema.php",
+      "path": "includes/admin/page-schema.php",
       "group": "admin",
       "role": "Schema submenu UI: Settings + Website tabs; Website tab has vertical Global/Person/Organisation/Publisher sections."
     },
     {
-      "path": "be-schema-engine/includes/admin/page-social-media.php",
+      "path": "includes/admin/page-social-media.php",
       "group": "admin",
       "role": "Social Media submenu UI: Settings/Facebook/Twitter tabs and associated options."
     },
     {
-      "path": "be-schema-engine/includes/admin/page-tools.php",
+      "path": "includes/admin/page-tools.php",
       "group": "admin",
       "role": "Tools submenu UI (future home for validators, snapshots, etc.)."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-breadcrumbs.php",
+      "path": "includes/engine/core-breadcrumbs.php",
       "group": "engine",
       "role": "Emits BreadcrumbList schema for non-front pages; always two levels: root + current."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-debug.php",
+      "path": "includes/engine/core-debug.php",
       "group": "engine",
       "role": "Schema debug collector and shutdown logger; writes BE_SCHEMA_DEBUG_GRAPH payloads to error_log when enabled."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-elementor.php",
+      "path": "includes/engine/core-elementor.php",
       "group": "engine",
       "role": "Elementor integration: page-level schema controls, widget-level enable switch, and safe, limited widget schema output."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-helpers.php",
+      "path": "includes/engine/core-helpers.php",
       "group": "engine",
       "role": "Shared helper functions for text normalization, image normalization, per-page disable checks, and post-type eligibility."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-posts.php",
+      "path": "includes/engine/core-posts.php",
       "group": "engine",
       "role": "BlogPosting schema for eligible single posts, including dates, description, mainEntityOfPage, author, publisher, and image."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-site-entities.php",
+      "path": "includes/engine/core-site-entities.php",
       "group": "engine",
       "role": "Builds site-level entities: Person, Organisation, WebSite, Publisher, and shared logo/person image nodes."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-social.php",
+      "path": "includes/engine/core-social.php",
       "group": "engine",
       "role": "Outputs OpenGraph and Twitter Card meta tags based on Social Media settings and page context."
     },
     {
-      "path": "be-schema-engine/includes/engine/core-special-pages.php",
+      "path": "includes/engine/core-special-pages.php",
       "group": "engine",
       "role": "Page-level schema for homepage and special pages (Contact, About, Privacy, Accessibility) with Elementor page-type integration."
     }

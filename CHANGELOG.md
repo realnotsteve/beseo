@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.32] - 2025-12-09
+- Bump type: patch
+- Files:
+- beseo-devnotes.json
+
 ## [1.3.31] - 2025-12-09
 - Bump type: patch
 - Files:
