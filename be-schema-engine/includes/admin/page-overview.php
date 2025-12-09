@@ -131,9 +131,7 @@ function be_schema_engine_render_overview_page() {
             background-position: center;
             border-radius: 8px;
             padding: 24px;
-            color: #000;
-            margin-bottom: 20px;
-            min-height: 260px;
+            height: 100%;
         }
         .be-schema-hero-row {
             display: flex;
@@ -154,13 +152,17 @@ function be_schema_engine_render_overview_page() {
             background-color: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(10px);
             border: 1px solid #e0e0e0;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
             border-radius: 8px;
-            padding: 20px 24px;
+            padding: 24px;
             display: inline-block;
+            border-style: solid;
+            border-width: 1px;
+            border-color: grey;
+            flex: 1;
         }
         .be-schema-overview-hero .be-schema-hero-content {
-            min-width: 240px;
+            width: 50%;
             text-align: center;
         }
         .be-schema-overview-hero .be-schema-hero-changelog {
@@ -178,7 +180,7 @@ function be_schema_engine_render_overview_page() {
             text-decoration: underline;
         }
         .description a {
-            text-decoration: none;
+            text-decoration: none !important;
         }
         .description a:hover {
             text-decoration: underline;
