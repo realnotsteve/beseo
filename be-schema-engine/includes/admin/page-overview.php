@@ -131,16 +131,19 @@ function be_schema_engine_render_overview_page() {
             background-position: center;
             border-radius: 8px;
             padding: 24px;
-            height: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .be-schema-hero-row {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 16px;
-            align-items: flex-start;
-            justify-content: center;
+            align-items: stretch;
+            justify-content: space-between;
             text-align: left;
+            flex: 1;
         }
         .be-schema-overview-hero h1,
         .be-schema-overview-hero p {
@@ -160,14 +163,22 @@ function be_schema_engine_render_overview_page() {
             border-width: 1px;
             border-color: grey;
             flex: 1;
+            height: 100%;
         }
         .be-schema-overview-hero .be-schema-hero-content {
-            width: 50%;
+            flex: 0 0 33%;
+            max-width: 33%;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .be-schema-overview-hero .be-schema-hero-changelog {
-            max-width: 480px;
-            max-height: 220px;
+            flex: 1 1 0;
+            max-width: 67%;
+            display: flex;
+            flex-direction: column;
+            max-height: none;
             overflow: auto;
             white-space: normal;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -194,7 +205,7 @@ function be_schema_engine_render_overview_page() {
                 $version = defined( 'BE_SCHEMA_ENGINE_VERSION' ) ? BE_SCHEMA_ENGINE_VERSION : '';
                 ?>
                 <div class="be-schema-hero-content">
-                    <h1><?php esc_html_e( 'BE SEO', 'be-schema-engine' ); ?></h1>
+                    <h2><?php esc_html_e( 'BE SEO', 'be-schema-engine' ); ?></h2>
 
                     <p class="description">
                         <?php
@@ -213,6 +224,7 @@ function be_schema_engine_render_overview_page() {
                 </div>
 
                 <div class="be-schema-hero-changelog" aria-label="<?php esc_attr_e( 'Changelog preview', 'be-schema-engine' ); ?>">
+                    <h2><?php esc_html_e( 'Changelog', 'be-schema-engine' ); ?></h2>
                     <?php echo $changelog_html_safe; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
             </div>
