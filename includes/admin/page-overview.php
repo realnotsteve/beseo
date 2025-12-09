@@ -36,7 +36,7 @@ function be_schema_engine_render_overview_page() {
     }
 
     if ( '' === $changelog_text ) {
-        $changelog_text = __( 'Changelog not available.', 'be-schema-engine' );
+        $changelog_text = __( 'Changelog not available.', 'beseo' );
     }
 
     /**
@@ -214,24 +214,24 @@ function be_schema_engine_render_overview_page() {
                 $version = defined( 'BE_SCHEMA_ENGINE_VERSION' ) ? BE_SCHEMA_ENGINE_VERSION : '';
                 ?>
                 <div class="be-schema-hero-content">
-                    <h2><?php esc_html_e( 'BE SEO', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'BE SEO', 'beseo' ); ?></h2>
 
                     <p class="description">
                         <?php
                         /* translators: %s is the plugin version. */
-                        printf( esc_html__( 'Version : %s', 'be-schema-engine' ), esc_html( $version ) );
+                        printf( esc_html__( 'Version : %s', 'beseo' ), esc_html( $version ) );
                         ?>
                     </p>
 
                     <p class="be-schema-status-row">
                         <span class="be-schema-status-pill <?php echo $enabled ? '' : 'off'; ?>">
-                            <?php echo $enabled ? esc_html__( 'Schema Engine: ON', 'be-schema-engine' ) : esc_html__( 'Schema Engine: OFF', 'be-schema-engine' ); ?>
+                            <?php echo $enabled ? esc_html__( 'Schema Engine: ON', 'beseo' ) : esc_html__( 'Schema Engine: OFF', 'beseo' ); ?>
                         </span>
                         <span class="be-schema-status-pill <?php echo $elementor_enabled ? '' : 'off'; ?>">
-                            <?php echo $elementor_enabled ? esc_html__( 'Elementor Schema: ON', 'be-schema-engine' ) : esc_html__( 'Elementor Schema: OFF', 'be-schema-engine' ); ?>
+                            <?php echo $elementor_enabled ? esc_html__( 'Elementor Schema: ON', 'beseo' ) : esc_html__( 'Elementor Schema: OFF', 'beseo' ); ?>
                         </span>
                         <span class="be-schema-status-pill <?php echo $debug_enabled ? '' : 'off'; ?>">
-                            <?php echo $debug_enabled ? esc_html__( 'Plugin Debug: ON', 'be-schema-engine' ) : esc_html__( 'Plugin Debug: OFF', 'be-schema-engine' ); ?>
+                            <?php echo $debug_enabled ? esc_html__( 'Plugin Debug: ON', 'beseo' ) : esc_html__( 'Plugin Debug: OFF', 'beseo' ); ?>
                         </span>
                     </p>
 
@@ -244,8 +244,8 @@ function be_schema_engine_render_overview_page() {
                     </p>
                 </div>
 
-                <div class="be-schema-hero-changelog" aria-label="<?php esc_attr_e( 'Changelog preview', 'be-schema-engine' ); ?>">
-                    <h2><?php esc_html_e( 'Changelog', 'be-schema-engine' ); ?></h2>
+                <div class="be-schema-hero-changelog" aria-label="<?php esc_attr_e( 'Changelog preview', 'beseo' ); ?>">
+                    <h2><?php esc_html_e( 'Changelog', 'beseo' ); ?></h2>
                     <?php echo $changelog_html_safe; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
             </div>

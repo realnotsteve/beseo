@@ -1,16 +1,17 @@
 <?php
 /**
- * Plugin Name:       BE SEO
+ * Plugin Name:       BESEO
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
- * Version:           1.3.30
+ * Version:           1.3.31
  * Author:            Bill Evans
  * Author URI:        https://billevans.be/
- * Text Domain:       be-schema-engine
+ * Text Domain:       beseo
  * Requires at least: 5.8
  * Requires PHP:      7.4
+ * Domain Path:       /languages
  *
- * @package BE_SEO
+ * @package BESEO
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -40,8 +41,22 @@ if ( ! defined( 'BE_SCHEMA_ENGINE_PLUGIN_URL' ) ) {
 
 // Plugin version (used for cache-busting if needed).
 if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.30' );
+    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.31' );
 }
+
+/**
+ * -------------------------------------------------------------------------
+ * Localization
+ * -------------------------------------------------------------------------
+ */
+function be_schema_engine_load_textdomain() {
+    load_plugin_textdomain(
+        'beseo',
+        false,
+        dirname( plugin_basename( __FILE__ ) ) . '/languages'
+    );
+}
+add_action( 'plugins_loaded', 'be_schema_engine_load_textdomain' );
 
 /**
  * -------------------------------------------------------------------------

@@ -12,42 +12,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 function be_schema_engine_render_dashboard_page() {
     ?>
     <div class="wrap be-schema-engine-dashboard-wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE Schema Engine', 'beseo' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
                 'BE Schema Engine centrally manages JSON-LD schema for your site with a conservative, safety-first approach.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
-        <h2><?php esc_html_e( 'Where to start', 'be-schema-engine' ); ?></h2>
+        <h2><?php esc_html_e( 'Where to start', 'beseo' ); ?></h2>
         <p>
             <?php esc_html_e(
                 'Use the submenus in the left-hand navigation to configure and inspect the engine:',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
         <ul class="ul-disc">
             <li>
-                <strong><?php esc_html_e( 'Schema', 'be-schema-engine' ); ?></strong> –
-                <?php esc_html_e( 'Enable/disable the engine, view diagnostics and configure site-level entities (Person, Organisation, Publisher, logos).', 'be-schema-engine' ); ?>
+                <strong><?php esc_html_e( 'Schema', 'beseo' ); ?></strong> –
+                <?php esc_html_e( 'Enable/disable the engine, view diagnostics and configure site-level entities (Person, Organisation, Publisher, logos).', 'beseo' ); ?>
             </li>
             <li>
-                <strong><?php esc_html_e( 'Social Media', 'be-schema-engine' ); ?></strong> –
-                <?php esc_html_e( 'Reserved for future sameAs / social profile settings.', 'be-schema-engine' ); ?>
+                <strong><?php esc_html_e( 'Social Media', 'beseo' ); ?></strong> –
+                <?php esc_html_e( 'Reserved for future sameAs / social profile settings.', 'beseo' ); ?>
             </li>
             <li>
-                <strong><?php esc_html_e( 'Tools', 'be-schema-engine' ); ?></strong> –
-                <?php esc_html_e( 'Currently points you to the main diagnostics under Schema → Settings.', 'be-schema-engine' ); ?>
+                <strong><?php esc_html_e( 'Tools', 'beseo' ); ?></strong> –
+                <?php esc_html_e( 'Currently points you to the main diagnostics under Schema → Settings.', 'beseo' ); ?>
             </li>
         </ul>
 
         <p class="description">
             <?php esc_html_e(
                 'Tip: Most configuration and debugging lives under the Schema submenu.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
     </div>

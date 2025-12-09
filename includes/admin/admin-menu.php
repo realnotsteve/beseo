@@ -36,12 +36,12 @@ function be_schema_engine_register_admin_menu() {
     }
 
     $capability    = 'manage_options';
-    $top_level_slug = 'be-schema-engine';
+    $top_level_slug = 'beseo';
 
     // Top-level menu: BE SEO.
     add_menu_page(
-        __( 'BE SEO', 'be-schema-engine' ),              // Page title.
-        __( 'BE SEO', 'be-schema-engine' ),              // Menu title.
+        __( 'BE SEO', 'beseo' ),              // Page title.
+        __( 'BE SEO', 'beseo' ),              // Menu title.
         $capability,                                     // Capability.
         $top_level_slug,                                 // Menu slug.
         'be_schema_engine_render_overview_page',         // Callback (default landing).
@@ -52,8 +52,8 @@ function be_schema_engine_register_admin_menu() {
     // "Home" submenu (same slug as top-level, becomes default).
     add_submenu_page(
         $top_level_slug,                                 // Parent slug.
-        __( 'Home', 'be-schema-engine' ),                // Page title.
-        __( 'Home', 'be-schema-engine' ),                // Menu title.
+        __( 'Home', 'beseo' ),                // Page title.
+        __( 'Home', 'beseo' ),                // Menu title.
         $capability,                                     // Capability.
         $top_level_slug,                                 // Menu slug (same as top-level).
         'be_schema_engine_render_overview_page'          // Callback.
@@ -62,8 +62,8 @@ function be_schema_engine_register_admin_menu() {
     // "Schema" submenu.
     add_submenu_page(
         $top_level_slug,
-        __( 'Schema', 'be-schema-engine' ),
-        __( 'Schema', 'be-schema-engine' ),
+        __( 'Schema', 'beseo' ),
+        __( 'Schema', 'beseo' ),
         $capability,
         'be-schema-engine-schema',
         'be_schema_engine_render_schema_page'
@@ -72,8 +72,8 @@ function be_schema_engine_register_admin_menu() {
     // "Social Media" submenu.
     add_submenu_page(
         $top_level_slug,
-        __( 'Social Media', 'be-schema-engine' ),
-        __( 'Social Media', 'be-schema-engine' ),
+        __( 'Social Media', 'beseo' ),
+        __( 'Social Media', 'beseo' ),
         $capability,
         'be-schema-engine-social-media',
         'be_schema_engine_render_social_media_page'
@@ -82,8 +82,8 @@ function be_schema_engine_register_admin_menu() {
     // "Tools" submenu (simple placeholder for now).
     add_submenu_page(
         $top_level_slug,
-        __( 'Tools', 'be-schema-engine' ),
-        __( 'Tools', 'be-schema-engine' ),
+        __( 'Tools', 'beseo' ),
+        __( 'Tools', 'beseo' ),
         $capability,
         'be-schema-engine-tools',
         'be_schema_engine_render_tools_page'
@@ -104,19 +104,19 @@ function be_schema_engine_render_tools_page() {
     }
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-tools-wrap">
-        <h1><?php esc_html_e( 'BE SEO – Tools', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Tools', 'beseo' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
                 'This page is reserved for future tools, such as quick links to schema and social validators, and internal debug helpers.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
         <p>
             <?php esc_html_e(
                 'For now, use the Schema and Social Media pages to configure JSON-LD and OpenGraph/Twitter output. Debug logs are written to the PHP error log when debug is enabled.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
     </div>

@@ -143,12 +143,12 @@ function be_schema_engine_render_social_media_page() {
 
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-social-wrap">
-        <h1><?php esc_html_e( 'BE SEO – Social Media', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Social Media', 'beseo' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
                 'Configure OpenGraph and Twitter Card defaults. This module controls social meta only; it does not change JSON-LD schema or sameAs arrays.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
@@ -285,10 +285,10 @@ function be_schema_engine_render_social_media_page() {
 
         <p>
             <span class="be-schema-social-status-pill <?php echo $og_enabled ? '' : 'off'; ?>">
-                <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'be-schema-engine' ) : esc_html__( 'OpenGraph: OFF', 'be-schema-engine' ); ?>
+                <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'beseo' ) : esc_html__( 'OpenGraph: OFF', 'beseo' ); ?>
             </span>
             <span class="be-schema-social-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
-                <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'be-schema-engine' ) : esc_html__( 'Twitter Cards: OFF', 'be-schema-engine' ); ?>
+                <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'beseo' ) : esc_html__( 'Twitter Cards: OFF', 'beseo' ); ?>
             </span>
         </p>
 
@@ -302,21 +302,21 @@ function be_schema_engine_render_social_media_page() {
                         <a href="#be-schema-social-tab-settings"
                            class="be-schema-social-tab-link be-schema-social-tab-active"
                            data-social-tab="settings">
-                            <?php esc_html_e( 'Settings', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Settings', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
                         <a href="#be-schema-social-tab-facebook"
                            class="be-schema-social-tab-link"
                            data-social-tab="facebook">
-                            <?php esc_html_e( 'Facebook', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Facebook', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
                         <a href="#be-schema-social-tab-twitter"
                            class="be-schema-social-tab-link"
                            data-social-tab="twitter">
-                            <?php esc_html_e( 'Twitter', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Twitter', 'beseo' ); ?>
                         </a>
                     </li>
                 </ul>
@@ -324,13 +324,13 @@ function be_schema_engine_render_social_media_page() {
                 <!-- SETTINGS TAB -->
                 <div id="be-schema-social-tab-settings"
                      class="be-schema-social-tab-panel be-schema-social-tab-panel-active">
-                    <h2><?php esc_html_e( 'Global Social Settings', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Global Social Settings', 'beseo' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Enable OpenGraph', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Enable OpenGraph', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <label>
@@ -340,13 +340,13 @@ function be_schema_engine_render_social_media_page() {
                                                <?php checked( $og_enabled ); ?> />
                                         <?php esc_html_e(
                                             'Output og:* tags for supported pages.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'When enabled, the plugin will output OpenGraph tags for pages and posts using the rules described below.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -354,7 +354,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Enable Twitter Cards', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Enable Twitter Cards', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <label>
@@ -364,13 +364,13 @@ function be_schema_engine_render_social_media_page() {
                                                <?php checked( $twitter_enabled ); ?> />
                                         <?php esc_html_e(
                                             'Output twitter:* tags for supported pages.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'When enabled, the plugin will output Twitter Card tags for pages and posts using the rules described below.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -378,7 +378,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Global Default Image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Global Default Image', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -391,19 +391,19 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_global_default_image"
                                                 data-target-preview="be_schema_global_default_image_preview">
-                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
                                                 data-target-input="be_schema_global_default_image"
                                                 data-target-preview="be_schema_global_default_image_preview">
-                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                         </button>
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Used as a final fallback when there is no featured image and no network-specific default image. This applies to both OpenGraph and Twitter.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                     <div id="be_schema_global_default_image_preview"
@@ -419,60 +419,60 @@ function be_schema_engine_render_social_media_page() {
 
                     <!-- Tiny "what image did we pick?" style summary -->
                     <div class="be-schema-social-mini-summary">
-                        <h3><?php esc_html_e( 'Image Selection Summary', 'be-schema-engine' ); ?></h3>
+                        <h3><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h3>
                         <p class="be-schema-social-description">
                             <?php esc_html_e(
                                 'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
-                                'be-schema-engine'
+                                'beseo'
                             ); ?>
                         </p>
                         <ul>
-                            <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'be-schema-engine' ); ?></li>
-                            <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'be-schema-engine' ); ?></li>
-                            <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'be-schema-engine' ); ?></li>
+                            <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
                         </ul>
 
                         <p class="be-schema-social-description">
                             <?php esc_html_e(
                                 'Below is a quick preview of the images that will be used when there is no featured image on a page:',
-                                'be-schema-engine'
+                                'beseo'
                             ); ?>
                         </p>
 
                         <div class="be-schema-social-mini-summary-images">
                             <div>
-                                <strong><?php esc_html_e( 'Global Fallback Image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
                                 <?php if ( $global_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
                                     </div>
                                     <code><?php echo esc_html( $global_default_image ); ?></code>
                                 <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'be-schema-engine' ); ?></em>
+                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
                                 <?php endif; ?>
                             </div>
 
                             <div>
-                                <strong><?php esc_html_e( 'Facebook Default OG Image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Facebook Default OG Image', 'beseo' ); ?></strong>
                                 <?php if ( $facebook_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
                                     </div>
                                     <code><?php echo esc_html( $facebook_default_image ); ?></code>
                                 <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'be-schema-engine' ); ?></em>
+                                    <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'beseo' ); ?></em>
                                 <?php endif; ?>
                             </div>
 
                             <div>
-                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'be-schema-engine' ); ?></strong>
+                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
                                 <?php if ( $twitter_default_image ) : ?>
                                     <div class="be-schema-image-preview">
                                         <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
                                     </div>
                                     <code><?php echo esc_html( $twitter_default_image ); ?></code>
                                 <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'be-schema-engine' ); ?></em>
+                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -480,7 +480,7 @@ function be_schema_engine_render_social_media_page() {
                         <p class="be-schema-social-description" style="margin-top: 8px;">
                             <?php esc_html_e(
                                 'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
-                                'be-schema-engine'
+                                'beseo'
                             ); ?>
                         </p>
                     </div>
@@ -488,13 +488,13 @@ function be_schema_engine_render_social_media_page() {
 
                 <!-- FACEBOOK TAB -->
                 <div id="be-schema-social-tab-facebook" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Facebook Settings', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Facebook Settings', 'beseo' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Facebook Page URL', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <input type="text"
@@ -504,7 +504,7 @@ function be_schema_engine_render_social_media_page() {
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Optional. A public Facebook Page URL for your site or organisation.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -512,7 +512,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default Facebook OG Image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -525,19 +525,19 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_facebook_default_image"
                                                 data-target-preview="be_schema_facebook_default_image_preview">
-                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
                                                 data-target-input="be_schema_facebook_default_image"
                                                 data-target-preview="be_schema_facebook_default_image_preview">
-                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                         </button>
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                     <div id="be_schema_facebook_default_image_preview"
@@ -551,7 +551,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Facebook App ID', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Facebook App ID', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <input type="text"
@@ -561,7 +561,7 @@ function be_schema_engine_render_social_media_page() {
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -569,7 +569,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes (Admin-Only)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <textarea
@@ -579,7 +579,7 @@ function be_schema_engine_render_social_media_page() {
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Free-form notes for your own reference. This is never output on the front end.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -590,13 +590,13 @@ function be_schema_engine_render_social_media_page() {
 
                 <!-- TWITTER TAB -->
                 <div id="be-schema-social-tab-twitter" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Twitter Settings', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Twitter Settings', 'beseo' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Twitter Handle (Without @)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <input type="text"
@@ -606,7 +606,7 @@ function be_schema_engine_render_social_media_page() {
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -614,23 +614,23 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default Card Type', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Card Type', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <select name="be_schema_twitter_card_type">
                                         <option value="summary"
                                             <?php selected( $twitter_card_type, 'summary' ); ?>>
-                                            <?php esc_html_e( 'summary', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'summary', 'beseo' ); ?>
                                         </option>
                                         <option value="summary_large_image"
                                             <?php selected( $twitter_card_type, 'summary_large_image' ); ?>>
-                                            <?php esc_html_e( 'summary_large_image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'summary_large_image', 'beseo' ); ?>
                                         </option>
                                     </select>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'This value is used for twitter:card on pages that do not specify a per-post override.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -638,7 +638,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Default Twitter Card Image', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <div class="be-schema-image-field">
@@ -651,19 +651,19 @@ function be_schema_engine_render_social_media_page() {
                                                 class="button be-schema-image-select"
                                                 data-target-input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
-                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                         </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
                                                 data-target-input="be_schema_twitter_default_image"
                                                 data-target-preview="be_schema_twitter_default_image_preview">
-                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                         </button>
                                     </div>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                     <div id="be_schema_twitter_default_image_preview"
@@ -677,7 +677,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Notes (Admin-Only)', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <textarea
@@ -687,7 +687,7 @@ function be_schema_engine_render_social_media_page() {
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
                                             'Free-form notes for your own reference. This is never output on the front end.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -698,7 +698,7 @@ function be_schema_engine_render_social_media_page() {
 
             </div>
 
-            <?php submit_button( __( 'Save Social Settings', 'be-schema-engine' ) ); ?>
+            <?php submit_button( __( 'Save Social Settings', 'beseo' ) ); ?>
         </form>
 
         <script>
@@ -743,7 +743,7 @@ function be_schema_engine_render_social_media_page() {
                     }
 
                     var frame = wp.media({
-                        title: '<?php echo esc_js( __( 'Select Image', 'be-schema-engine' ) ); ?>',
+                        title: '<?php echo esc_js( __( 'Select Image', 'beseo' ) ); ?>',
                         multiple: false
                     });
 

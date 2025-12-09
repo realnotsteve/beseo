@@ -41,7 +41,7 @@ class BE_Elementor_Schema_Plugin {
         $document->start_controls_section(
             'be_schema_section_page',
             array(
-                'label' => __( 'Schema', 'be-schema-engine' ),
+                'label' => __( 'Schema', 'beseo' ),
                 'tab'   => Controls_Manager::TAB_SETTINGS,
             )
         );
@@ -49,27 +49,27 @@ class BE_Elementor_Schema_Plugin {
         $document->add_control(
             'be_schema_enable_page',
             array(
-                'label'        => __( 'Enable schema for this page', 'be-schema-engine' ),
+                'label'        => __( 'Enable schema for this page', 'beseo' ),
                 'type'         => Controls_Manager::SWITCHER,
-                'label_on'     => __( 'Yes', 'be-schema-engine' ),
-                'label_off'    => __( 'No', 'be-schema-engine' ),
+                'label_on'     => __( 'Yes', 'beseo' ),
+                'label_off'    => __( 'No', 'beseo' ),
                 'return_value' => 'yes',
                 'default'      => '',
-                'description'  => __( 'Required to allow page-specific schema (special pages, Elementor widgets).', 'be-schema-engine' ),
+                'description'  => __( 'Required to allow page-specific schema (special pages, Elementor widgets).', 'beseo' ),
             )
         );
 
         $document->add_control(
             'be_schema_page_type',
             array(
-                'label'     => __( 'Page type', 'be-schema-engine' ),
+                'label'     => __( 'Page type', 'beseo' ),
                 'type'      => Controls_Manager::SELECT,
                 'options'   => array(
-                    'none'                  => __( 'None (regular page)', 'be-schema-engine' ),
-                    'contact'               => __( 'Contact page', 'be-schema-engine' ),
-                    'about'                 => __( 'About page', 'be-schema-engine' ),
-                    'privacy-policy'        => __( 'Privacy policy', 'be-schema-engine' ),
-                    'accessibility-statement' => __( 'Accessibility statement', 'be-schema-engine' ),
+                    'none'                  => __( 'None (regular page)', 'beseo' ),
+                    'contact'               => __( 'Contact page', 'beseo' ),
+                    'about'                 => __( 'About page', 'beseo' ),
+                    'privacy-policy'        => __( 'Privacy policy', 'beseo' ),
+                    'accessibility-statement' => __( 'Accessibility statement', 'beseo' ),
                 ),
                 'default'   => 'none',
                 'condition' => array(
@@ -81,13 +81,13 @@ class BE_Elementor_Schema_Plugin {
         $document->add_control(
             'be_schema_page_override_enable',
             array(
-                'label'        => __( 'Override description & image', 'be-schema-engine' ),
+                'label'        => __( 'Override description & image', 'beseo' ),
                 'type'         => Controls_Manager::SWITCHER,
-                'label_on'     => __( 'Yes', 'be-schema-engine' ),
-                'label_off'    => __( 'No', 'be-schema-engine' ),
+                'label_on'     => __( 'Yes', 'beseo' ),
+                'label_off'    => __( 'No', 'beseo' ),
                 'return_value' => 'yes',
                 'default'      => '',
-                'description'  => __( 'Override the default description and image used for special page schema.', 'be-schema-engine' ),
+                'description'  => __( 'Override the default description and image used for special page schema.', 'beseo' ),
                 'condition'    => array(
                     'be_schema_enable_page' => 'yes',
                     'be_schema_page_type!'  => 'none',
@@ -98,10 +98,10 @@ class BE_Elementor_Schema_Plugin {
         $document->add_control(
             'be_schema_page_description',
             array(
-                'label'       => __( 'Schema description override', 'be-schema-engine' ),
+                'label'       => __( 'Schema description override', 'beseo' ),
                 'type'        => Controls_Manager::TEXTAREA,
                 'rows'        => 3,
-                'placeholder' => __( 'Short description for schema.org markup…', 'be-schema-engine' ),
+                'placeholder' => __( 'Short description for schema.org markup…', 'beseo' ),
                 'condition'   => array(
                     'be_schema_enable_page'         => 'yes',
                     'be_schema_page_type!'          => 'none',
@@ -113,7 +113,7 @@ class BE_Elementor_Schema_Plugin {
         $document->add_control(
             'be_schema_page_image',
             array(
-                'label'     => __( 'Schema image override', 'be-schema-engine' ),
+                'label'     => __( 'Schema image override', 'beseo' ),
                 'type'      => Controls_Manager::MEDIA,
                 'dynamic'   => array( 'active' => false ),
                 'condition' => array(
@@ -150,7 +150,7 @@ class BE_Elementor_Schema_Plugin {
         $element->start_controls_section(
             'be_schema_section_widget',
             array(
-                'label' => __( 'Schema', 'be-schema-engine' ),
+                'label' => __( 'Schema', 'beseo' ),
                 'tab'   => Controls_Manager::TAB_ADVANCED,
             )
         );
@@ -158,10 +158,10 @@ class BE_Elementor_Schema_Plugin {
         $element->add_control(
             'be_schema_enable_widget',
             array(
-                'label'        => __( 'Enable schema for this widget', 'be-schema-engine' ),
+                'label'        => __( 'Enable schema for this widget', 'beseo' ),
                 'type'         => Controls_Manager::SWITCHER,
-                'label_on'     => __( 'Yes', 'be-schema-engine' ),
-                'label_off'    => __( 'No', 'be-schema-engine' ),
+                'label_on'     => __( 'Yes', 'beseo' ),
+                'label_off'    => __( 'No', 'beseo' ),
                 'return_value' => 'yes',
                 'default'      => '',
             )
@@ -172,10 +172,10 @@ class BE_Elementor_Schema_Plugin {
             $element->add_control(
                 'be_schema_image_description',
                 array(
-                    'label'       => __( 'Schema description', 'be-schema-engine' ),
+                    'label'       => __( 'Schema description', 'beseo' ),
                     'type'        => Controls_Manager::TEXTAREA,
                     'rows'        => 2,
-                    'placeholder' => __( 'Optional description for ImageObject schema…', 'be-schema-engine' ),
+                    'placeholder' => __( 'Optional description for ImageObject schema…', 'beseo' ),
                     'condition'   => array(
                         'be_schema_enable_widget' => 'yes',
                     ),

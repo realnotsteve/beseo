@@ -93,7 +93,7 @@ function be_schema_get_breadcrumb_current_item() {
             $name = get_the_title( $page_for_posts );
             $url  = get_permalink( $page_for_posts );
         } else {
-            $name = __( 'Blog', 'be-schema-engine' );
+            $name = __( 'Blog', 'beseo' );
             $url  = get_permalink();
         }
     } elseif ( is_category() || is_tag() || is_tax() ) {
@@ -111,7 +111,7 @@ function be_schema_get_breadcrumb_current_item() {
     } elseif ( is_search() ) {
         $name = sprintf(
             /* translators: %s is the search query. */
-            __( 'Search results for "%s"', 'be-schema-engine' ),
+            __( 'Search results for "%s"', 'beseo' ),
             get_search_query( false )
         );
         $url = get_search_link();

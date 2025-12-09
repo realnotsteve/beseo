@@ -12,17 +12,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 function be_schema_engine_render_tools_page() {
     ?>
     <div class="wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Tools', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE Schema Engine – Tools', 'beseo' ); ?></h1>
         <p class="description">
             <?php esc_html_e(
                 'Diagnostic information and effective status summaries have been moved to the Schema → Settings tab.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
         <p>
             <?php esc_html_e(
                 'Go to: BE Schema Engine → Schema, then open the “Settings” tab to view global status, wp-config constants, and a settings snapshot.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
     </div>

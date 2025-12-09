@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.31] - 2025-12-09
+- Bump type: patch
+- Files:
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/admin-menu.php
+- includes/admin/page-dashboard.php
+- includes/admin/page-overview.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+- includes/engine/core-breadcrumbs.php
+- includes/engine/core-elementor.php
+
 ## [1.3.30] - 2025-12-09
 - Bump type: patch
 - Files:

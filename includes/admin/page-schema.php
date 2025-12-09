@@ -270,12 +270,12 @@ function be_schema_engine_render_schema_page() {
 
     ?>
     <div class="wrap be-schema-engine-wrap be-schema-schema-wrap">
-        <h1><?php esc_html_e( 'BE SEO – Schema', 'be-schema-engine' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Schema', 'beseo' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e(
                 'Configure site-wide schema behavior and site entities for JSON-LD output. Page-level schema is still opt-in via Elementor controls and per-page settings.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
@@ -581,7 +581,7 @@ function be_schema_engine_render_schema_page() {
         <p class="description be-schema-description">
             <?php esc_html_e(
                 'Schema is still controlled by several layers: global plugin settings, optional overrides in wp-config.php, per-page disable meta, and Elementor page controls. This page configures site-wide defaults.',
-                'be-schema-engine'
+                'beseo'
             ); ?>
         </p>
 
@@ -595,21 +595,21 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-settings"
                            class="be-schema-tab-link be-schema-tab-active"
                            data-schema-tab="settings">
-                            <?php esc_html_e( 'Settings', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Settings', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
                         <a href="#be-schema-tab-overview"
                            class="be-schema-tab-link"
                            data-schema-tab="overview">
-                            <?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Snapshots', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
                         <a href="#be-schema-tab-website"
                            class="be-schema-tab-link"
                            data-schema-tab="website">
-                            <?php esc_html_e( 'Website', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Website', 'beseo' ); ?>
                         </a>
                     </li>
                 </ul>
@@ -617,13 +617,13 @@ function be_schema_engine_render_schema_page() {
                 <!-- SETTINGS TAB -->
                 <div id="be-schema-tab-settings"
                      class="be-schema-tab-panel be-schema-tab-panel-active">
-                    <h2><?php esc_html_e( 'Global Settings', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Global Settings', 'beseo' ); ?></h2>
 
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Enable Schema Engine', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Enable Schema Engine', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <label>
@@ -633,13 +633,13 @@ function be_schema_engine_render_schema_page() {
                                                <?php checked( $enabled ); ?> />
                                         <?php esc_html_e(
                                             'Allow BE SEO to output JSON-LD schema.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'If this is disabled, the plugin will not output any schema, regardless of page or Elementor settings.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -647,7 +647,7 @@ function be_schema_engine_render_schema_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Enable Elementor Schema', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Enable Elementor Schema', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <label>
@@ -657,13 +657,13 @@ function be_schema_engine_render_schema_page() {
                                                <?php checked( $elementor_enabled ); ?> />
                                         <?php esc_html_e(
                                             'Allow Elementor-driven schema for supported widgets and page types.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'When enabled, Elementor page settings and widget controls can emit additional JSON-LD (subject to per-page safety checks).',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -671,7 +671,7 @@ function be_schema_engine_render_schema_page() {
 
                             <tr>
                                 <th scope="row">
-                                    <?php esc_html_e( 'Debug Logging', 'be-schema-engine' ); ?>
+                                    <?php esc_html_e( 'Debug Logging', 'beseo' ); ?>
                                 </th>
                                 <td>
                                     <label>
@@ -681,20 +681,20 @@ function be_schema_engine_render_schema_page() {
                                                <?php checked( $debug_enabled ); ?> />
                                         <?php esc_html_e(
                                             'Log a combined @graph snapshot to the PHP error log on each request (when WP_DEBUG is true).',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </label>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'When enabled (and WP_DEBUG is on), the plugin writes a single BE_SCHEMA_DEBUG_GRAPH payload to the error log. This is useful for validating what the plugin thinks it is outputting.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
 
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'You can also force debug via the BE_SCHEMA_DEBUG constant in wp-config.php. Constants always win over admin settings.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </td>
@@ -707,11 +707,11 @@ function be_schema_engine_render_schema_page() {
 
                 <!-- OVERVIEW TAB -->
                 <div id="be-schema-tab-overview" class="be-schema-tab-panel">
-                    <h2><?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Snapshots', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
                             'Quick, read-only views of the schema engine state and site health.',
-                            'be-schema-engine'
+                            'beseo'
                         ); ?>
                     </p>
 
@@ -722,14 +722,14 @@ function be_schema_engine_render_schema_page() {
                                     <a href="#be-schema-overview-snapshots"
                                        class="be-schema-overview-tab-link be-schema-overview-tab-active"
                                        data-overview-tab="snapshots">
-                                        <?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Snapshots', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="#be-schema-overview-health"
                                        class="be-schema-overview-tab-link"
                                        data-overview-tab="health">
-                                        <?php esc_html_e( 'Health Check', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Health Check', 'beseo' ); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -739,53 +739,53 @@ function be_schema_engine_render_schema_page() {
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
                                 <div class="be-schema-settings-snapshot">
-                                    <h3><?php esc_html_e( 'wp-config.php Overrides', 'be-schema-engine' ); ?></h3>
+                                    <h3><?php esc_html_e( 'wp-config.php Overrides', 'beseo' ); ?></h3>
                                     <ul class="be-schema-description">
                                         <li>
                                             <code>BE_SCHEMA_DISABLE_ALL</code>:
                                             <?php esc_html_e(
                                                 'When true, disables all schema output from this plugin, regardless of admin settings.',
-                                                'be-schema-engine'
+                                                'beseo'
                                             ); ?>
                                             <?php if ( $const_disable_all ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'be-schema-engine' ); ?></strong>
+                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
                                             <?php endif; ?>
                                         </li>
                                         <li>
                                             <code>BE_SCHEMA_DISABLE_ELEMENTOR</code>:
                                             <?php esc_html_e(
                                                 'When true, disables only Elementor-specific schema.',
-                                                'be-schema-engine'
+                                                'beseo'
                                             ); ?>
                                             <?php if ( $const_disable_elementor ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'be-schema-engine' ); ?></strong>
+                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
                                             <?php endif; ?>
                                         </li>
                                         <li>
                                             <code>BE_SCHEMA_DEBUG</code>:
                                             <?php esc_html_e(
                                                 'When true, forces debug logging even if the admin setting is off.',
-                                                'be-schema-engine'
+                                                'beseo'
                                             ); ?>
                                             <?php if ( $const_debug ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'be-schema-engine' ); ?></strong>
+                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
                                             <?php endif; ?>
                                         </li>
                                     </ul>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'Use these constants sparingly, for emergency switches or local development. For day-to-day control, prefer the admin settings above.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                 </div>
 
                                 <div class="be-schema-settings-snapshot">
-                                    <h3><?php esc_html_e( 'Settings Snapshot (Read-Only)', 'be-schema-engine' ); ?></h3>
+                                    <h3><?php esc_html_e( 'Settings Snapshot (Read-Only)', 'beseo' ); ?></h3>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'A compact view of the current be_schema_engine_settings option, useful for debugging and verifying that values are saved as expected.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                     <?php if ( ! empty( $settings ) && is_array( $settings ) ) : ?>
@@ -793,10 +793,10 @@ function be_schema_engine_render_schema_page() {
                                             <thead>
                                                 <tr>
                                                     <th class="be-schema-settings-snapshot-key">
-                                                        <?php esc_html_e( 'Key', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Key', 'beseo' ); ?>
                                                     </th>
                                                     <th class="be-schema-settings-snapshot-value">
-                                                        <?php esc_html_e( 'Value', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Value', 'beseo' ); ?>
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -809,7 +809,7 @@ function be_schema_engine_render_schema_page() {
                                                         <td class="be-schema-settings-snapshot-value">
                                                             <?php
                                                             if ( is_bool( $value ) ) {
-                                                                echo $value ? esc_html__( 'true', 'be-schema-engine' ) : esc_html__( 'false', 'be-schema-engine' );
+                                                                echo $value ? esc_html__( 'true', 'beseo' ) : esc_html__( 'false', 'beseo' );
                                                             } elseif ( is_array( $value ) ) {
                                                                 echo esc_html( wp_json_encode( $value ) );
                                                             } else {
@@ -826,43 +826,43 @@ function be_schema_engine_render_schema_page() {
                                             </tbody>
                                         </table>
                                     <?php else : ?>
-                                        <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'be-schema-engine' ); ?></em></p>
+                                        <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
                             <div id="be-schema-overview-health" class="be-schema-overview-panel">
                                 <div class="be-schema-health-table">
-                                    <h3><?php esc_html_e( 'Schema Health Check', 'be-schema-engine' ); ?></h3>
+                                    <h3><?php esc_html_e( 'Schema Health Check', 'beseo' ); ?></h3>
                                     <p class="description be-schema-description">
                                         <?php esc_html_e(
                                             'A quick, read-only summary of core site entities used by the schema engine.',
-                                            'be-schema-engine'
+                                            'beseo'
                                         ); ?>
                                     </p>
                                     <table>
                                         <thead>
                                             <tr>
-                                                <th><?php esc_html_e( 'Entity', 'be-schema-engine' ); ?></th>
-                                                <th><?php esc_html_e( 'Enabled', 'be-schema-engine' ); ?></th>
-                                                <th><?php esc_html_e( 'Name', 'be-schema-engine' ); ?></th>
-                                                <th><?php esc_html_e( 'Image / Logo', 'be-schema-engine' ); ?></th>
+                                                <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Image / Logo', 'beseo' ); ?></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td><?php esc_html_e( 'Person', 'be-schema-engine' ); ?></td>
+                                                <td><?php esc_html_e( 'Person', 'beseo' ); ?></td>
                                                 <td><?php echo $person_enabled ? '✅' : '⛔'; ?></td>
                                                 <td>
                                                     <?php
                                                     if ( $person_name_effective ) {
                                                         printf(
                                                             /* translators: %s: site title used as person name */
-                                                            esc_html__( 'Site title: %s', 'be-schema-engine' ),
+                                                            esc_html__( 'Site title: %s', 'beseo' ),
                                                             esc_html( $person_name_effective )
                                                         );
                                                     } else {
-                                                        echo '⚠ ' . esc_html__( 'No effective name resolved', 'be-schema-engine' );
+                                                        echo '⚠ ' . esc_html__( 'No effective name resolved', 'beseo' );
                                                     }
                                                     ?>
                                                 </td>
@@ -871,20 +871,20 @@ function be_schema_engine_render_schema_page() {
                                                     if ( $person_image_ok ) {
                                                         echo '✅';
                                                     } else {
-                                                        echo esc_html__( 'Not set (allowed; logo fallback may be used)', 'be-schema-engine' );
+                                                        echo esc_html__( 'Not set (allowed; logo fallback may be used)', 'beseo' );
                                                     }
                                                     ?>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><?php esc_html_e( 'Organisation', 'be-schema-engine' ); ?></td>
+                                                <td><?php esc_html_e( 'Organisation', 'beseo' ); ?></td>
                                                 <td><?php echo $organization_enabled ? '✅' : '⛔'; ?></td>
                                                 <td>
                                                     <?php
                                                     if ( $org_name_trim ) {
                                                         echo esc_html( $org_name_trim );
                                                     } else {
-                                                        echo '⚠ ' . esc_html__( 'Missing organisation name', 'be-schema-engine' );
+                                                        echo '⚠ ' . esc_html__( 'Missing organisation name', 'beseo' );
                                                     }
                                                     ?>
                                                 </td>
@@ -893,7 +893,7 @@ function be_schema_engine_render_schema_page() {
                                                     if ( $org_logo_ok ) {
                                                         echo '✅';
                                                     } else {
-                                                        echo esc_html__( 'Not set (allowed)', 'be-schema-engine' );
+                                                        echo esc_html__( 'Not set (allowed)', 'beseo' );
                                                     }
                                                     ?>
                                                 </td>
@@ -908,11 +908,11 @@ function be_schema_engine_render_schema_page() {
 
                 <!-- WEBSITE TAB -->
                 <div id="be-schema-tab-website" class="be-schema-tab-panel">
-                    <h2><?php esc_html_e( 'Website Entities', 'be-schema-engine' ); ?></h2>
+                    <h2><?php esc_html_e( 'Website Entities', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
                             'Configure site identity mode plus the Person, Organisation, Publisher, and shared logo/images used by the site-level JSON-LD graph.',
-                            'be-schema-engine'
+                            'beseo'
                         ); ?>
                     </p>
 
@@ -923,7 +923,7 @@ function be_schema_engine_render_schema_page() {
                                     <a href="#be-schema-website-global"
                                        class="be-schema-website-tab-link be-schema-website-tab-active"
                                        data-website-tab="global">
-                                        <?php esc_html_e( 'Global', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Global', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -931,7 +931,7 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-website-tab-link<?php echo $identity_person_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
                                        data-website-tab="person"
                                        <?php echo $identity_person_enabled ? '' : 'aria-disabled="true"'; ?>>
-                                        <?php esc_html_e( 'Person', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Person', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -939,7 +939,7 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-website-tab-link<?php echo $identity_organisation_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
                                        data-website-tab="organization"
                                        <?php echo $identity_organisation_enabled ? '' : 'aria-disabled="true"'; ?>>
-                                        <?php esc_html_e( 'Organisation', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Organisation', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -947,7 +947,7 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-website-tab-link<?php echo $identity_publisher_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
                                        data-website-tab="publisher"
                                        <?php echo $identity_publisher_enabled ? '' : 'aria-disabled="true"'; ?>>
-                                        <?php esc_html_e( 'Publisher', 'be-schema-engine' ); ?>
+                                        <?php esc_html_e( 'Publisher', 'beseo' ); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -958,15 +958,15 @@ function be_schema_engine_render_schema_page() {
                             <!-- GLOBAL PANEL -->
                             <div id="be-schema-website-global"
                                  class="be-schema-website-panel be-schema-website-panel-active">
-                                <h3><?php esc_html_e( 'Global', 'be-schema-engine' ); ?></h3>
+                                <h3><?php esc_html_e( 'Global', 'beseo' ); ?></h3>
 
                                 <div class="be-schema-global-section">
-                                    <h4><?php esc_html_e( 'Site Identity Mode', 'be-schema-engine' ); ?></h4>
+                                    <h4><?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Site Identity Mode', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-identity-options">
@@ -979,7 +979,7 @@ function be_schema_engine_render_schema_page() {
                                                                    data-target-tab="person"
                                                                    <?php checked( $identity_person_enabled ); ?> />
                                                             <label for="be_schema_identity_person_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Person option', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Enable Person option', 'beseo' ); ?>
                                                             </label>
                                                            <input type="radio"
                                                                    id="be_schema_identity_person_radio"
@@ -989,7 +989,7 @@ function be_schema_engine_render_schema_page() {
                                                                    <?php checked( 'person', $site_identity_mode ); ?>
                                                                    <?php disabled( ! $identity_person_enabled ); ?> />
                                                             <label for="be_schema_identity_person_radio">
-                                                                <?php esc_html_e( 'Person-First (Personal Brand)', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Person-First (Personal Brand)', 'beseo' ); ?>
                                                             </label>
                                                         </div>
 
@@ -1002,7 +1002,7 @@ function be_schema_engine_render_schema_page() {
                                                                    data-target-tab="organization"
                                                                    <?php checked( $identity_organisation_enabled ); ?> />
                                                             <label for="be_schema_identity_org_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Organisation option', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Enable Organisation option', 'beseo' ); ?>
                                                             </label>
                                                            <input type="radio"
                                                                    id="be_schema_identity_org_radio"
@@ -1012,7 +1012,7 @@ function be_schema_engine_render_schema_page() {
                                                                    <?php checked( 'organisation', $site_identity_mode ); ?>
                                                                    <?php disabled( ! $identity_organisation_enabled ); ?> />
                                                             <label for="be_schema_identity_org_radio">
-                                                                <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'beseo' ); ?>
                                                             </label>
                                                         </div>
 
@@ -1025,7 +1025,7 @@ function be_schema_engine_render_schema_page() {
                                                                    data-target-tab="publisher"
                                                                    <?php checked( $identity_publisher_enabled ); ?> />
                                                             <label for="be_schema_identity_publisher_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Publisher option', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Enable Publisher option', 'beseo' ); ?>
                                                             </label>
                                                             <input type="radio"
                                                                    id="be_schema_identity_publisher_radio"
@@ -1035,14 +1035,14 @@ function be_schema_engine_render_schema_page() {
                                                                    <?php checked( 'publisher', $site_identity_mode ); ?>
                                                                    <?php disabled( ! $identity_publisher_enabled ); ?> />
                                                             <label for="be_schema_identity_publisher_radio">
-                                                                <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'be-schema-engine' ); ?>
+                                                                <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'beseo' ); ?>
                                                             </label>
                                                         </div>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Controls which identity is prioritised for WebSite.about / WebSite.publisher. Other enabled entities remain in the graph as fallbacks.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1052,12 +1052,12 @@ function be_schema_engine_render_schema_page() {
                                 </div>
 
                                 <div class="be-schema-global-section">
-                                    <h4><?php esc_html_e( 'Images', 'be-schema-engine' ); ?></h4>
+                                    <h4><?php esc_html_e( 'Images', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Site Logo (Shared)', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Site Logo (Shared)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <label>
@@ -1068,7 +1068,7 @@ function be_schema_engine_render_schema_page() {
                                                                data-target-clear="be_schema_org_logo_clear"
                                                                name="be_schema_org_logo_enabled"
                                                                <?php checked( $org_logo_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
                                                     </label>
                                                     <div class="be-schema-image-field">
                                                         <input type="text"
@@ -1083,7 +1083,7 @@ function be_schema_engine_render_schema_page() {
                                                                 data-target-input="be_schema_org_logo"
                                                                 data-target-preview="be_schema_org_logo_preview"
                                                                 <?php disabled( ! $org_logo_enabled ); ?>>
-                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                         </button>
                                                         <button type="button"
                                                                 class="button be-schema-image-clear"
@@ -1091,13 +1091,13 @@ function be_schema_engine_render_schema_page() {
                                                                 data-target-input="be_schema_org_logo"
                                                                 data-target-preview="be_schema_org_logo_preview"
                                                                 <?php disabled( ! $org_logo_enabled ); ?>>
-                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                         </button>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'This logo is used by the Organisation entity, the WebSite entity, and as a fallback for the Person image when a dedicated profile picture is not provided.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_org_logo_preview"
@@ -1117,7 +1117,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <label>
@@ -1128,7 +1128,7 @@ function be_schema_engine_render_schema_page() {
                                                                data-target-clear="be_schema_website_image_16_9_clear"
                                                                name="be_schema_website_image_16_9_enabled"
                                                                <?php checked( $website_image_16_9_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
                                                     </label>
                                                     <div class="be-schema-image-field">
                                                         <input type="text"
@@ -1143,7 +1143,7 @@ function be_schema_engine_render_schema_page() {
                                                                 data-target-input="be_schema_website_image_16_9"
                                                                 data-target-preview="be_schema_website_image_16_9_preview"
                                                                 <?php disabled( ! $website_image_16_9_enabled ); ?>>
-                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                         </button>
                                                         <button type="button"
                                                                 class="button be-schema-image-clear"
@@ -1151,13 +1151,13 @@ function be_schema_engine_render_schema_page() {
                                                                 data-target-input="be_schema_website_image_16_9"
                                                                 data-target-preview="be_schema_website_image_16_9_preview"
                                                                 <?php disabled( ! $website_image_16_9_enabled ); ?>>
-                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                         </button>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A 16:9 aspect ratio image that can be used by the WebSite or WebPage schema when a featured image is needed.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_website_image_16_9_preview"
@@ -1171,7 +1171,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                <?php esc_html_e( 'WebSite Featured Image (4:3)', 'be-schema-engine' ); ?>
+                                                <?php esc_html_e( 'WebSite Featured Image (4:3)', 'beseo' ); ?>
                                             </th>
                                             <td>
                                                 <label>
@@ -1182,7 +1182,7 @@ function be_schema_engine_render_schema_page() {
                                                            data-target-clear="be_schema_website_image_4_3_clear"
                                                            name="be_schema_website_image_4_3_enabled"
                                                            <?php checked( $website_image_4_3_enabled ); ?> />
-                                                    <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
                                                 </label>
                                                 <div class="be-schema-image-field">
                                                     <input type="text"
@@ -1197,7 +1197,7 @@ function be_schema_engine_render_schema_page() {
                                                             data-target-input="be_schema_website_image_4_3"
                                                             data-target-preview="be_schema_website_image_4_3_preview"
                                                             <?php disabled( ! $website_image_4_3_enabled ); ?>>
-                                                        <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                     </button>
                                                     <button type="button"
                                                             class="button be-schema-image-clear"
@@ -1205,13 +1205,13 @@ function be_schema_engine_render_schema_page() {
                                                             data-target-input="be_schema_website_image_4_3"
                                                             data-target-preview="be_schema_website_image_4_3_preview"
                                                             <?php disabled( ! $website_image_4_3_enabled ); ?>>
-                                                        <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                     </button>
                                                 </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A 4:3 aspect ratio image for WebSite/WebPage schema where that shape is appropriate.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_website_image_4_3_preview"
@@ -1225,7 +1225,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                <?php esc_html_e( 'WebSite Featured Image (1:1)', 'be-schema-engine' ); ?>
+                                                <?php esc_html_e( 'WebSite Featured Image (1:1)', 'beseo' ); ?>
                                             </th>
                                             <td>
                                                 <label>
@@ -1236,7 +1236,7 @@ function be_schema_engine_render_schema_page() {
                                                            data-target-clear="be_schema_website_image_1_1_clear"
                                                            name="be_schema_website_image_1_1_enabled"
                                                            <?php checked( $website_image_1_1_enabled ); ?> />
-                                                    <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
                                                 </label>
                                                 <div class="be-schema-image-field">
                                                     <input type="text"
@@ -1251,7 +1251,7 @@ function be_schema_engine_render_schema_page() {
                                                             data-target-input="be_schema_website_image_1_1"
                                                             data-target-preview="be_schema_website_image_1_1_preview"
                                                             <?php disabled( ! $website_image_1_1_enabled ); ?>>
-                                                        <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                     </button>
                                                     <button type="button"
                                                             class="button be-schema-image-clear"
@@ -1259,13 +1259,13 @@ function be_schema_engine_render_schema_page() {
                                                             data-target-input="be_schema_website_image_1_1"
                                                             data-target-preview="be_schema_website_image_1_1_preview"
                                                             <?php disabled( ! $website_image_1_1_enabled ); ?>>
-                                                        <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                     </button>
                                                 </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A square (1:1) featured image for schema use.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_website_image_1_1_preview"
@@ -1283,13 +1283,13 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- PERSON PANEL -->
                             <div id="be-schema-website-person" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Person', 'be-schema-engine' ); ?></h3>
+                                <h3><?php esc_html_e( 'Person', 'beseo' ); ?></h3>
 
                                 <table class="form-table">
                                     <tbody>
                                         <tr>
                                             <th scope="row">
-                                                <?php esc_html_e( 'Enable Person Entity', 'be-schema-engine' ); ?>
+                                                <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
                                             </th>
                                             <td>
                                                 <label>
@@ -1301,13 +1301,13 @@ function be_schema_engine_render_schema_page() {
                                                            <?php checked( $person_enabled ); ?> />
                                                     <?php esc_html_e(
                                                         'Include a Person node in the site-level schema.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </label>
                                                 <p class="description be-schema-description">
                                                     <?php esc_html_e(
                                                         'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </p>
                                             </td>
@@ -1321,7 +1321,7 @@ function be_schema_engine_render_schema_page() {
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Profile Image', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Profile Image', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-image-field">
@@ -1334,19 +1334,19 @@ function be_schema_engine_render_schema_page() {
                                                                 class="button be-schema-image-select"
                                                                 data-target-input="be_schema_person_image_url"
                                                                 data-target-preview="be_schema_person_image_url_preview">
-                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                         </button>
                                                         <button type="button"
                                                                 class="button be-schema-image-clear"
                                                                 data-target-input="be_schema_person_image_url"
                                                                 data-target-preview="be_schema_person_image_url_preview">
-                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                         </button>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. If left empty, the Person entity can fall back to the shared site logo.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_person_image_url_preview"
@@ -1360,7 +1360,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Honorific Prefix', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1370,7 +1370,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. For example: Dr, Prof, Mr, Ms, etc.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1378,7 +1378,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Honorific Suffix', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1388,7 +1388,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. For example: PhD, MD, CPA, etc.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1396,7 +1396,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'SameAs URLs', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'SameAs URLs', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <textarea
@@ -1406,7 +1406,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'One URL per line, pointing to authoritative profiles for this person (for example, knowledge panels or professional profiles). These are used as Person.sameAs and are separate from social sharing settings.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1418,13 +1418,13 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- ORGANISATION PANEL -->
                             <div id="be-schema-website-organization" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Organisation', 'be-schema-engine' ); ?></h3>
+                                <h3><?php esc_html_e( 'Organisation', 'beseo' ); ?></h3>
 
                                 <table class="form-table">
                                     <tbody>
                                         <tr>
                                             <th scope="row">
-                                                <?php esc_html_e( 'Enable Organisation Entity', 'be-schema-engine' ); ?>
+                                                <?php esc_html_e( 'Enable Organisation Entity', 'beseo' ); ?>
                                             </th>
                                             <td>
                                                 <label>
@@ -1436,13 +1436,13 @@ function be_schema_engine_render_schema_page() {
                                                            <?php checked( $organization_enabled ); ?> />
                                                     <?php esc_html_e(
                                                         'Include an Organisation node for this site.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </label>
                                                 <p class="description be-schema-description">
                                                     <?php esc_html_e(
                                                         'When enabled, the site will include an Organisation entity that can be used as the primary about/publisher for the WebSite, and as the default publisher for BlogPosting.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </p>
                                             </td>
@@ -1456,7 +1456,7 @@ function be_schema_engine_render_schema_page() {
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Organisation Name', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Organisation Name', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1466,7 +1466,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'The public name of the organisation.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1474,7 +1474,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Legal Name', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Legal Name', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1484,7 +1484,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. The legal name of the organisation, if different from the public name.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1492,7 +1492,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Organisation URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Organisation URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1502,7 +1502,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. If empty, the site URL is used.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1510,20 +1510,20 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Shared Logo (Read-Only)', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Shared Logo (Read-Only)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'The Organisation uses the shared site logo configured on the Global tab.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div class="be-schema-image-preview">
                                                         <?php if ( $org_logo ) : ?>
                                                             <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
                                                         <?php else : ?>
-                                                            <em><?php esc_html_e( 'No shared logo selected yet.', 'be-schema-engine' ); ?></em>
+                                                            <em><?php esc_html_e( 'No shared logo selected yet.', 'beseo' ); ?></em>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
@@ -1535,13 +1535,13 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- PUBLISHER PANEL -->
                             <div id="be-schema-website-publisher" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Publisher', 'be-schema-engine' ); ?></h3>
+                                <h3><?php esc_html_e( 'Publisher', 'beseo' ); ?></h3>
 
                                 <table class="form-table">
                                     <tbody>
                                         <tr>
                                             <th scope="row">
-                                                <?php esc_html_e( 'Enable WebSite.publisher', 'be-schema-engine' ); ?>
+                                                <?php esc_html_e( 'Enable WebSite.publisher', 'beseo' ); ?>
                                             </th>
                                             <td>
                                                 <label>
@@ -1553,13 +1553,13 @@ function be_schema_engine_render_schema_page() {
                                                            <?php checked( $publisher_enabled ); ?> />
                                                     <?php esc_html_e(
                                                         'Attach a Publisher entity to the WebSite.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </label>
                                                 <p class="description be-schema-description">
                                                     <?php esc_html_e(
                                                         'When enabled, the WebSite.publisher property can reference either the site Person, the Organisation, or a dedicated custom publisher organisation, depending on your configuration.',
-                                                        'be-schema-engine'
+                                                        'beseo'
                                                     ); ?>
                                                 </p>
                                             </td>
@@ -1573,7 +1573,7 @@ function be_schema_engine_render_schema_page() {
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Copyright Year', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Copyright Year', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1584,7 +1584,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. Used for descriptive publishing metadata; not all validators require this.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1592,7 +1592,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'License URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'License URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1602,7 +1602,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A URL describing the license under which the site content is published.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1610,7 +1610,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Publishing Principles URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1620,7 +1620,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A page describing your editorial standards or publishing principles.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1628,7 +1628,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Corrections Policy URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1638,7 +1638,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A page explaining how corrections or updates are handled.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1646,7 +1646,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Ownership / Funding Info URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1656,7 +1656,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A page describing ownership or funding information for the publisher.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1664,7 +1664,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher Organisation Name', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1674,7 +1674,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1682,7 +1682,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher URL', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
@@ -1692,7 +1692,7 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. The URL for the custom publisher organisation.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
@@ -1700,7 +1700,7 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher Logo', 'be-schema-engine' ); ?>
+                                                    <?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-image-field">
@@ -1713,19 +1713,19 @@ function be_schema_engine_render_schema_page() {
                                                                 class="button be-schema-image-select"
                                                                 data-target-input="be_schema_publisher_custom_logo"
                                                                 data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                                         </button>
                                                         <button type="button"
                                                                 class="button be-schema-image-clear"
                                                                 data-target-input="be_schema_publisher_custom_logo"
                                                                 data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                         </button>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
-                                                            'be-schema-engine'
+                                                            'beseo'
                                                         ); ?>
                                                     </p>
                                                     <div id="be_schema_publisher_custom_logo_preview"
@@ -1747,7 +1747,7 @@ function be_schema_engine_render_schema_page() {
 
             </div>
 
-            <?php submit_button( __( 'Save Schema Settings', 'be-schema-engine' ) ); ?>
+            <?php submit_button( __( 'Save Schema Settings', 'beseo' ) ); ?>
         </form>
 
         <script>
@@ -1913,7 +1913,7 @@ function be_schema_engine_render_schema_page() {
                     }
 
                     var frame = wp.media({
-                        title: '<?php echo esc_js( __( 'Select Image', 'be-schema-engine' ) ); ?>',
+                        title: '<?php echo esc_js( __( 'Select Image', 'beseo' ) ); ?>',
                         multiple: false
                     });
 
