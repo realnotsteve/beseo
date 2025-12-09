@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.26] - 2025-12-09
+- Bump type: patch
+- Files:
+- CHANGELOG2.md
+- assets/images/admin/be_seo-landing_image.webp
+- includes/admin/admin-menu.php
+- includes/admin/page-dashboard.php
+- includes/admin/page-overview.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+- includes/engine/core-breadcrumbs.php
+- includes/engine/core-debug.php
+- includes/engine/core-elementor.php
+- includes/engine/core-helpers.php
+- includes/engine/core-posts.php
+- includes/engine/core-site-entities.php
+- includes/engine/core-social.php
+- includes/engine/core-special-pages.php
+
 ## [1.3.25] - 2025-12-09
 - Bump type: patch
 - Files:
