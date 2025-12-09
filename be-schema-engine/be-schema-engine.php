@@ -3,7 +3,7 @@
  * Plugin Name:       BE SEO
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
- * Version:           1.3.27
+ * Version:           1.3.28
  * Author:            Bill Evans
  * Author URI:        https://billevans.be/
  * Text Domain:       be-schema-engine
@@ -40,7 +40,7 @@ if ( ! defined( 'BE_SCHEMA_ENGINE_PLUGIN_URL' ) ) {
 
 // Plugin version (used for cache-busting if needed).
 if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.27' );
+    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.28' );
 }
 
 /**
