@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.25] - 2025-12-09
+- Bump type: patch
+- Files:
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- be-schema-engine.zip
+- be-schema-engine/be-schema-engine.php
+- be-schema-engine/includes/admin/page-overview.php
+- be-schema-engine/includes/admin/page-schema.php
+- be-schema-engine/includes/engine/core-helpers.php
+- be-schema-engine/includes/engine/core-site-entities.php
+
+## [1.3.24] - 2025-12-09
+- Bump type: patch
+- Files:
+- CHANGELOG.md
+- be-schema-engine.zip
+- be-schema-engine/includes/admin/page-overview.php
+- be-schema-engine/includes/admin/page-schema.php
+- be-schema-engine/includes/engine/core-helpers.php
+- be-schema-engine/includes/engine/core-site-entities.php
+
 ## [1.3.23] - 2025-12-09
 - Bump type: patch
 - Files:

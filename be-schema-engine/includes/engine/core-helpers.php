@@ -49,20 +49,32 @@ function be_schema_engine_get_settings() {
 		'organization_enabled'  => '0',
 		'publisher_enabled'     => '0',
 
-		// Site identity mode (how WebSite & publisher prioritise Person vs Organisation).
-		// Allowed values: 'person', 'organisation', 'mixed'.
-		'site_identity_mode'    => 'mixed',
+		// Site identity mode (how WebSite & publisher prioritise Person vs Organisation vs Publisher).
+		// Allowed values: 'person', 'organisation', 'publisher'.
+		'site_identity_mode'    => 'publisher',
+		'site_identity_person_enabled'       => '1',
+		'site_identity_organisation_enabled' => '1',
+		'site_identity_publisher_enabled'    => '1',
 
 		// Organisation fields.
 		'org_name'         => '',
 		'org_legal_name'   => '',
 		'org_url'          => '',
 		'org_logo'         => '', // Could be attachment ID or URL depending on your UI.
+		'org_logo_enabled' => '1',
 
 		// Publisher custom organisation.
 		'publisher_custom_name' => '',
 		'publisher_custom_url'  => '',
 		'publisher_custom_logo' => '',
+
+		// WebSite featured images.
+		'website_image_16_9'        => '',
+		'website_image_4_3'         => '',
+		'website_image_1_1'         => '',
+		'website_image_16_9_enabled' => '1',
+		'website_image_4_3_enabled'  => '1',
+		'website_image_1_1_enabled'  => '1',
 
 		// Additional policy / legal metadata.
 		'copyright_year'        => '',

@@ -342,24 +342,36 @@ function be_schema_get_site_entities() {
         );
     }
 
-    // about: Organisation first, otherwise Person.
-    if ( $organization_node ) {
-        $website_node['about'] = array(
-            '@id' => $organization_node['@id'],
-        );
-    } elseif ( $person_node ) {
-        $website_node['about'] = array(
-            '@id' => $person_node['@id'],
-        );
+    $priority = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+    $priority_order = array(
+        'person'       => array( 'person', 'organisation', 'publisher' ),
+        'organisation' => array( 'organisation', 'publisher', 'person' ),
+        'publisher'    => array( 'publisher', 'organisation', 'person' ),
+    );
+    if ( ! isset( $priority_order[ $priority ] ) ) {
+        $priority = 'publisher';
     }
 
-    // publisher: custom Publisher, or Organisation/Person fallback.
-    if ( $publisher_node ) {
-        $website_node['publisher'] = array(
-            '@id' => $publisher_node['@id'],
-        );
-    } elseif ( $publisher_ref ) {
-        $website_node['publisher'] = $publisher_ref;
+    $entity_refs = array(
+        'person'       => $person_node ? array( '@id' => $person_node['@id'] ) : null,
+        'organisation' => $organization_node ? array( '@id' => $organization_node['@id'] ) : null,
+        'publisher'    => $publisher_node ? array( '@id' => $publisher_node['@id'] ) : $publisher_ref,
+    );
+
+    $pick_entity = function ( $priority_key ) use ( $priority_order, $entity_refs ) {
+        foreach ( $priority_order[ $priority_key ] as $key ) {
+            if ( ! empty( $entity_refs[ $key ] ) ) {
+                return $entity_refs[ $key ];
+            }
+        }
+        return null;
+    };
+
+    $primary_entity = $pick_entity( $priority );
+
+    if ( $primary_entity ) {
+        $website_node['about'] = $primary_entity;
+        $website_node['publisher'] = $primary_entity;
     }
 
     /**

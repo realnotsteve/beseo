@@ -45,15 +45,35 @@ function be_schema_engine_save_settings() {
     // Mirror debug into a dedicated debug_enabled key for engine helpers.
     $settings['debug_enabled'] = $settings['debug'];
 
-    // Site identity mode (person / organisation / mixed).
+    // Site identity mode (person / organisation / publisher).
     if ( isset( $_POST['be_schema_site_identity_mode'] ) ) {
         $mode    = sanitize_text_field( wp_unslash( $_POST['be_schema_site_identity_mode'] ) );
-        $allowed = array( 'person', 'organisation', 'mixed' );
+        $allowed = array( 'person', 'organisation', 'publisher' );
         if ( ! in_array( $mode, $allowed, true ) ) {
-            $mode = 'mixed';
+            $mode = 'publisher';
         }
         $settings['site_identity_mode'] = $mode;
     }
+
+    // Site identity checkboxes (persist UI state).
+    $settings['site_identity_person_enabled']       = isset( $_POST['be_schema_identity_person_enabled'] ) ? '1' : '0';
+    $settings['site_identity_organisation_enabled'] = isset( $_POST['be_schema_identity_org_enabled'] ) ? '1' : '0';
+    $settings['site_identity_publisher_enabled']    = isset( $_POST['be_schema_identity_publisher_enabled'] ) ? '1' : '0';
+
+    // Ensure site identity mode aligns with enabled options.
+    $mode_current  = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+    $mode_allowed  = array( 'person', 'organisation', 'publisher' );
+    if ( ! in_array( $mode_current, $mode_allowed, true ) ) {
+        $mode_current = 'publisher';
+    }
+    if ( 'person' === $mode_current && '1' !== $settings['site_identity_person_enabled'] ) {
+        $mode_current = '1' === $settings['site_identity_organisation_enabled'] ? 'organisation' : ( '1' === $settings['site_identity_publisher_enabled'] ? 'publisher' : 'person' );
+    } elseif ( 'organisation' === $mode_current && '1' !== $settings['site_identity_organisation_enabled'] ) {
+        $mode_current = '1' === $settings['site_identity_person_enabled'] ? 'person' : ( '1' === $settings['site_identity_publisher_enabled'] ? 'publisher' : 'organisation' );
+    } elseif ( 'publisher' === $mode_current && '1' !== $settings['site_identity_publisher_enabled'] ) {
+        $mode_current = '1' === $settings['site_identity_person_enabled'] ? 'person' : ( '1' === $settings['site_identity_organisation_enabled'] ? 'organisation' : 'publisher' );
+    }
+    $settings['site_identity_mode'] = $mode_current;
 
     // Person.
     $settings['person_enabled'] = isset( $_POST['be_schema_person_enabled'] ) ? '1' : '0';
@@ -90,22 +110,26 @@ function be_schema_engine_save_settings() {
         : '';
 
     // Shared site logo.
-    $settings['org_logo'] = isset( $_POST['be_schema_org_logo'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_org_logo'] ) )
-        : '';
+    $settings['org_logo_enabled'] = isset( $_POST['be_schema_org_logo_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['org_logo_enabled'] && isset( $_POST['be_schema_org_logo'] ) ) {
+        $settings['org_logo'] = esc_url_raw( wp_unslash( $_POST['be_schema_org_logo'] ) );
+    }
 
     // WebSite featured images (16:9, 4:3, 1:1).
-    $settings['website_image_16_9'] = isset( $_POST['be_schema_website_image_16_9'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_website_image_16_9'] ) )
-        : '';
+    $settings['website_image_16_9_enabled'] = isset( $_POST['be_schema_website_image_16_9_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['website_image_16_9_enabled'] && isset( $_POST['be_schema_website_image_16_9'] ) ) {
+        $settings['website_image_16_9'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_16_9'] ) );
+    }
 
-    $settings['website_image_4_3'] = isset( $_POST['be_schema_website_image_4_3'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_website_image_4_3'] ) )
-        : '';
+    $settings['website_image_4_3_enabled'] = isset( $_POST['be_schema_website_image_4_3_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['website_image_4_3_enabled'] && isset( $_POST['be_schema_website_image_4_3'] ) ) {
+        $settings['website_image_4_3'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_4_3'] ) );
+    }
 
-    $settings['website_image_1_1'] = isset( $_POST['be_schema_website_image_1_1'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_website_image_1_1'] ) )
-        : '';
+    $settings['website_image_1_1_enabled'] = isset( $_POST['be_schema_website_image_1_1_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['website_image_1_1_enabled'] && isset( $_POST['be_schema_website_image_1_1'] ) ) {
+        $settings['website_image_1_1'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_1_1'] ) );
+    }
 
     // Publisher.
     $settings['publisher_enabled'] = isset( $_POST['be_schema_publisher_enabled'] ) ? '1' : '0';
@@ -179,8 +203,23 @@ function be_schema_engine_render_schema_page() {
         $settings['debug_enabled'] = $settings['debug'];
     }
 
-    // Site identity mode.
-    $site_identity_mode = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'mixed';
+    // Site identity mode and toggles.
+    $site_identity_mode = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+    $identity_allowed   = array( 'person', 'organisation', 'publisher' );
+    if ( ! in_array( $site_identity_mode, $identity_allowed, true ) ) {
+        $site_identity_mode = 'publisher';
+    }
+    $identity_person_enabled       = isset( $settings['site_identity_person_enabled'] ) ? '1' === $settings['site_identity_person_enabled'] : true;
+    $identity_organisation_enabled = isset( $settings['site_identity_organisation_enabled'] ) ? '1' === $settings['site_identity_organisation_enabled'] : true;
+    $identity_publisher_enabled    = isset( $settings['site_identity_publisher_enabled'] ) ? '1' === $settings['site_identity_publisher_enabled'] : true;
+
+    if ( 'person' === $site_identity_mode && ! $identity_person_enabled ) {
+        $site_identity_mode = $identity_organisation_enabled ? 'organisation' : ( $identity_publisher_enabled ? 'publisher' : 'person' );
+    } elseif ( 'organisation' === $site_identity_mode && ! $identity_organisation_enabled ) {
+        $site_identity_mode = $identity_person_enabled ? 'person' : ( $identity_publisher_enabled ? 'publisher' : 'organisation' );
+    } elseif ( 'publisher' === $site_identity_mode && ! $identity_publisher_enabled ) {
+        $site_identity_mode = $identity_person_enabled ? 'person' : ( $identity_organisation_enabled ? 'organisation' : 'publisher' );
+    }
 
     // Person.
     $person_enabled          = ! empty( $settings['person_enabled'] ) && '1' === $settings['person_enabled'];
@@ -194,9 +233,14 @@ function be_schema_engine_render_schema_page() {
     $org_name             = isset( $settings['org_name'] ) ? $settings['org_name'] : '';
     $org_legal_name       = isset( $settings['org_legal_name'] ) ? $settings['org_legal_name'] : '';
     $org_url              = isset( $settings['org_url'] ) ? $settings['org_url'] : '';
+    $org_logo_enabled     = isset( $settings['org_logo_enabled'] ) ? '1' === $settings['org_logo_enabled'] : true;
     $org_logo             = isset( $settings['org_logo'] ) ? $settings['org_logo'] : '';
 
     // WebSite featured images.
+    $website_image_16_9_enabled = isset( $settings['website_image_16_9_enabled'] ) ? '1' === $settings['website_image_16_9_enabled'] : true;
+    $website_image_4_3_enabled  = isset( $settings['website_image_4_3_enabled'] ) ? '1' === $settings['website_image_4_3_enabled'] : true;
+    $website_image_1_1_enabled  = isset( $settings['website_image_1_1_enabled'] ) ? '1' === $settings['website_image_1_1_enabled'] : true;
+
     $website_image_16_9 = isset( $settings['website_image_16_9'] ) ? $settings['website_image_16_9'] : '';
     $website_image_4_3  = isset( $settings['website_image_4_3'] ) ? $settings['website_image_4_3'] : '';
     $website_image_1_1  = isset( $settings['website_image_1_1'] ) ? $settings['website_image_1_1'] : '';
@@ -407,6 +451,43 @@ function be_schema_engine_render_schema_page() {
                 display: block;
             }
 
+            /* Global tab sections */
+            .be-schema-global-section {
+                border: 1px solid #ccd0d4;
+                border-radius: 6px;
+                padding: 12px;
+                margin-bottom: 16px;
+                background: #f9fafb;
+            }
+
+            .be-schema-global-section h4 {
+                margin: 0 0 10px;
+            }
+
+            .be-schema-global-divider {
+                margin: 16px 0;
+                border: 0;
+                border-top: 1px solid #dcdcde;
+            }
+
+            .be-schema-identity-options {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .be-schema-identity-option {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .be-schema-website-nav a.be-schema-website-tab-disabled {
+                opacity: 0.5;
+                pointer-events: none;
+                cursor: default;
+            }
+
             .be-schema-image-field {
                 display: flex;
                 flex-wrap: wrap;
@@ -497,18 +578,6 @@ function be_schema_engine_render_schema_page() {
             }
         </style>
 
-        <p>
-            <span class="be-schema-status-pill <?php echo $enabled ? '' : 'off'; ?>">
-                <?php echo $enabled ? esc_html__( 'Schema Engine: ON', 'be-schema-engine' ) : esc_html__( 'Schema Engine: OFF', 'be-schema-engine' ); ?>
-            </span>
-            <span class="be-schema-status-pill <?php echo $elementor_enabled ? '' : 'off'; ?>">
-                <?php echo $elementor_enabled ? esc_html__( 'Elementor Schema: ON', 'be-schema-engine' ) : esc_html__( 'Elementor Schema: OFF', 'be-schema-engine' ); ?>
-            </span>
-            <span class="be-schema-status-pill <?php echo $debug_enabled ? '' : 'off'; ?>">
-                <?php echo $debug_enabled ? esc_html__( 'Plugin Debug: ON', 'be-schema-engine' ) : esc_html__( 'Plugin Debug: OFF', 'be-schema-engine' ); ?>
-            </span>
-        </p>
-
         <p class="description be-schema-description">
             <?php esc_html_e(
                 'Schema is still controlled by several layers: global plugin settings, optional overrides in wp-config.php, per-page disable meta, and Elementor page controls. This page configures site-wide defaults.',
@@ -533,7 +602,7 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-overview"
                            class="be-schema-tab-link"
                            data-schema-tab="overview">
-                            <?php esc_html_e( 'Overview', 'be-schema-engine' ); ?>
+                            <?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?>
                         </a>
                     </li>
                     <li>
@@ -631,11 +700,46 @@ function be_schema_engine_render_schema_page() {
                                 </td>
                             </tr>
 
-                            <tr>
-                                <th scope="row">
-                                    <?php esc_html_e( 'wp-config.php Overrides', 'be-schema-engine' ); ?>
-                                </th>
-                                <td>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <!-- OVERVIEW TAB -->
+                <div id="be-schema-tab-overview" class="be-schema-tab-panel">
+                    <h2><?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?></h2>
+                    <p class="description be-schema-description">
+                        <?php esc_html_e(
+                            'Quick, read-only views of the schema engine state and site health.',
+                            'be-schema-engine'
+                        ); ?>
+                    </p>
+
+                    <div class="be-schema-overview-layout">
+                        <div class="be-schema-overview-nav">
+                            <ul>
+                                <li>
+                                    <a href="#be-schema-overview-snapshots"
+                                       class="be-schema-overview-tab-link be-schema-overview-tab-active"
+                                       data-overview-tab="snapshots">
+                                        <?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#be-schema-overview-health"
+                                       class="be-schema-overview-tab-link"
+                                       data-overview-tab="health">
+                                        <?php esc_html_e( 'Health Check', 'be-schema-engine' ); ?>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="be-schema-overview-panels">
+                            <div id="be-schema-overview-snapshots"
+                                 class="be-schema-overview-panel be-schema-overview-panel-active">
+                                <div class="be-schema-settings-snapshot">
+                                    <h3><?php esc_html_e( 'wp-config.php Overrides', 'be-schema-engine' ); ?></h3>
                                     <ul class="be-schema-description">
                                         <li>
                                             <code>BE_SCHEMA_DISABLE_ALL</code>:
@@ -674,47 +778,8 @@ function be_schema_engine_render_schema_page() {
                                             'be-schema-engine'
                                         ); ?>
                                     </p>
-                                </td>
-                            </tr>
+                                </div>
 
-                        </tbody>
-                    </table>
-
-                </div>
-
-                <!-- OVERVIEW TAB -->
-                <div id="be-schema-tab-overview" class="be-schema-tab-panel">
-                    <h2><?php esc_html_e( 'Overview', 'be-schema-engine' ); ?></h2>
-                    <p class="description be-schema-description">
-                        <?php esc_html_e(
-                            'Quick, read-only views of the schema engine state and site health.',
-                            'be-schema-engine'
-                        ); ?>
-                    </p>
-
-                    <div class="be-schema-overview-layout">
-                        <div class="be-schema-overview-nav">
-                            <ul>
-                                <li>
-                                    <a href="#be-schema-overview-snapshots"
-                                       class="be-schema-overview-tab-link be-schema-overview-tab-active"
-                                       data-overview-tab="snapshots">
-                                        <?php esc_html_e( 'Snapshots', 'be-schema-engine' ); ?>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#be-schema-overview-health"
-                                       class="be-schema-overview-tab-link"
-                                       data-overview-tab="health">
-                                        <?php esc_html_e( 'Health Check', 'be-schema-engine' ); ?>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="be-schema-overview-panels">
-                            <div id="be-schema-overview-snapshots"
-                                 class="be-schema-overview-panel be-schema-overview-panel-active">
                                 <div class="be-schema-settings-snapshot">
                                     <h3><?php esc_html_e( 'Settings Snapshot (Read-Only)', 'be-schema-engine' ); ?></h3>
                                     <p class="description be-schema-description">
@@ -863,22 +928,25 @@ function be_schema_engine_render_schema_page() {
                                 </li>
                                 <li>
                                     <a href="#be-schema-website-person"
-                                       class="be-schema-website-tab-link"
-                                       data-website-tab="person">
+                                       class="be-schema-website-tab-link<?php echo $identity_person_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
+                                       data-website-tab="person"
+                                       <?php echo $identity_person_enabled ? '' : 'aria-disabled="true"'; ?>>
                                         <?php esc_html_e( 'Person', 'be-schema-engine' ); ?>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="#be-schema-website-organization"
-                                       class="be-schema-website-tab-link"
-                                       data-website-tab="organization">
+                                       class="be-schema-website-tab-link<?php echo $identity_organisation_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
+                                       data-website-tab="organization"
+                                       <?php echo $identity_organisation_enabled ? '' : 'aria-disabled="true"'; ?>>
                                         <?php esc_html_e( 'Organisation', 'be-schema-engine' ); ?>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="#be-schema-website-publisher"
-                                       class="be-schema-website-tab-link"
-                                       data-website-tab="publisher">
+                                       class="be-schema-website-tab-link<?php echo $identity_publisher_enabled ? '' : ' be-schema-website-tab-disabled'; ?>"
+                                       data-website-tab="publisher"
+                                       <?php echo $identity_publisher_enabled ? '' : 'aria-disabled="true"'; ?>>
                                         <?php esc_html_e( 'Publisher', 'be-schema-engine' ); ?>
                                     </a>
                                 </li>
@@ -892,202 +960,325 @@ function be_schema_engine_render_schema_page() {
                                  class="be-schema-website-panel be-schema-website-panel-active">
                                 <h3><?php esc_html_e( 'Global', 'be-schema-engine' ); ?></h3>
 
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Site Identity Mode', 'be-schema-engine' ); ?>
-                                            </th>
-                                            <td>
-                                                <fieldset>
+                                <div class="be-schema-global-section">
+                                    <h4><?php esc_html_e( 'Site Identity Mode', 'be-schema-engine' ); ?></h4>
+                                    <table class="form-table">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Site Identity Mode', 'be-schema-engine' ); ?>
+                                                </th>
+                                                <td>
+                                                    <div class="be-schema-identity-options">
+                                                        <div class="be-schema-identity-option">
+                                                            <input type="checkbox"
+                                                                   class="be-schema-identity-checkbox"
+                                                                   id="be_schema_identity_person_checkbox"
+                                                                   name="be_schema_identity_person_enabled"
+                                                                   data-target-radio="be_schema_identity_person_radio"
+                                                                   data-target-tab="person"
+                                                                   <?php checked( $identity_person_enabled ); ?> />
+                                                            <label for="be_schema_identity_person_radio" class="screen-reader-text">
+                                                                <?php esc_html_e( 'Enable Person option', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                           <input type="radio"
+                                                                   id="be_schema_identity_person_radio"
+                                                                   class="be-schema-identity-radio"
+                                                                   name="be_schema_site_identity_mode"
+                                                                   value="person"
+                                                                   <?php checked( 'person', $site_identity_mode ); ?>
+                                                                   <?php disabled( ! $identity_person_enabled ); ?> />
+                                                            <label for="be_schema_identity_person_radio">
+                                                                <?php esc_html_e( 'Person-First (Personal Brand)', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="be-schema-identity-option">
+                                                            <input type="checkbox"
+                                                                   class="be-schema-identity-checkbox"
+                                                                   id="be_schema_identity_org_checkbox"
+                                                                   name="be_schema_identity_org_enabled"
+                                                                   data-target-radio="be_schema_identity_org_radio"
+                                                                   data-target-tab="organization"
+                                                                   <?php checked( $identity_organisation_enabled ); ?> />
+                                                            <label for="be_schema_identity_org_radio" class="screen-reader-text">
+                                                                <?php esc_html_e( 'Enable Organisation option', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                           <input type="radio"
+                                                                   id="be_schema_identity_org_radio"
+                                                                   class="be-schema-identity-radio"
+                                                                   name="be_schema_site_identity_mode"
+                                                                   value="organisation"
+                                                                   <?php checked( 'organisation', $site_identity_mode ); ?>
+                                                                   <?php disabled( ! $identity_organisation_enabled ); ?> />
+                                                            <label for="be_schema_identity_org_radio">
+                                                                <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="be-schema-identity-option">
+                                                            <input type="checkbox"
+                                                                   class="be-schema-identity-checkbox"
+                                                                   id="be_schema_identity_publisher_checkbox"
+                                                                   name="be_schema_identity_publisher_enabled"
+                                                                   data-target-radio="be_schema_identity_publisher_radio"
+                                                                   data-target-tab="publisher"
+                                                                   <?php checked( $identity_publisher_enabled ); ?> />
+                                                            <label for="be_schema_identity_publisher_radio" class="screen-reader-text">
+                                                                <?php esc_html_e( 'Enable Publisher option', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                            <input type="radio"
+                                                                   id="be_schema_identity_publisher_radio"
+                                                                   class="be-schema-identity-radio"
+                                                                   name="be_schema_site_identity_mode"
+                                                                   value="publisher"
+                                                                   <?php checked( 'publisher', $site_identity_mode ); ?>
+                                                                   <?php disabled( ! $identity_publisher_enabled ); ?> />
+                                                            <label for="be_schema_identity_publisher_radio">
+                                                                <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'be-schema-engine' ); ?>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Controls which identity is prioritised for WebSite.about / WebSite.publisher. Other enabled entities remain in the graph as fallbacks.',
+                                                            'be-schema-engine'
+                                                        ); ?>
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="be-schema-global-section">
+                                    <h4><?php esc_html_e( 'Images', 'be-schema-engine' ); ?></h4>
+                                    <table class="form-table">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Site Logo (Shared)', 'be-schema-engine' ); ?>
+                                                </th>
+                                                <td>
                                                     <label>
-                                                        <input type="radio"
-                                                               name="be_schema_site_identity_mode"
-                                                               value="person"
-                                                               <?php checked( 'person', $site_identity_mode ); ?> />
-                                                        <?php esc_html_e( 'Person-First (Personal Brand)', 'be-schema-engine' ); ?>
-                                                    </label><br />
-                                                    <label>
-                                                        <input type="radio"
-                                                               name="be_schema_site_identity_mode"
-                                                               value="organisation"
-                                                               <?php checked( 'organisation', $site_identity_mode ); ?> />
-                                                        <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'be-schema-engine' ); ?>
-                                                    </label><br />
-                                                    <label>
-                                                        <input type="radio"
-                                                               name="be_schema_site_identity_mode"
-                                                               value="mixed"
-                                                               <?php checked( 'mixed', $site_identity_mode ); ?> />
-                                                        <?php esc_html_e( 'Mixed (Site About a Person, Published by an Organisation)', 'be-schema-engine' ); ?>
+                                                        <input type="checkbox"
+                                                               class="be-schema-image-enable"
+                                                               data-target-input="be_schema_org_logo"
+                                                               data-target-select="be_schema_org_logo_select"
+                                                               data-target-clear="be_schema_org_logo_clear"
+                                                               name="be_schema_org_logo_enabled"
+                                                               <?php checked( $org_logo_enabled ); ?> />
+                                                        <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
                                                     </label>
-                                                </fieldset>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'Controls how the WebSite and publisher entities prioritise Person vs Organisation in the graph.',
-                                                        'be-schema-engine'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
+                                                    <div class="be-schema-image-field">
+                                                        <input type="text"
+                                                               id="be_schema_org_logo"
+                                                               name="be_schema_org_logo"
+                                                               value="<?php echo esc_url( $org_logo ); ?>"
+                                                               class="regular-text"
+                                                               <?php disabled( ! $org_logo_enabled ); ?> />
+                                                        <button type="button"
+                                                                class="button be-schema-image-select"
+                                                                id="be_schema_org_logo_select"
+                                                                data-target-input="be_schema_org_logo"
+                                                                data-target-preview="be_schema_org_logo_preview"
+                                                                <?php disabled( ! $org_logo_enabled ); ?>>
+                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="button be-schema-image-clear"
+                                                                id="be_schema_org_logo_clear"
+                                                                data-target-input="be_schema_org_logo"
+                                                                data-target-preview="be_schema_org_logo_preview"
+                                                                <?php disabled( ! $org_logo_enabled ); ?>>
+                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                        </button>
+                                                    </div>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'This logo is used by the Organisation entity, the WebSite entity, and as a fallback for the Person image when a dedicated profile picture is not provided.',
+                                                            'be-schema-engine'
+                                                        ); ?>
+                                                    </p>
+                                                    <div id="be_schema_org_logo_preview"
+                                                         class="be-schema-image-preview">
+                                                        <?php if ( $org_logo ) : ?>
+                                                            <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Site Logo (Shared)', 'be-schema-engine' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
-                                                    <input type="text"
-                                                           id="be_schema_org_logo"
-                                                           name="be_schema_org_logo"
-                                                           value="<?php echo esc_url( $org_logo ); ?>"
-                                                           class="regular-text" />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            data-target-input="be_schema_org_logo"
-                                                            data-target-preview="be_schema_org_logo_preview">
-                                                        <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            data-target-input="be_schema_org_logo"
-                                                            data-target-preview="be_schema_org_logo_preview">
-                                                        <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
-                                                    </button>
-                                                </div>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'This logo is used by the Organisation entity, the WebSite entity, and as a fallback for the Person image when a dedicated profile picture is not provided.',
-                                                        'be-schema-engine'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_org_logo_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $org_logo ) : ?>
-                                                        <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            <tr>
+                                                <td colspan="2">
+                                                    <hr class="be-schema-global-divider" />
+                                                </td>
+                                            </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'WebSite Featured Image (16:9)', 'be-schema-engine' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
-                                                    <input type="text"
-                                                           id="be_schema_website_image_16_9"
-                                                           name="be_schema_website_image_16_9"
-                                                           value="<?php echo esc_url( $website_image_16_9 ); ?>"
-                                                           class="regular-text" />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            data-target-input="be_schema_website_image_16_9"
-                                                            data-target-preview="be_schema_website_image_16_9_preview">
-                                                        <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            data-target-input="be_schema_website_image_16_9"
-                                                            data-target-preview="be_schema_website_image_16_9_preview">
-                                                        <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
-                                                    </button>
-                                                </div>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'Optional. A 16:9 aspect ratio image that can be used by the WebSite or WebPage schema when a featured image is needed.',
-                                                        'be-schema-engine'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_website_image_16_9_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $website_image_16_9 ) : ?>
-                                                        <img src="<?php echo esc_url( $website_image_16_9 ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'be-schema-engine' ); ?>
+                                                </th>
+                                                <td>
+                                                    <label>
+                                                        <input type="checkbox"
+                                                               class="be-schema-image-enable"
+                                                               data-target-input="be_schema_website_image_16_9"
+                                                               data-target-select="be_schema_website_image_16_9_select"
+                                                               data-target-clear="be_schema_website_image_16_9_clear"
+                                                               name="be_schema_website_image_16_9_enabled"
+                                                               <?php checked( $website_image_16_9_enabled ); ?> />
+                                                        <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                    </label>
+                                                    <div class="be-schema-image-field">
+                                                        <input type="text"
+                                                               id="be_schema_website_image_16_9"
+                                                               name="be_schema_website_image_16_9"
+                                                               value="<?php echo esc_url( $website_image_16_9 ); ?>"
+                                                               class="regular-text"
+                                                               <?php disabled( ! $website_image_16_9_enabled ); ?> />
+                                                        <button type="button"
+                                                                class="button be-schema-image-select"
+                                                                id="be_schema_website_image_16_9_select"
+                                                                data-target-input="be_schema_website_image_16_9"
+                                                                data-target-preview="be_schema_website_image_16_9_preview"
+                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
+                                                            <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="button be-schema-image-clear"
+                                                                id="be_schema_website_image_16_9_clear"
+                                                                data-target-input="be_schema_website_image_16_9"
+                                                                data-target-preview="be_schema_website_image_16_9_preview"
+                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
+                                                            <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
+                                                        </button>
+                                                    </div>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Optional. A 16:9 aspect ratio image that can be used by the WebSite or WebPage schema when a featured image is needed.',
+                                                            'be-schema-engine'
+                                                        ); ?>
+                                                    </p>
+                                                    <div id="be_schema_website_image_16_9_preview"
+                                                         class="be-schema-image-preview">
+                                                        <?php if ( $website_image_16_9 ) : ?>
+                                                            <img src="<?php echo esc_url( $website_image_16_9 ); ?>" alt="" />
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
 
-                                        <tr>
-                                            <th scope="row">
+                                            <tr>
+                                                <th scope="row">
                                                 <?php esc_html_e( 'WebSite Featured Image (4:3)', 'be-schema-engine' ); ?>
                                             </th>
                                             <td>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           class="be-schema-image-enable"
+                                                           data-target-input="be_schema_website_image_4_3"
+                                                           data-target-select="be_schema_website_image_4_3_select"
+                                                           data-target-clear="be_schema_website_image_4_3_clear"
+                                                           name="be_schema_website_image_4_3_enabled"
+                                                           <?php checked( $website_image_4_3_enabled ); ?> />
+                                                    <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                </label>
                                                 <div class="be-schema-image-field">
                                                     <input type="text"
                                                            id="be_schema_website_image_4_3"
                                                            name="be_schema_website_image_4_3"
                                                            value="<?php echo esc_url( $website_image_4_3 ); ?>"
-                                                           class="regular-text" />
+                                                           class="regular-text"
+                                                           <?php disabled( ! $website_image_4_3_enabled ); ?> />
                                                     <button type="button"
                                                             class="button be-schema-image-select"
+                                                            id="be_schema_website_image_4_3_select"
                                                             data-target-input="be_schema_website_image_4_3"
-                                                            data-target-preview="be_schema_website_image_4_3_preview">
+                                                            data-target-preview="be_schema_website_image_4_3_preview"
+                                                            <?php disabled( ! $website_image_4_3_enabled ); ?>>
                                                         <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
                                                     </button>
                                                     <button type="button"
                                                             class="button be-schema-image-clear"
+                                                            id="be_schema_website_image_4_3_clear"
                                                             data-target-input="be_schema_website_image_4_3"
-                                                            data-target-preview="be_schema_website_image_4_3_preview">
+                                                            data-target-preview="be_schema_website_image_4_3_preview"
+                                                            <?php disabled( ! $website_image_4_3_enabled ); ?>>
                                                         <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
                                                     </button>
                                                 </div>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'Optional. A 4:3 aspect ratio image for WebSite/WebPage schema where that shape is appropriate.',
-                                                        'be-schema-engine'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_website_image_4_3_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $website_image_4_3 ) : ?>
-                                                        <img src="<?php echo esc_url( $website_image_4_3 ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Optional. A 4:3 aspect ratio image for WebSite/WebPage schema where that shape is appropriate.',
+                                                            'be-schema-engine'
+                                                        ); ?>
+                                                    </p>
+                                                    <div id="be_schema_website_image_4_3_preview"
+                                                         class="be-schema-image-preview">
+                                                        <?php if ( $website_image_4_3 ) : ?>
+                                                            <img src="<?php echo esc_url( $website_image_4_3 ); ?>" alt="" />
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
 
-                                        <tr>
-                                            <th scope="row">
+                                            <tr>
+                                                <th scope="row">
                                                 <?php esc_html_e( 'WebSite Featured Image (1:1)', 'be-schema-engine' ); ?>
                                             </th>
                                             <td>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           class="be-schema-image-enable"
+                                                           data-target-input="be_schema_website_image_1_1"
+                                                           data-target-select="be_schema_website_image_1_1_select"
+                                                           data-target-clear="be_schema_website_image_1_1_clear"
+                                                           name="be_schema_website_image_1_1_enabled"
+                                                           <?php checked( $website_image_1_1_enabled ); ?> />
+                                                    <?php esc_html_e( 'Enable', 'be-schema-engine' ); ?>
+                                                </label>
                                                 <div class="be-schema-image-field">
                                                     <input type="text"
                                                            id="be_schema_website_image_1_1"
                                                            name="be_schema_website_image_1_1"
                                                            value="<?php echo esc_url( $website_image_1_1 ); ?>"
-                                                           class="regular-text" />
+                                                           class="regular-text"
+                                                           <?php disabled( ! $website_image_1_1_enabled ); ?> />
                                                     <button type="button"
                                                             class="button be-schema-image-select"
+                                                            id="be_schema_website_image_1_1_select"
                                                             data-target-input="be_schema_website_image_1_1"
-                                                            data-target-preview="be_schema_website_image_1_1_preview">
+                                                            data-target-preview="be_schema_website_image_1_1_preview"
+                                                            <?php disabled( ! $website_image_1_1_enabled ); ?>>
                                                         <?php esc_html_e( 'Select Image', 'be-schema-engine' ); ?>
                                                     </button>
                                                     <button type="button"
                                                             class="button be-schema-image-clear"
+                                                            id="be_schema_website_image_1_1_clear"
                                                             data-target-input="be_schema_website_image_1_1"
-                                                            data-target-preview="be_schema_website_image_1_1_preview">
+                                                            data-target-preview="be_schema_website_image_1_1_preview"
+                                                            <?php disabled( ! $website_image_1_1_enabled ); ?>>
                                                         <?php esc_html_e( 'Clear', 'be-schema-engine' ); ?>
                                                     </button>
                                                 </div>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'Optional. A square (1:1) featured image for schema use.',
-                                                        'be-schema-engine'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_website_image_1_1_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $website_image_1_1 ) : ?>
-                                                        <img src="<?php echo esc_url( $website_image_1_1 ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Optional. A square (1:1) featured image for schema use.',
+                                                            'be-schema-engine'
+                                                        ); ?>
+                                                    </p>
+                                                    <div id="be_schema_website_image_1_1_preview"
+                                                         class="be-schema-image-preview">
+                                                        <?php if ( $website_image_1_1 ) : ?>
+                                                            <img src="<?php echo esc_url( $website_image_1_1 ); ?>" alt="" />
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <!-- PERSON PANEL -->
@@ -1583,14 +1774,6 @@ function be_schema_engine_render_schema_page() {
                     });
                 }
 
-                tabLinks.forEach(function (link) {
-                    link.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        var tabKey = link.getAttribute('data-schema-tab');
-                        activateSchemaTab(tabKey);
-                    });
-                });
-
                 // Overview vertical tabs.
                 var overviewLinks = document.querySelectorAll('.be-schema-overview-tab-link');
                 var overviewPanels = document.querySelectorAll('.be-schema-overview-panel');
@@ -1621,6 +1804,14 @@ function be_schema_engine_render_schema_page() {
                     });
                 });
 
+                tabLinks.forEach(function (link) {
+                    link.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        var tabKey = link.getAttribute('data-schema-tab');
+                        activateSchemaTab(tabKey);
+                    });
+                });
+
                 // Vertical website tabs.
                 var websiteLinks = document.querySelectorAll('.be-schema-website-tab-link');
                 var websitePanels = document.querySelectorAll('.be-schema-website-panel');
@@ -1639,6 +1830,40 @@ function be_schema_engine_render_schema_page() {
                             panel.classList.add('be-schema-website-panel-active');
                         } else {
                             panel.classList.remove('be-schema-website-panel-active');
+                        }
+                    });
+                }
+
+                function getFirstEnabledWebsiteTab() {
+                    var first = null;
+                    websiteLinks.forEach(function (link) {
+                        if (first) {
+                            return;
+                        }
+                        if (! link.classList.contains('be-schema-website-tab-disabled')) {
+                            first = link.getAttribute('data-website-tab');
+                        }
+                    });
+                    return first;
+                }
+
+                function setWebsiteTabDisabled(tabKey, disabled) {
+                    websiteLinks.forEach(function (link) {
+                        if (link.getAttribute('data-website-tab') !== tabKey) {
+                            return;
+                        }
+                        if (disabled) {
+                            link.classList.add('be-schema-website-tab-disabled');
+                            link.setAttribute('aria-disabled', 'true');
+                            if (link.classList.contains('be-schema-website-tab-active')) {
+                                var fallback = getFirstEnabledWebsiteTab();
+                                if (fallback && fallback !== tabKey) {
+                                    activateWebsiteTab(fallback);
+                                }
+                            }
+                        } else {
+                            link.classList.remove('be-schema-website-tab-disabled');
+                            link.removeAttribute('aria-disabled');
                         }
                     });
                 }
@@ -1742,6 +1967,87 @@ function be_schema_engine_render_schema_page() {
                             preview.innerHTML = '';
                         }
                     });
+                });
+
+                // Image enable/disable toggles (Global tab).
+                var imageEnableToggles = document.querySelectorAll('.be-schema-image-enable');
+
+                function toggleImageField(toggle) {
+                    var targetInputId = toggle.getAttribute('data-target-input');
+                    var targetSelectId = toggle.getAttribute('data-target-select');
+                    var targetClearId = toggle.getAttribute('data-target-clear');
+
+                    var input = document.getElementById(targetInputId);
+                    var selectBtn = document.getElementById(targetSelectId);
+                    var clearBtn = document.getElementById(targetClearId);
+
+                    var enabled = toggle.checked;
+
+                    if (input) {
+                        input.disabled = ! enabled;
+                    }
+                    if (selectBtn) {
+                        selectBtn.disabled = ! enabled;
+                    }
+                    if (clearBtn) {
+                        clearBtn.disabled = ! enabled;
+                    }
+                }
+
+                imageEnableToggles.forEach(function (toggle) {
+                    toggle.addEventListener('change', function () {
+                        toggleImageField(toggle);
+                    });
+                    toggleImageField(toggle);
+                });
+
+                // Identity option enable/disable.
+                var identityCheckboxes = document.querySelectorAll('.be-schema-identity-checkbox');
+
+                function updateIdentityOption(checkbox) {
+                    var radioId = checkbox.getAttribute('data-target-radio');
+                    var radio = document.getElementById(radioId);
+                    if (! radio) {
+                        return;
+                    }
+
+                    if (checkbox.checked) {
+                        radio.disabled = false;
+                        return;
+                    }
+
+                    var wasChecked = radio.checked;
+                    radio.disabled = true;
+                    radio.checked = false;
+
+                    if (wasChecked) {
+                        var fallback = document.querySelector('.be-schema-identity-radio:not(:disabled)');
+                        if (fallback) {
+                            fallback.checked = true;
+                        }
+                    }
+                }
+
+                identityCheckboxes.forEach(function (checkbox) {
+                    checkbox.addEventListener('change', function () {
+                        updateIdentityOption(checkbox);
+                    });
+                    updateIdentityOption(checkbox);
+                });
+
+                function updateIdentityTabLink(checkbox) {
+                    var tabKey = checkbox.getAttribute('data-target-tab');
+                    if (! tabKey) {
+                        return;
+                    }
+                    setWebsiteTabDisabled(tabKey, ! checkbox.checked);
+                }
+
+                identityCheckboxes.forEach(function (checkbox) {
+                    checkbox.addEventListener('change', function () {
+                        updateIdentityTabLink(checkbox);
+                    });
+                    updateIdentityTabLink(checkbox);
                 });
             });
         </script>

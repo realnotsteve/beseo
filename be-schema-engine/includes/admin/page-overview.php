@@ -125,13 +125,14 @@ function be_schema_engine_render_overview_page() {
     );
     ?>
     <style>
+         h2 {font-size: 36px;}
         .be-schema-overview-hero {
             background-image: url('<?php echo esc_url( $hero_image_url ); ?>');
             background-size: cover;
             background-position: center;
             border-radius: 8px;
             padding: 24px;
-            min-height: 100vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
@@ -144,6 +145,8 @@ function be_schema_engine_render_overview_page() {
             justify-content: space-between;
             text-align: left;
             flex: 1;
+            height: 100%;
+            min-height: 0;
         }
         .be-schema-overview-hero h1,
         .be-schema-overview-hero p {
@@ -172,6 +175,7 @@ function be_schema_engine_render_overview_page() {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            min-height: 0;
         }
         .be-schema-overview-hero .be-schema-hero-changelog {
             flex: 1 1 0;
@@ -179,7 +183,9 @@ function be_schema_engine_render_overview_page() {
             display: flex;
             flex-direction: column;
             max-height: none;
-            overflow: auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
             white-space: normal;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             font-size: 13px;
@@ -189,6 +195,9 @@ function be_schema_engine_render_overview_page() {
         .be-schema-overview-hero .be-schema-hero-content a {
             color: #000;
             text-decoration: underline;
+        }
+        .be-schema-status-row {
+            margin: 12px 0 0;
         }
         .description a {
             text-decoration: none !important;
@@ -212,6 +221,18 @@ function be_schema_engine_render_overview_page() {
                         /* translators: %s is the plugin version. */
                         printf( esc_html__( 'Version : %s', 'be-schema-engine' ), esc_html( $version ) );
                         ?>
+                    </p>
+
+                    <p class="be-schema-status-row">
+                        <span class="be-schema-status-pill <?php echo $enabled ? '' : 'off'; ?>">
+                            <?php echo $enabled ? esc_html__( 'Schema Engine: ON', 'be-schema-engine' ) : esc_html__( 'Schema Engine: OFF', 'be-schema-engine' ); ?>
+                        </span>
+                        <span class="be-schema-status-pill <?php echo $elementor_enabled ? '' : 'off'; ?>">
+                            <?php echo $elementor_enabled ? esc_html__( 'Elementor Schema: ON', 'be-schema-engine' ) : esc_html__( 'Elementor Schema: OFF', 'be-schema-engine' ); ?>
+                        </span>
+                        <span class="be-schema-status-pill <?php echo $debug_enabled ? '' : 'off'; ?>">
+                            <?php echo $debug_enabled ? esc_html__( 'Plugin Debug: ON', 'be-schema-engine' ) : esc_html__( 'Plugin Debug: OFF', 'be-schema-engine' ); ?>
+                        </span>
                     </p>
 
                     <p class="description" style="margin-top: 12pt;">
