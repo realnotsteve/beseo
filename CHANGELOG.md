@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.26] - 2025-12-09
+- Bump type: patch
+- Files:
+- beseo.php
+
 ## [1.3.25] - 2025-12-09
 - Bump type: patch
 - Files:
