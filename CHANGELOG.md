@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.30] - 2025-12-09
+- Bump type: patch
+- Files:
+- CHANGELOG2.md
+
 ## [1.3.29] - 2025-12-09
 - Bump type: patch
 - Files:
