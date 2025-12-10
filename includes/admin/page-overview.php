@@ -42,90 +42,139 @@ function be_schema_engine_render_overview_page() {
     /**
      * Render a small subset of Markdown into safe HTML for the hero preview.
      *
-     * Supports headings (#, ##, ###), bullet lists (- item), and paragraphs.
+     * Supports headings (#, ##, ###), bullet lists (- item), and paragraphs,
+     * plus styling hooks for bump type, files list, and filenames.
      *
      * @param string $markdown Raw markdown snippet.
      * @return string HTML.
      */
     $render_changelog = function ( $markdown ) {
-        $lines    = preg_split( "/\r?\n/", $markdown );
-        $html     = '';
-        $in_list  = false;
+        $lines          = preg_split( "/\r?\n/", $markdown );
+        $html           = '';
+        $open_list_type = ''; // '', 'generic', or 'files'.
+
+        $close_list = static function () use ( &$html, &$open_list_type ) {
+            if ( '' !== $open_list_type ) {
+                $html          .= '</ul>';
+                $open_list_type = '';
+            }
+        };
+
         foreach ( $lines as $line ) {
             $trim = trim( $line );
             if ( '' === $trim ) {
-                if ( $in_list ) {
-                    $html   .= '</ul>';
-                    $in_list = false;
-                }
+                $close_list();
                 continue;
             }
 
             if ( 0 === strpos( $trim, '### ' ) ) {
-                if ( $in_list ) {
-                    $html   .= '</ul>';
-                    $in_list = false;
-                }
-                $html .= '<h3>' . esc_html( substr( $trim, 4 ) ) . '</h3>';
+                $close_list();
+                $html .= '<h4 class="be-changelog-heading be-changelog-subsection">' . esc_html( substr( $trim, 4 ) ) . '</h4>';
                 continue;
             }
 
             if ( 0 === strpos( $trim, '## ' ) ) {
-                if ( $in_list ) {
-                    $html   .= '</ul>';
-                    $in_list = false;
-                }
-                $html .= '<h2>' . esc_html( substr( $trim, 3 ) ) . '</h2>';
+                $close_list();
+                $html .= '<h3 class="be-changelog-heading be-changelog-version">' . esc_html( substr( $trim, 3 ) ) . '</h3>';
                 continue;
             }
 
             if ( 0 === strpos( $trim, '# ' ) ) {
-                if ( $in_list ) {
-                    $html   .= '</ul>';
-                    $in_list = false;
-                }
-                $html .= '<h2>' . esc_html( substr( $trim, 2 ) ) . '</h2>';
+                $close_list();
+                $html .= '<h2 class="be-changelog-heading be-changelog-title">' . esc_html( substr( $trim, 2 ) ) . '</h2>';
+                continue;
+            }
+
+            if ( preg_match( '/^-\\s*Bump type:\\s*(.+)$/i', $trim, $m ) ) {
+                $close_list();
+                $html .= '<p class="be-changelog-bump">Bump type: ' . esc_html( $m[1] ) . '</p>';
+                continue;
+            }
+
+            if ( preg_match( '/^-\\s*Files:?$/i', $trim ) ) {
+                $close_list();
+                $html          .= '<p class="be-changelog-files-label">Files</p>';
+                $html          .= '<ul class="be-changelog-files">';
+                $open_list_type = 'files';
                 continue;
             }
 
             if ( 0 === strpos( $trim, '- ' ) ) {
-                if ( ! $in_list ) {
-                    $html   .= '<ul>';
-                    $in_list = true;
+                $content = substr( $trim, 2 );
+                if ( '' === $open_list_type ) {
+                    $html          .= '<ul>';
+                    $open_list_type = 'generic';
                 }
-                $html .= '<li>' . esc_html( substr( $trim, 2 ) ) . '</li>';
+
+                if ( 'files' === $open_list_type ) {
+                    $html .= '<li><span class="be-changelog-file">' . esc_html( $content ) . '</span></li>';
+                } else {
+                    $html .= '<li>' . esc_html( $content ) . '</li>';
+                }
                 continue;
             }
 
-            if ( $in_list ) {
-                $html   .= '</ul>';
-                $in_list = false;
-            }
-
+            $close_list();
             $html .= '<p>' . esc_html( $trim ) . '</p>';
         }
 
-        if ( $in_list ) {
-            $html .= '</ul>';
-        }
+        $close_list();
 
         return $html;
     };
+
+    // Current runtime flags (schema + social).
+    $engine_settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : get_option( 'be_schema_engine_settings', array() );
+    if ( ! is_array( $engine_settings ) ) {
+        $engine_settings = array();
+    }
+
+    $enabled           = function_exists( 'be_schema_globally_disabled' ) ? ! be_schema_globally_disabled() : ( '1' === (string) ( $engine_settings['enabled'] ?? '0' ) );
+    $elementor_enabled = function_exists( 'be_schema_elementor_disabled' ) ? ! be_schema_elementor_disabled() : ( '1' === (string) ( $engine_settings['elementor_enabled'] ?? '0' ) );
+    $debug_enabled     = function_exists( 'be_schema_is_debug_enabled' ) ? be_schema_is_debug_enabled() : ( '1' === (string) ( $engine_settings['debug_enabled'] ?? ( $engine_settings['debug'] ?? '0' ) ) );
+
+    $social_settings = function_exists( 'be_schema_social_get_settings' ) ? be_schema_social_get_settings() : get_option( 'be_schema_social_settings', array() );
+    if ( ! is_array( $social_settings ) ) {
+        $social_settings = array();
+    }
+
+    $og_enabled = false;
+    if ( isset( $social_settings['social_enable_og'] ) ) {
+        $og_enabled = '1' === (string) $social_settings['social_enable_og'];
+    } elseif ( isset( $social_settings['og_enabled'] ) ) {
+        $og_enabled = '1' === (string) $social_settings['og_enabled'];
+    } elseif ( isset( $social_settings['enabled'] ) ) {
+        $og_enabled = '1' === (string) $social_settings['enabled'];
+    }
+
+    $twitter_enabled = false;
+    if ( isset( $social_settings['social_enable_twitter'] ) ) {
+        $twitter_enabled = '1' === (string) $social_settings['social_enable_twitter'];
+    } elseif ( isset( $social_settings['twitter_enabled'] ) ) {
+        $twitter_enabled = '1' === (string) $social_settings['twitter_enabled'];
+    } elseif ( isset( $social_settings['enabled'] ) ) {
+        $twitter_enabled = '1' === (string) $social_settings['enabled'];
+    }
 
     $changelog_html      = $render_changelog( $changelog_text );
     $changelog_html_safe = wp_kses(
         $changelog_html,
         array(
-            'h2' => array(),
-            'h3' => array(),
-            'ul' => array(),
-            'li' => array(),
-            'p'  => array(),
+            'h2'   => array( 'class' => array() ),
+            'h3'   => array( 'class' => array() ),
+            'h4'   => array( 'class' => array() ),
+            'ul'   => array( 'class' => array() ),
+            'li'   => array( 'class' => array() ),
+            'p'    => array( 'class' => array() ),
+            'span' => array( 'class' => array() ),
         )
     );
     ?>
     <style>
          h2 {font-size: 36px;}
+        .beseo-overview-wrap {
+            margin-top: 20px; /* preserve top spacing; use WP's default horizontal gutters */
+        }
         .be-schema-overview-hero {
             background-image: url('<?php echo esc_url( $hero_image_url ); ?>');
             background-size: cover;
@@ -148,7 +197,6 @@ function be_schema_engine_render_overview_page() {
             height: 100%;
             min-height: 0;
         }
-        .be-schema-overview-hero h1,
         .be-schema-overview-hero p {
             color: #000;
             text-shadow: none;
@@ -188,9 +236,38 @@ function be_schema_engine_render_overview_page() {
             overflow-x: hidden;
             white-space: normal;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 13px;
+            font-size: 23px;
             line-height: 1.5;
-            color: #111;
+            color: #344cfdff;
+        }
+        .be-schema-hero-changelog .be-changelog-heading {
+            margin: 10px 0 6px;
+        }
+        .be-schema-hero-changelog .be-changelog-title {
+            margin-top: 0;
+        }
+        .be-schema-hero-changelog .be-changelog-version {
+            margin: 16px 0 8px; /* controls space above/below the version/date heading */
+        }
+        .be-schema-hero-changelog .be-changelog-bump {
+            font-weight: 600;
+            margin: 4px 0 6px;
+        }
+        .be-schema-hero-changelog .be-changelog-files-label {
+            font-weight: 600;
+            margin: 6px 0 4px;
+        }
+        .be-schema-hero-changelog ul.be-changelog-files {
+            list-style: square outside !important;
+            margin: 0 0 10px 18px;
+            padding-left: 0;
+        }
+        .be-schema-hero-changelog ul.be-changelog-files li {
+            margin: 2px 0;
+            padding-left: 2px;
+        }
+        .be-schema-hero-changelog .be-changelog-file {
+            font-family: Menlo, Consolas, "Liberation Mono", monospace;
         }
         .be-schema-overview-hero .be-schema-hero-content a {
             color: #000;
@@ -199,11 +276,28 @@ function be_schema_engine_render_overview_page() {
         .be-schema-status-row {
             margin: 12px 0 0;
         }
+        .be-schema-status-pill {
+            display: inline-block;
+            margin: 4px 6px 0 0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.01em;
+            background-color: #31b355ff;
+            border: 1px solid #2a2a2aff;
+            color: #0f5132;
+        }
+        .be-schema-status-pill.off {
+            background-color: #b03e31ff;
+            border: 1px solid #2a2a2aff;
+            color: #8c1d18;
+        }
         .description a {
             text-decoration: none !important;
         }
         .description a:hover {
-            text-decoration: underline;
+            text-decoration: underline !important;;
         }
     </style>
 
@@ -234,7 +328,14 @@ function be_schema_engine_render_overview_page() {
                             <?php echo $debug_enabled ? esc_html__( 'Plugin Debug: ON', 'beseo' ) : esc_html__( 'Plugin Debug: OFF', 'beseo' ); ?>
                         </span>
                     </p>
-
+                    <p class="be-schema-status-row">
+                        <span class="be-schema-status-pill <?php echo $og_enabled ? '' : 'off'; ?>">
+                            <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'beseo' ) : esc_html__( 'OpenGraph: OFF', 'beseo' ); ?>
+                        </span>
+                        <span class="be-schema-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
+                            <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'beseo' ) : esc_html__( 'Twitter Cards: OFF', 'beseo' ); ?>
+                        </span>
+                    </p>
                     <p class="description" style="margin-top: 12pt;">
                         <a href="https://github.com/realnotsteve/beseo" target="_blank" rel="noopener noreferrer">GitHub</a><span class="dashicons dashicons-external"></span>
                     </p>
@@ -245,7 +346,6 @@ function be_schema_engine_render_overview_page() {
                 </div>
 
                 <div class="be-schema-hero-changelog" aria-label="<?php esc_attr_e( 'Changelog preview', 'beseo' ); ?>">
-                    <h2><?php esc_html_e( 'Changelog', 'beseo' ); ?></h2>
                     <?php echo $changelog_html_safe; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
             </div>

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.34] - 2025-12-10
+- Bump type: patch
+- Files:
+- includes/admin/page-overview.php
+
 ## [1.3.33] - 2025-12-09
 - Bump type: patch
 - Files:
