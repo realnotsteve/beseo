@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.37] - 2025-12-10
+- Bump type: patch
+- Files:
+- includes/admin/page-schema.php
+
 ## [1.3.36] - 2025-12-10
 - Bump type: patch
 - Files:

@@ -522,7 +522,6 @@ function be_schema_engine_render_schema_page() {
             }
 
             .be-schema-settings-snapshot {
-                max-width: 800px;
                 margin-top: 24px;
             }
 
@@ -555,7 +554,6 @@ function be_schema_engine_render_schema_page() {
 
             /* Health check table */
             .be-schema-health-table {
-                max-width: 800px;
                 margin-top: 16px;
             }
 
@@ -710,7 +708,7 @@ function be_schema_engine_render_schema_page() {
                     <h2><?php esc_html_e( 'Snapshots', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
-                            'Quick, read-only views of the schema engine state and site health.',
+                            'Quick, read-only views of the schema engine state, WordPress overrides, and site health.',
                             'beseo'
                         ); ?>
                     </p>
@@ -723,6 +721,13 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-overview-tab-link be-schema-overview-tab-active"
                                        data-overview-tab="snapshots">
                                         <?php esc_html_e( 'Snapshots', 'beseo' ); ?>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#be-schema-overview-wordpress"
+                                       class="be-schema-overview-tab-link"
+                                       data-overview-tab="wordpress">
+                                        <?php esc_html_e( 'WordPress', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -739,7 +744,60 @@ function be_schema_engine_render_schema_page() {
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
                                 <div class="be-schema-settings-snapshot">
-                                    <h3><?php esc_html_e( 'wp-config.php Overrides', 'beseo' ); ?></h3>
+                                    <p class="description be-schema-description">
+                                        <?php esc_html_e(
+                                            'A compact view of the current be_schema_engine_settings option, useful for debugging and verifying that values are saved as expected.',
+                                            'beseo'
+                                        ); ?>
+                                    </p>
+                                    <?php if ( ! empty( $settings ) && is_array( $settings ) ) : ?>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th class="be-schema-settings-snapshot-key">
+                                                        <?php esc_html_e( 'Key', 'beseo' ); ?>
+                                                    </th>
+                                                    <th class="be-schema-settings-snapshot-value">
+                                                        <?php esc_html_e( 'Value', 'beseo' ); ?>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ( $settings as $key => $value ) : ?>
+                                                    <tr>
+                                                        <td class="be-schema-settings-snapshot-key">
+                                                            <?php echo esc_html( $key ); ?>
+                                                        </td>
+                                                        <td class="be-schema-settings-snapshot-value">
+                                                            <?php
+                                                            if ( is_bool( $value ) ) {
+                                                                echo $value ? esc_html__( 'true', 'beseo' ) : esc_html__( 'false', 'beseo' );
+                                                            } elseif ( is_array( $value ) ) {
+                                                                echo empty( $value ) ? '-' : esc_html( wp_json_encode( $value ) );
+                                                            } else {
+                                                                $string_value = (string) $value;
+                                                                if ( '' === trim( $string_value ) ) {
+                                                                    $string_value = '-';
+                                                                } elseif ( mb_strlen( $string_value ) > 140 ) {
+                                                                    $string_value = mb_substr( $string_value, 0, 140 ) . '…';
+                                                                }
+                                                                echo esc_html( $string_value );
+                                                            }
+                                                            ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    <?php else : ?>
+                                        <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div id="be-schema-overview-wordpress" class="be-schema-overview-panel">
+                                <div class="be-schema-settings-snapshot">
+                                    <h3><?php esc_html_e( 'wp-config Overrides', 'beseo' ); ?></h3>
                                     <ul class="be-schema-description">
                                         <li>
                                             <code>BE_SCHEMA_DISABLE_ALL</code>:
@@ -778,56 +836,6 @@ function be_schema_engine_render_schema_page() {
                                             'beseo'
                                         ); ?>
                                     </p>
-                                </div>
-
-                                <div class="be-schema-settings-snapshot">
-                                    <h3><?php esc_html_e( 'Settings Snapshot (Read-Only)', 'beseo' ); ?></h3>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'A compact view of the current be_schema_engine_settings option, useful for debugging and verifying that values are saved as expected.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                    <?php if ( ! empty( $settings ) && is_array( $settings ) ) : ?>
-                                        <table>
-                                            <thead>
-                                                <tr>
-                                                    <th class="be-schema-settings-snapshot-key">
-                                                        <?php esc_html_e( 'Key', 'beseo' ); ?>
-                                                    </th>
-                                                    <th class="be-schema-settings-snapshot-value">
-                                                        <?php esc_html_e( 'Value', 'beseo' ); ?>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ( $settings as $key => $value ) : ?>
-                                                    <tr>
-                                                        <td class="be-schema-settings-snapshot-key">
-                                                            <?php echo esc_html( $key ); ?>
-                                                        </td>
-                                                        <td class="be-schema-settings-snapshot-value">
-                                                            <?php
-                                                            if ( is_bool( $value ) ) {
-                                                                echo $value ? esc_html__( 'true', 'beseo' ) : esc_html__( 'false', 'beseo' );
-                                                            } elseif ( is_array( $value ) ) {
-                                                                echo esc_html( wp_json_encode( $value ) );
-                                                            } else {
-                                                                $string_value = (string) $value;
-                                                                if ( mb_strlen( $string_value ) > 140 ) {
-                                                                    $string_value = mb_substr( $string_value, 0, 140 ) . '…';
-                                                                }
-                                                                echo esc_html( $string_value );
-                                                            }
-                                                            ?>
-                                                        </td>
-                                                    </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    <?php else : ?>
-                                        <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
-                                    <?php endif; ?>
                                 </div>
                             </div>
 
