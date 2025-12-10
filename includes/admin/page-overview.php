@@ -171,6 +171,10 @@ function be_schema_engine_render_overview_page() {
     );
     ?>
     <style>
+        body.wp-admin.toplevel_page_beseo #wpcontent,
+        body.wp-admin.toplevel_page_beseo #wpbody-content {
+            background: #b5b7bf; /* pick your color */
+        }
          h2 {font-size: 36px;}
         .beseo-overview-wrap {
             margin-top: 20px; /* preserve top spacing; use WP's default horizontal gutters */
@@ -236,34 +240,38 @@ function be_schema_engine_render_overview_page() {
             overflow-x: hidden;
             white-space: normal;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 23px;
+            font-size: 12px;
             line-height: 1.5;
-            color: #344cfdff;
+            color: #000000ff;
         }
         .be-schema-hero-changelog .be-changelog-heading {
             margin: 10px 0 6px;
         }
         .be-schema-hero-changelog .be-changelog-title {
-            margin-top: 0;
+            margin-top: 18px;
         }
         .be-schema-hero-changelog .be-changelog-version {
-            margin: 16px 0 8px; /* controls space above/below the version/date heading */
+            margin: 16px 0px 0px 0px; /* controls space above/below the version/date heading */
+            color: #333692ff;
         }
         .be-schema-hero-changelog .be-changelog-bump {
             font-weight: 600;
-            margin: 4px 0 6px;
+            margin: 4px 0 0px;
+            color: #5a3554ff;
         }
         .be-schema-hero-changelog .be-changelog-files-label {
             font-weight: 600;
-            margin: 6px 0 4px;
+            margin: 1px 0px 0px;
+            color: #484848ff;
         }
         .be-schema-hero-changelog ul.be-changelog-files {
             list-style: square outside !important;
-            margin: 0 0 10px 18px;
+            margin: 0px 0px 0px 18px;
             padding-left: 0;
+            color: #484848ff;
         }
         .be-schema-hero-changelog ul.be-changelog-files li {
-            margin: 2px 0;
+            margin: 0px 0px;
             padding-left: 2px;
         }
         .be-schema-hero-changelog .be-changelog-file {
@@ -286,12 +294,12 @@ function be_schema_engine_render_overview_page() {
             letter-spacing: 0.01em;
             background-color: #31b355ff;
             border: 1px solid #2a2a2aff;
-            color: #0f5132;
+            color: #ffffffff;
         }
         .be-schema-status-pill.off {
             background-color: #b03e31ff;
             border: 1px solid #2a2a2aff;
-            color: #8c1d18;
+            color: #ffffffff;
         }
         .description a {
             text-decoration: none !important;
@@ -337,11 +345,8 @@ function be_schema_engine_render_overview_page() {
                         </span>
                     </p>
                     <p class="description" style="margin-top: 12pt;">
-                        <a href="https://github.com/realnotsteve/beseo" target="_blank" rel="noopener noreferrer">GitHub</a><span class="dashicons dashicons-external"></span>
-                    </p>
-
-                    <p class="description" style="margin-top: 12pt;">
-                        <a href="https://billevans.be" target="_blank" rel="noopener noreferrer">Bill's Site</a> <span class="dashicons dashicons-external"></span>
+                        <a href="https://github.com/realnotsteve/beseo" style="margin-right: 1px;" target="_blank" rel="noopener noreferrer">GitHub</a><span style="vertical-align: -4px; margin-right: 6px;" class="dashicons dashicons-external"></span>
+                        <a href="https://billevans.be" style="margin-left: 6px; margin-right: 1px;" target="_blank" rel="noopener noreferrer">Bill's Site</a><span style="vertical-align: -4px;" class="dashicons dashicons-external"></span>
                     </p>
                 </div>
 
