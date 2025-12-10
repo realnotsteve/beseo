@@ -31,7 +31,13 @@ function be_schema_engine_render_overview_page() {
     if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
         $raw = file_get_contents( $changelog_path );
         if ( false !== $raw ) {
-            $changelog_text = substr( $raw, 0, 1200 ); // keep preview short.
+            $max_preview_lines = 120; // keep preview short without cutting mid-line.
+            $lines             = preg_split( "/\r?\n/", $raw );
+            if ( is_array( $lines ) ) {
+                $changelog_text = implode( "\n", array_slice( $lines, 0, $max_preview_lines ) );
+            } else {
+                $changelog_text = $raw;
+            }
         }
     }
 
@@ -93,7 +99,7 @@ function be_schema_engine_render_overview_page() {
 
             if ( preg_match( '/^-\\s*Files:?$/i', $trim ) ) {
                 $close_list();
-                $html          .= '<p class="be-changelog-files-label">Files</p>';
+               /* $html          .= '<p class="be-changelog-files-label">Files</p>'; */
                 $html          .= '<ul class="be-changelog-files">';
                 $open_list_type = 'files';
                 continue;
@@ -316,7 +322,7 @@ function be_schema_engine_render_overview_page() {
                 $version = defined( 'BE_SCHEMA_ENGINE_VERSION' ) ? BE_SCHEMA_ENGINE_VERSION : '';
                 ?>
                 <div class="be-schema-hero-content">
-                    <h2><?php esc_html_e( 'BE SEO', 'beseo' ); ?></h2>
+                    <h2 style="margin-bottom: 8px"><?php esc_html_e( 'BE SEO', 'beseo' ); ?></h2>
 
                     <p class="description">
                         <?php
