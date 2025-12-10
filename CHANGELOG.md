@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.38] - 2025-12-10
+- Bump type: patch
+- Files:
+- includes/admin/page-overview.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+
 ## [1.3.37] - 2025-12-10
 - Bump type: patch
 - Files:

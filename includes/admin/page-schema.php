@@ -329,7 +329,7 @@ function be_schema_engine_render_schema_page() {
             }
 
             .be-schema-description {
-                max-width: 760px;
+                max-width: none;
             }
 
             .be-schema-status-pill {
@@ -455,13 +455,22 @@ function be_schema_engine_render_schema_page() {
             .be-schema-global-section {
                 border: 1px solid #ccd0d4;
                 border-radius: 6px;
-                padding: 12px;
+                padding: 0;
                 margin-bottom: 16px;
                 background: #f9fafb;
+                color: #111;
+            }
+
+            .be-schema-section-title {
+                display: block;
+                margin: 0;
+                padding: 12px;
+                background: #0f172a;
+                color: #f9fafb;
             }
 
             .be-schema-global-section h4 {
-                margin: 0 0 10px;
+                margin: 0;
             }
 
             .be-schema-global-divider {
@@ -473,13 +482,37 @@ function be_schema_engine_render_schema_page() {
             .be-schema-identity-options {
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
+                gap: 8px;
+                padding: 12px;
             }
 
             .be-schema-identity-option {
                 display: flex;
                 align-items: center;
-                gap: 10px;
+                gap: 12px;
+                flex-wrap: nowrap;
+            }
+
+            .be-schema-identity-toggle {
+                flex: 1;
+                display: flex;
+                align-items: center;
+            }
+
+            .be-schema-identity-priority {
+                width: 160px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .be-schema-identity-toggle label,
+            .be-schema-identity-priority label {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 600;
+                margin: 0;
             }
 
             .be-schema-website-nav a.be-schema-website-tab-disabled {
@@ -493,6 +526,15 @@ function be_schema_engine_render_schema_page() {
                 flex-wrap: wrap;
                 align-items: center;
                 gap: 10px;
+            }
+
+            .be-schema-image-field .be-schema-image-enable-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin: 0;
+                font-weight: 600;
+                align-self: center;
             }
 
             .be-schema-image-field input[type="text"] {
@@ -717,10 +759,17 @@ function be_schema_engine_render_schema_page() {
                         <div class="be-schema-overview-nav">
                             <ul>
                                 <li>
+                                    <a href="#be-schema-overview-health"
+                                       class="be-schema-overview-tab-link"
+                                       data-overview-tab="health">
+                                        <?php esc_html_e( 'Health Check', 'beseo' ); ?>
+                                    </a>
+                                </li>
+                                <li>
                                     <a href="#be-schema-overview-snapshots"
                                        class="be-schema-overview-tab-link be-schema-overview-tab-active"
                                        data-overview-tab="snapshots">
-                                        <?php esc_html_e( 'Snapshots', 'beseo' ); ?>
+                                        <?php esc_html_e( 'Individual Schema', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -728,13 +777,6 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-overview-tab-link"
                                        data-overview-tab="wordpress">
                                         <?php esc_html_e( 'WordPress', 'beseo' ); ?>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#be-schema-overview-health"
-                                       class="be-schema-overview-tab-link"
-                                       data-overview-tab="health">
-                                        <?php esc_html_e( 'Health Check', 'beseo' ); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -969,82 +1011,94 @@ function be_schema_engine_render_schema_page() {
                                 <h3><?php esc_html_e( 'Global', 'beseo' ); ?></h3>
 
                                 <div class="be-schema-global-section">
-                                    <h4><?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?></h4>
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Identity', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-identity-options">
                                                         <div class="be-schema-identity-option">
-                                                            <input type="checkbox"
-                                                                   class="be-schema-identity-checkbox"
-                                                                   id="be_schema_identity_person_checkbox"
-                                                                   name="be_schema_identity_person_enabled"
-                                                                   data-target-radio="be_schema_identity_person_radio"
-                                                                   data-target-tab="person"
-                                                                   <?php checked( $identity_person_enabled ); ?> />
-                                                            <label for="be_schema_identity_person_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Person option', 'beseo' ); ?>
-                                                            </label>
-                                                           <input type="radio"
-                                                                   id="be_schema_identity_person_radio"
-                                                                   class="be-schema-identity-radio"
-                                                                   name="be_schema_site_identity_mode"
-                                                                   value="person"
-                                                                   <?php checked( 'person', $site_identity_mode ); ?>
-                                                                   <?php disabled( ! $identity_person_enabled ); ?> />
-                                                            <label for="be_schema_identity_person_radio">
-                                                                <?php esc_html_e( 'Person-First (Personal Brand)', 'beseo' ); ?>
-                                                            </label>
+                                                            <div class="be-schema-identity-toggle">
+                                                                <label for="be_schema_identity_person_checkbox">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-identity-checkbox"
+                                                                           id="be_schema_identity_person_checkbox"
+                                                                           name="be_schema_identity_person_enabled"
+                                                                           data-target-radio="be_schema_identity_person_radio"
+                                                                           data-target-tab="person"
+                                                                           <?php checked( $identity_person_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Person-First (Personal Brand)', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
+                                                            <div class="be-schema-identity-priority">
+                                                                <label for="be_schema_identity_person_radio">
+                                                                    <input type="radio"
+                                                                           id="be_schema_identity_person_radio"
+                                                                           class="be-schema-identity-radio"
+                                                                           name="be_schema_site_identity_mode"
+                                                                           value="person"
+                                                                           <?php checked( 'person', $site_identity_mode ); ?>
+                                                                           <?php disabled( ! $identity_person_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Priority', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
                                                         </div>
 
                                                         <div class="be-schema-identity-option">
-                                                            <input type="checkbox"
-                                                                   class="be-schema-identity-checkbox"
-                                                                   id="be_schema_identity_org_checkbox"
-                                                                   name="be_schema_identity_org_enabled"
-                                                                   data-target-radio="be_schema_identity_org_radio"
-                                                                   data-target-tab="organization"
-                                                                   <?php checked( $identity_organisation_enabled ); ?> />
-                                                            <label for="be_schema_identity_org_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Organisation option', 'beseo' ); ?>
-                                                            </label>
-                                                           <input type="radio"
-                                                                   id="be_schema_identity_org_radio"
-                                                                   class="be-schema-identity-radio"
-                                                                   name="be_schema_site_identity_mode"
-                                                                   value="organisation"
-                                                                   <?php checked( 'organisation', $site_identity_mode ); ?>
-                                                                   <?php disabled( ! $identity_organisation_enabled ); ?> />
-                                                            <label for="be_schema_identity_org_radio">
-                                                                <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'beseo' ); ?>
-                                                            </label>
+                                                            <div class="be-schema-identity-toggle">
+                                                                <label for="be_schema_identity_org_checkbox">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-identity-checkbox"
+                                                                           id="be_schema_identity_org_checkbox"
+                                                                           name="be_schema_identity_org_enabled"
+                                                                           data-target-radio="be_schema_identity_org_radio"
+                                                                           data-target-tab="organization"
+                                                                           <?php checked( $identity_organisation_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Organisation-First (Company / Organisation)', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
+                                                            <div class="be-schema-identity-priority">
+                                                                <label for="be_schema_identity_org_radio">
+                                                                    <input type="radio"
+                                                                           id="be_schema_identity_org_radio"
+                                                                           class="be-schema-identity-radio"
+                                                                           name="be_schema_site_identity_mode"
+                                                                           value="organisation"
+                                                                           <?php checked( 'organisation', $site_identity_mode ); ?>
+                                                                           <?php disabled( ! $identity_organisation_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Priority', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
                                                         </div>
 
                                                         <div class="be-schema-identity-option">
-                                                            <input type="checkbox"
-                                                                   class="be-schema-identity-checkbox"
-                                                                   id="be_schema_identity_publisher_checkbox"
-                                                                   name="be_schema_identity_publisher_enabled"
-                                                                   data-target-radio="be_schema_identity_publisher_radio"
-                                                                   data-target-tab="publisher"
-                                                                   <?php checked( $identity_publisher_enabled ); ?> />
-                                                            <label for="be_schema_identity_publisher_radio" class="screen-reader-text">
-                                                                <?php esc_html_e( 'Enable Publisher option', 'beseo' ); ?>
-                                                            </label>
-                                                            <input type="radio"
-                                                                   id="be_schema_identity_publisher_radio"
-                                                                   class="be-schema-identity-radio"
-                                                                   name="be_schema_site_identity_mode"
-                                                                   value="publisher"
-                                                                   <?php checked( 'publisher', $site_identity_mode ); ?>
-                                                                   <?php disabled( ! $identity_publisher_enabled ); ?> />
-                                                            <label for="be_schema_identity_publisher_radio">
-                                                                <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'beseo' ); ?>
-                                                            </label>
+                                                            <div class="be-schema-identity-toggle">
+                                                                <label for="be_schema_identity_publisher_checkbox">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-identity-checkbox"
+                                                                           id="be_schema_identity_publisher_checkbox"
+                                                                           name="be_schema_identity_publisher_enabled"
+                                                                           data-target-radio="be_schema_identity_publisher_radio"
+                                                                           data-target-tab="publisher"
+                                                                           <?php checked( $identity_publisher_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
+                                                            <div class="be-schema-identity-priority">
+                                                                <label for="be_schema_identity_publisher_radio">
+                                                                    <input type="radio"
+                                                                           id="be_schema_identity_publisher_radio"
+                                                                           class="be-schema-identity-radio"
+                                                                           name="be_schema_site_identity_mode"
+                                                                           value="publisher"
+                                                                           <?php checked( 'publisher', $site_identity_mode ); ?>
+                                                                           <?php disabled( ! $identity_publisher_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Priority', 'beseo' ); ?>
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <p class="description be-schema-description">
@@ -1060,7 +1114,7 @@ function be_schema_engine_render_schema_page() {
                                 </div>
 
                                 <div class="be-schema-global-section">
-                                    <h4><?php esc_html_e( 'Images', 'beseo' ); ?></h4>
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Images', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
@@ -1068,17 +1122,17 @@ function be_schema_engine_render_schema_page() {
                                                     <?php esc_html_e( 'Site Logo (Shared)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               class="be-schema-image-enable"
-                                                               data-target-input="be_schema_org_logo"
-                                                               data-target-select="be_schema_org_logo_select"
-                                                               data-target-clear="be_schema_org_logo_clear"
-                                                               name="be_schema_org_logo_enabled"
-                                                               <?php checked( $org_logo_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                    </label>
                                                     <div class="be-schema-image-field">
+                                                        <label class="be-schema-image-enable-label">
+                                                            <input type="checkbox"
+                                                                   class="be-schema-image-enable"
+                                                                   data-target-input="be_schema_org_logo"
+                                                                   data-target-select="be_schema_org_logo_select"
+                                                                   data-target-clear="be_schema_org_logo_clear"
+                                                                   name="be_schema_org_logo_enabled"
+                                                                   <?php checked( $org_logo_enabled ); ?> />
+                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                        </label>
                                                         <input type="text"
                                                                id="be_schema_org_logo"
                                                                name="be_schema_org_logo"
@@ -1128,17 +1182,17 @@ function be_schema_engine_render_schema_page() {
                                                     <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               class="be-schema-image-enable"
-                                                               data-target-input="be_schema_website_image_16_9"
-                                                               data-target-select="be_schema_website_image_16_9_select"
-                                                               data-target-clear="be_schema_website_image_16_9_clear"
-                                                               name="be_schema_website_image_16_9_enabled"
-                                                               <?php checked( $website_image_16_9_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                    </label>
                                                     <div class="be-schema-image-field">
+                                                        <label class="be-schema-image-enable-label">
+                                                            <input type="checkbox"
+                                                                   class="be-schema-image-enable"
+                                                                   data-target-input="be_schema_website_image_16_9"
+                                                                   data-target-select="be_schema_website_image_16_9_select"
+                                                                   data-target-clear="be_schema_website_image_16_9_clear"
+                                                                   name="be_schema_website_image_16_9_enabled"
+                                                                   <?php checked( $website_image_16_9_enabled ); ?> />
+                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                        </label>
                                                         <input type="text"
                                                                id="be_schema_website_image_16_9"
                                                                name="be_schema_website_image_16_9"
@@ -1182,17 +1236,17 @@ function be_schema_engine_render_schema_page() {
                                                 <?php esc_html_e( 'WebSite Featured Image (4:3)', 'beseo' ); ?>
                                             </th>
                                             <td>
-                                                <label>
-                                                    <input type="checkbox"
-                                                           class="be-schema-image-enable"
-                                                           data-target-input="be_schema_website_image_4_3"
-                                                           data-target-select="be_schema_website_image_4_3_select"
-                                                           data-target-clear="be_schema_website_image_4_3_clear"
-                                                           name="be_schema_website_image_4_3_enabled"
-                                                           <?php checked( $website_image_4_3_enabled ); ?> />
-                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                </label>
                                                 <div class="be-schema-image-field">
+                                                    <label class="be-schema-image-enable-label">
+                                                        <input type="checkbox"
+                                                               class="be-schema-image-enable"
+                                                               data-target-input="be_schema_website_image_4_3"
+                                                               data-target-select="be_schema_website_image_4_3_select"
+                                                               data-target-clear="be_schema_website_image_4_3_clear"
+                                                               name="be_schema_website_image_4_3_enabled"
+                                                               <?php checked( $website_image_4_3_enabled ); ?> />
+                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                    </label>
                                                     <input type="text"
                                                            id="be_schema_website_image_4_3"
                                                            name="be_schema_website_image_4_3"
@@ -1236,17 +1290,17 @@ function be_schema_engine_render_schema_page() {
                                                 <?php esc_html_e( 'WebSite Featured Image (1:1)', 'beseo' ); ?>
                                             </th>
                                             <td>
-                                                <label>
-                                                    <input type="checkbox"
-                                                           class="be-schema-image-enable"
-                                                           data-target-input="be_schema_website_image_1_1"
-                                                           data-target-select="be_schema_website_image_1_1_select"
-                                                           data-target-clear="be_schema_website_image_1_1_clear"
-                                                           name="be_schema_website_image_1_1_enabled"
-                                                           <?php checked( $website_image_1_1_enabled ); ?> />
-                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                </label>
                                                 <div class="be-schema-image-field">
+                                                    <label class="be-schema-image-enable-label">
+                                                        <input type="checkbox"
+                                                               class="be-schema-image-enable"
+                                                               data-target-input="be_schema_website_image_1_1"
+                                                               data-target-select="be_schema_website_image_1_1_select"
+                                                               data-target-clear="be_schema_website_image_1_1_clear"
+                                                               name="be_schema_website_image_1_1_enabled"
+                                                               <?php checked( $website_image_1_1_enabled ); ?> />
+                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                    </label>
                                                     <input type="text"
                                                            id="be_schema_website_image_1_1"
                                                            name="be_schema_website_image_1_1"
