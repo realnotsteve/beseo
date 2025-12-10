@@ -65,7 +65,7 @@ function be_schema_engine_register_admin_menu() {
         __( 'Schema', 'beseo' ),
         __( 'Schema', 'beseo' ),
         $capability,
-        'be-schema-engine-schema',
+        'beseo-schema',
         'be_schema_engine_render_schema_page'
     );
 
@@ -75,7 +75,7 @@ function be_schema_engine_register_admin_menu() {
         __( 'Social Media', 'beseo' ),
         __( 'Social Media', 'beseo' ),
         $capability,
-        'be-schema-engine-social-media',
+        'beseo-social-media',
         'be_schema_engine_render_social_media_page'
     );
 
@@ -85,7 +85,7 @@ function be_schema_engine_register_admin_menu() {
         __( 'Tools', 'beseo' ),
         __( 'Tools', 'beseo' ),
         $capability,
-        'be-schema-engine-tools',
+        'beseo-tools',
         'be_schema_engine_render_tools_page'
     );
 }
@@ -103,7 +103,7 @@ function be_schema_engine_render_tools_page() {
         return;
     }
     ?>
-    <div class="wrap be-schema-engine-wrap be-schema-tools-wrap">
+    <div class="wrap beseo-wrap beseo-tools-wrap">
         <h1><?php esc_html_e( 'BE SEO – Tools', 'beseo' ); ?></h1>
 
         <p class="description">

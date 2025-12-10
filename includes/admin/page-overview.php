@@ -207,7 +207,7 @@ function be_schema_engine_render_overview_page() {
         }
     </style>
 
-    <div class="wrap be-schema-engine-wrap be-schema-overview-wrap">
+    <div class="wrap beseo-wrap beseo-overview-wrap">
         <div class="be-schema-overview-hero">
             <div class="be-schema-hero-row">
                 <?php

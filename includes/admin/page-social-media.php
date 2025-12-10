@@ -142,7 +142,7 @@ function be_schema_engine_render_social_media_page() {
     $twitter_notes         = isset( $settings['twitter_notes'] ) ? $settings['twitter_notes'] : '';
 
     ?>
-    <div class="wrap be-schema-engine-wrap be-schema-social-wrap">
+    <div class="wrap beseo-wrap beseo-social-wrap">
         <h1><?php esc_html_e( 'BE SEO – Social Media', 'beseo' ); ?></h1>
 
         <p class="description">

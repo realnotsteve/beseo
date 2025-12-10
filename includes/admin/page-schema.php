@@ -269,7 +269,7 @@ function be_schema_engine_render_schema_page() {
     $org_logo_ok   = ! empty( $org_logo );
 
     ?>
-    <div class="wrap be-schema-engine-wrap be-schema-schema-wrap">
+    <div class="wrap beseo-wrap beseo-schema-wrap">
         <h1><?php esc_html_e( 'BE SEO – Schema', 'beseo' ); ?></h1>
 
         <p class="description">

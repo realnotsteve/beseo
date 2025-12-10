@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function be_schema_engine_render_dashboard_page() {
     ?>
-    <div class="wrap be-schema-engine-dashboard-wrap">
+    <div class="wrap beseo-dashboard-wrap">
         <h1><?php esc_html_e( 'BE Schema Engine', 'beseo' ); ?></h1>
 
         <p class="description">
