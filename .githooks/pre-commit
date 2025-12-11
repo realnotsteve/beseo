@@ -111,6 +111,7 @@ def build_summary(files, env_msg):
 
 files = staged_files()
 summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"))
+description = os.environ.get("BESEO_CHANGELOG_DESC", summary)
 
 header = "# Changelog"
 today = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -118,6 +119,7 @@ entry_lines = [
     f"## [{version}] - {today}",
     f"- Bump type: {bump}",
     f"- Summary: {summary}",
+    f"- Description: {description}",
     "- Details:",
 ]
 if files:

@@ -380,6 +380,6 @@
   ],
   "dev_workflow_notes": [
     "Home hero panel lists dev workflow reminders: pre-commit auto bump + auto message, use dry-run toggles for testing, check tests/README.md, keep beseo-devnotes.json updated.",
-    "Changelog entries now include a generated Summary and Details list (from staged files or BESEO_COMMIT_MSG)."
+    "Changelog entries now include a generated Summary, Description (defaults to Summary or BESEO_CHANGELOG_DESC), and Details list (from staged files or BESEO_COMMIT_MSG)."
   ]
 }
