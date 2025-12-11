@@ -31,7 +31,7 @@ function be_schema_engine_render_overview_page() {
     if ( file_exists( $changelog_path ) && is_readable( $changelog_path ) ) {
         $raw = file_get_contents( $changelog_path );
         if ( false !== $raw ) {
-            $max    x_preview_lines = 120; // keep preview short without cutting mid-line.
+            $max_preview_lines = 120; // keep preview short without cutting mid-line.
             $lines             = preg_split( "/\r?\n/", $raw );
             if ( is_array( $lines ) ) {
                 $changelog_text = implode( "\n", array_slice( $lines, 0, $max_preview_lines ) );

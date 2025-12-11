@@ -5,9 +5,9 @@
  * Submenu: BE SEO → Social Media
  *
  * Tabs:
- *  - Settings (global enable flags + global fallback image + tiny image summary)
- *  - Facebook (FB page, FB default image, app id, notes)
- *  - Twitter (handle, card type, Twitter default image, notes)
+ *  - Dashboard (global fallback image + tiny image summary)
+ *  - Facebook (overview toggle/status + FB page, FB default image, app id, notes, tools)
+ *  - Twitter (overview toggle/status + handle, card type, Twitter default image, notes, tools)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,9 +41,9 @@ function be_schema_engine_save_social_settings() {
         }
     }
 
-    // SETTINGS TAB -------------------------------.
+    // DASHBOARD TAB ------------------------------.
 
-    // Global enables (must align with core-social.php defaults).
+    // Global enables (collected from the Facebook/Twitter Overview panels; must align with core-social.php defaults).
     $settings['social_enable_og']      = isset( $_POST['be_schema_og_enabled'] ) ? '1' : '0';
     $settings['social_enable_twitter'] = isset( $_POST['be_schema_twitter_enabled'] ) ? '1' : '0';
 
@@ -372,7 +372,7 @@ function be_schema_engine_render_social_media_page() {
                     </li>
                 </ul>
 
-                <!-- SETTINGS TAB -->
+                <!-- DASHBOARD TAB -->
                 <div id="be-schema-social-tab-settings"
                      class="be-schema-social-tab-panel be-schema-social-tab-panel-active">
                     <h2><?php esc_html_e( 'Social Dashboard', 'beseo' ); ?></h2>
