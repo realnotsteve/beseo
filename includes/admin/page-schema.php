@@ -455,18 +455,23 @@ function be_schema_engine_render_schema_page() {
             .be-schema-global-section {
                 border: 1px solid #ccd0d4;
                 border-radius: 6px;
-                padding: 0;
+                padding: 15px;
                 margin-bottom: 16px;
                 background: #f9fafb;
                 color: #111;
             }
 
+            .be-schema-global-section .form-table th {
+                white-space: nowrap;
+                width: 1%;
+            }
+
             .be-schema-section-title {
                 display: block;
-                margin: 0;
-                padding: 12px;
-                background: #0f172a;
-                color: #f9fafb;
+                margin: -15px -15px 12px;
+                padding: 12px 15px;
+                background: #e1e4e8;
+                color: #111;
             }
 
             .be-schema-global-section h4 {
@@ -489,18 +494,22 @@ function be_schema_engine_render_schema_page() {
             .be-schema-identity-option {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 20px;
                 flex-wrap: nowrap;
             }
 
             .be-schema-identity-toggle {
-                flex: 1;
                 display: flex;
                 align-items: center;
+                justify-content: flex-start;
+                flex: 0 0 420px;
+            }
+
+            .be-schema-identity-toggle label {
+                white-space: nowrap;
             }
 
             .be-schema-identity-priority {
-                width: 160px;
                 display: flex;
                 align-items: center;
                 justify-content: flex-start;
@@ -535,6 +544,11 @@ function be_schema_engine_render_schema_page() {
                 margin: 0;
                 font-weight: 600;
                 align-self: center;
+            }
+
+            .be-schema-image-field input[type="checkbox"] {
+                vertical-align: middle;
+                margin: 0;
             }
 
             .be-schema-image-field input[type="text"] {
@@ -1003,15 +1017,13 @@ function be_schema_engine_render_schema_page() {
                             </ul>
                         </div>
 
-                        <div class="be-schema-website-panels">
+                            <div class="be-schema-website-panels">
 
-                            <!-- GLOBAL PANEL -->
-                            <div id="be-schema-website-global"
-                                 class="be-schema-website-panel be-schema-website-panel-active">
-                                <h3><?php esc_html_e( 'Global', 'beseo' ); ?></h3>
-
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?></h4>
+                                <!-- GLOBAL PANEL -->
+                                <div id="be-schema-website-global"
+                                     class="be-schema-website-panel be-schema-website-panel-active">
+                                    <div class="be-schema-global-section">
+                                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Site Identity Mode', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>

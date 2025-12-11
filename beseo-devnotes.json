@@ -347,5 +347,8 @@
         "handles"
       ]
     }
-  }
+  },
+  "ui_notes": [
+    "Schema > Website > Global: removed the panel title heading; section titles remain and now use a medium grey (#e1e4e8) background with dark text instead of black; global section padding increased to 15px; image row checkboxes centered with their fields; form-table left column now no-wraps and shrinks to fit content; Site Identity Mode uses a two-column flex row with a fixed 420px checkbox column and 20px gap to the radio column for consistent left alignment."
+  ]
 }

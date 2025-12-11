@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.41] - 2025-12-10
+- Bump type: patch
+- Files:
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+
 ## [1.3.40] - 2025-12-10
 - Bump type: patch
 - Files:
