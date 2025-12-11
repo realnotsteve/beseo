@@ -260,7 +260,7 @@ function be_schema_engine_render_overview_page() {
             color: #000000ff;
         }
         .be-schema-hero-changelog .be-changelog-heading {
-            margin: 0 0 6px 0; /* subtitles spacing */
+            margin: 0 0 0 0; /* tighter subtitles spacing */
         }
         .be-schema-hero-changelog .be-changelog-title {
             margin: 0 0 8px 0; /* match left hero spacing */

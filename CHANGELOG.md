@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.53] - 2025-12-11
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- includes/admin/page-overview.php
+
+
 ## [1.3.52] - 2025-12-11
 Summary: Update.
 
