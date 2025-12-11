@@ -1,10 +1,59 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.  
+The format follows clear, human-readable version entries grouped by change type.
+
+---
+
+## [1.3.48] - 2025-12-11
+BESEO: tooling + devnotes
+
+### Added
+- (none)
+
+### Changed
+- Touched areas: tooling, devnotes.
+
+### Fixed
+- (none)
+
+### Removed
+- (none)
+
+### Security
+- (none)
+
+### Upgrade Notes
+- (none)
+
+### Details
+- .githooks/pre-commit
+- CHANGELOG.md
+- beseo-devnotes.json
+
+
 ## [1.3.47] - 2025-12-10
-- Bump type: patch
-- Summary: BESEO: tooling + devnotes
-- Description: Areas touched: tooling, devnotes.
-- Details:
+BESEO: tooling + devnotes.
+
+### Added
+- (none)
+
+### Changed
+- Touched areas: tooling, devnotes.
+
+### Fixed
+- (none)
+
+### Removed
+- (none)
+
+### Security
+- (none)
+
+### Upgrade Notes
+- (none)
+
+### Details
 - .githooks/pre-commit
 - beseo-devnotes.json
 

@@ -105,40 +105,63 @@ def categorize(files):
             add_part("devnotes")
     return parts
 
-def build_summary(files, env_msg, parts):
+def build_summary(parts, env_msg):
     if env_msg:
         return env_msg
     if not parts:
         return "BESEO: update"
     return "BESEO: " + " + ".join(parts)
 
-def build_description(env_desc, parts, files, summary):
+def build_focus_line(summary, parts, env_desc):
     if env_desc and env_desc.strip():
         return env_desc.strip()
+    if summary:
+        return summary
     if parts:
-        return "Areas touched: " + ", ".join(parts) + "."
+        return "Focus on " + " + ".join(parts) + "."
+    return "BESEO: update."
+
+def build_changed_items(parts, files, focus_line):
+    if parts:
+        return ["Touched areas: " + ", ".join(parts) + "."]
     if files:
-        return "Update touching staged files."
-    return summary or "BESEO: update"
+        return ["Updated staged files."]
+    return [focus_line or "Maintenance."]
+
+def section_block(title, items):
+    if not items:
+        items = ["(none)"]
+    return [f"### {title}"] + [f"- {item}" for item in items] + [""]
 
 files = staged_files()
 parts = categorize(files)
-summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"), parts)
-description = build_description(os.environ.get("BESEO_CHANGELOG_DESC"), parts, files, summary)
+summary = build_summary(parts, os.environ.get("BESEO_COMMIT_MSG"))
+focus_line = build_focus_line(summary, parts, os.environ.get("BESEO_CHANGELOG_DESC"))
+changed_items = build_changed_items(parts, files, focus_line)
 
-header = "# Changelog"
+header = "\n".join([
+    "# Changelog",
+    "",
+    "All notable changes to this project will be documented in this file.  ",
+    "The format follows clear, human-readable version entries grouped by change type.",
+    "",
+    "---",
+])
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 entry_lines = [
     f"## [{version}] - {today}",
-    f"- Bump type: {bump}",
-    f"- Summary: {summary}",
-    f"- Description: {description}",
-    "- Details:",
+    focus_line,
+    "",
 ]
-if files:
-    entry_lines += [f"- {f}" for f in files]
-else:
-    entry_lines.append("- (no staged files listed)")
+
+entry_lines += section_block("Added", [])
+entry_lines += section_block("Changed", changed_items)
+entry_lines += section_block("Fixed", [])
+entry_lines += section_block("Removed", [])
+entry_lines += section_block("Security", [])
+entry_lines += section_block("Upgrade Notes", [])
+entry_lines += section_block("Details", files if files else ["(no staged files listed)"])
+
 entry = "\n".join(entry_lines) + "\n\n"
 if os.path.exists(path):
     existing = open(path).read()
