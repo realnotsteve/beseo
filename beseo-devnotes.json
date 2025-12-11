@@ -349,6 +349,28 @@
     }
   },
   "ui_notes": [
-    "Schema > Website > Global: removed the panel title heading; section titles remain and now use a medium grey (#e1e4e8) background with dark text instead of black; global section padding increased to 15px; image row checkboxes centered with their fields; form-table left column now no-wraps and shrinks to fit content; Site Identity Mode uses a two-column flex row with a fixed 420px checkbox column and 20px gap to the radio column for consistent left alignment."
+    "Schema > Website > Global: removed the panel title heading; section titles remain and now use a medium grey (#e1e4e8) background with dark text instead of black; global section padding increased to 15px; image row checkboxes centered with their fields; form-table left column now no-wraps and shrinks to fit content; Site Identity Mode uses a flex row with an ~380px checkbox column, 8px gap to the radios, and JS that bolds only the selected radio label.",
+    "Schema > Website > Person: removed the panel title heading; honorific prefix and suffix are on one row with inline labels; panel now matches Global styling with bordered sections (Person Details, Person Links) using grey section headers and enclosed backgrounds.",
+    "Schema > Website > Organisation/Publisher: removed panel titles; each now uses Global-style bordered sections with grey section headers enclosing enable toggles and their fields.",
+    "Schema > Snapshots tab (Health/Individual/WordPress panels) now uses Global-style bordered sections with grey section headers wrapping the read-only tables.",
+    "Social Media dashboard and Facebook/Twitter subtabs now use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks."
+  ],
+  "validation_notes": [
+    "Schema settings: added URL validation (http/https) for Organisation URL, publisher URLs/policies, and numeric copyright year (4 digits), surfacing errors via settings_errors.",
+    "Social settings: added URL validation (http/https) for Global/Facebook/Twitter images and Facebook Page URL, with admin error notices."
+  ],
+  "ux_notes": [
+    "Schema Website entities (Person/Organisation/Publisher) now show inline status pills (ON/OFF) within their sections to surface current enable state.",
+    "Schema Settings debug row now includes a read-only debug readiness box showing WP_DEBUG, admin debug toggle, and BE_SCHEMA_DEBUG constant state."
+  ],
+  "testing_notes": [
+    "Manual test checklist in tests/README.md covering schema/social URL validation, copyright-year check, dry-run behaviour, and debug readiness pills. No automated test suite wired up yet."
+  ],
+  "safety_notes": [
+    "Schema: added dry-run toggle (admin Settings) that prevents JSON-LD output while logging BE_SCHEMA_DRY_RUN events.",
+    "Social: added dry-run toggle (Social Dashboard) that prevents OG/Twitter meta output while logging BE_SOCIAL_DRY_RUN events."
+  ],
+  "ux_notes_settings": [
+    "Schema > Dashboard tab now uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls."
   ]
 }

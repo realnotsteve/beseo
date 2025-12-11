@@ -21,6 +21,18 @@ function be_schema_output_breadcrumb_schema() {
         return;
     }
 
+    if ( function_exists( 'be_schema_is_dry_run' ) && be_schema_is_dry_run() ) {
+        if ( function_exists( 'be_schema_log_dry_run' ) ) {
+            be_schema_log_dry_run(
+                'breadcrumbs',
+                array(
+                    'url' => home_url( add_query_arg( array(), '' ) ),
+                )
+            );
+        }
+        return;
+    }
+
     if ( is_front_page() ) {
         return;
     }

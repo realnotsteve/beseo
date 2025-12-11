@@ -310,6 +310,19 @@ function be_schema_output_post_schema() {
 		);
 	}
 
+	if ( function_exists( 'be_schema_is_dry_run' ) && be_schema_is_dry_run() ) {
+		if ( function_exists( 'be_schema_log_dry_run' ) ) {
+			be_schema_log_dry_run(
+				'post',
+				array(
+					'post_id' => $post_id,
+					'url'     => get_permalink( $post_id ),
+				)
+			);
+		}
+		return;
+	}
+
 	$webpage    = be_schema_build_post_webpage_node( $post );
 	$blogposting = be_schema_build_blogposting_node( $post );
 

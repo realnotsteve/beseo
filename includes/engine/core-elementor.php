@@ -217,6 +217,18 @@ function be_schema_output_elementor_schema() {
         return;
     }
 
+    if ( function_exists( 'be_schema_is_dry_run' ) && be_schema_is_dry_run() ) {
+        if ( function_exists( 'be_schema_log_dry_run' ) ) {
+            be_schema_log_dry_run(
+                'elementor',
+                array(
+                    'post_id' => get_the_ID(),
+                )
+            );
+        }
+        return;
+    }
+
     if ( ! class_exists( '\Elementor\Plugin' ) ) {
         return;
     }

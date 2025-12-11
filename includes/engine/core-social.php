@@ -44,6 +44,7 @@ function be_schema_social_get_settings() {
 	$defaults = array(
 		// Master enable for social meta.
 		'enabled' => '0',
+		'dry_run' => '0',
 
 		// Default images (attachment IDs or URLs depending on UI).
 		'default_facebook_image_id' => '',
@@ -422,6 +423,7 @@ function be_schema_output_social_meta() {
 	$twitter_site  = be_schema_social_normalize_twitter_handle( $settings['twitter_site'] );
 	$twitter_creator = be_schema_social_normalize_twitter_handle( $settings['twitter_creator'] );
 	$facebook_app_id = isset( $settings['facebook_app_id'] ) ? trim( (string) $settings['facebook_app_id'] ) : '';
+	$dry_run         = ! empty( $settings['dry_run'] ) && '1' === (string) $settings['dry_run'];
 
 	// Automatic values before any potential future overrides (for debug).
 	$automatic = array(
@@ -461,6 +463,20 @@ function be_schema_output_social_meta() {
 		);
 
 		error_log( 'BE_SOCIAL_DEBUG ' . wp_json_encode( $debug_snapshot ) );
+	}
+
+	if ( $dry_run ) {
+		$dry_run_snapshot = array(
+			'url'               => $url,
+			'title'             => $final['title'],
+			'description'       => $final['description'],
+			'og_type'           => $og_type,
+			'twitter_card_type' => $twitter_card_type,
+			'og_image'          => $final['og_image'],
+			'tw_image'          => $final['tw_image'],
+		);
+		error_log( 'BE_SOCIAL_DRY_RUN ' . wp_json_encode( $dry_run_snapshot ) );
+		return;
 	}
 
 	// Output OG tags.

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.42] - 2025-12-10
+- Bump type: patch
+- Files:
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/engine/core-breadcrumbs.php
+- includes/engine/core-elementor.php
+- includes/engine/core-helpers.php
+- includes/engine/core-posts.php
+- includes/engine/core-social.php
+- includes/engine/core-special-pages.php
+- tests/README.md
+
 ## [1.3.41] - 2025-12-10
 - Bump type: patch
 - Files:

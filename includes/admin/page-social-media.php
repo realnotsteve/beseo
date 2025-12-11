@@ -19,6 +19,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Option name: be_schema_social_settings
  */
+if ( ! function_exists( 'be_schema_social_validate_url_field' ) ) {
+    function be_schema_social_validate_url_field( $raw_value, $label, &$errors ) {
+        $raw_value = isset( $raw_value ) ? trim( (string) $raw_value ) : '';
+        if ( '' === $raw_value ) {
+            return '';
+        }
+
+        $sanitized = esc_url_raw( $raw_value );
+        if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
+            $errors[] = sprintf( /* translators: %s: field label */ __( '%s must be a valid URL (http/https).', 'beseo' ), $label );
+            return '';
+        }
+
+        return $sanitized;
+    }
+}
+
 function be_schema_engine_save_social_settings() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
@@ -41,33 +58,42 @@ function be_schema_engine_save_social_settings() {
         }
     }
 
+    $validation_errors = array();
+
     // DASHBOARD TAB ------------------------------.
 
     // Global enables (collected from the Facebook/Twitter Overview panels; must align with core-social.php defaults).
     $settings['social_enable_og']      = isset( $_POST['be_schema_og_enabled'] ) ? '1' : '0';
     $settings['social_enable_twitter'] = isset( $_POST['be_schema_twitter_enabled'] ) ? '1' : '0';
+    $settings['dry_run']               = isset( $_POST['be_schema_social_dry_run'] ) ? '1' : '0';
 
     // Optional: keep legacy keys in sync if they existed before.
     $settings['og_enabled']      = $settings['social_enable_og'];
     $settings['twitter_enabled'] = $settings['social_enable_twitter'];
 
     // Global default fallback image (must align with social_default_image).
-    $settings['social_default_image'] = isset( $_POST['be_schema_global_default_image'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_global_default_image'] ) )
-        : '';
+    $settings['social_default_image'] = be_schema_social_validate_url_field(
+        isset( $_POST['be_schema_global_default_image'] ) ? wp_unslash( $_POST['be_schema_global_default_image'] ) : '',
+        __( 'Global Default Image', 'beseo' ),
+        $validation_errors
+    );
 
     // Optional legacy alias for older code, if any.
     $settings['global_default_image'] = $settings['social_default_image'];
 
     // FACEBOOK TAB ------------------------------.
 
-    $settings['facebook_page_url'] = isset( $_POST['be_schema_facebook_page_url'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_facebook_page_url'] ) )
-        : '';
+    $settings['facebook_page_url'] = be_schema_social_validate_url_field(
+        isset( $_POST['be_schema_facebook_page_url'] ) ? wp_unslash( $_POST['be_schema_facebook_page_url'] ) : '',
+        __( 'Facebook Page URL', 'beseo' ),
+        $validation_errors
+    );
 
-    $settings['facebook_default_image'] = isset( $_POST['be_schema_facebook_default_image'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_facebook_default_image'] ) )
-        : '';
+    $settings['facebook_default_image'] = be_schema_social_validate_url_field(
+        isset( $_POST['be_schema_facebook_default_image'] ) ? wp_unslash( $_POST['be_schema_facebook_default_image'] ) : '',
+        __( 'Default Facebook OG Image', 'beseo' ),
+        $validation_errors
+    );
 
     $settings['facebook_app_id'] = isset( $_POST['be_schema_facebook_app_id'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_facebook_app_id'] ) )
@@ -87,15 +113,21 @@ function be_schema_engine_save_social_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_card_type'] ) )
         : 'summary_large_image';
 
-    $settings['twitter_default_image'] = isset( $_POST['be_schema_twitter_default_image'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_twitter_default_image'] ) )
-        : '';
+    $settings['twitter_default_image'] = be_schema_social_validate_url_field(
+        isset( $_POST['be_schema_twitter_default_image'] ) ? wp_unslash( $_POST['be_schema_twitter_default_image'] ) : '',
+        __( 'Default Twitter Card Image', 'beseo' ),
+        $validation_errors
+    );
 
     $settings['twitter_notes'] = isset( $_POST['be_schema_twitter_notes'] )
         ? wp_kses_post( wp_unslash( $_POST['be_schema_twitter_notes'] ) )
         : '';
 
     update_option( 'be_schema_social_settings', $settings );
+
+    foreach ( $validation_errors as $message ) {
+        add_settings_error( 'be_schema_social', 'be_schema_social_validation', $message, 'error' );
+    }
 }
 
 /**
@@ -129,6 +161,7 @@ function be_schema_engine_render_social_media_page() {
     // Simple access helpers (read the same keys core-social.php uses).
     $og_enabled      = ! empty( $settings['social_enable_og'] ) && '1' === $settings['social_enable_og'];
     $twitter_enabled = ! empty( $settings['social_enable_twitter'] ) && '1' === $settings['social_enable_twitter'];
+    $social_dry_run  = ! empty( $settings['dry_run'] ) && '1' === $settings['dry_run'];
 
     $global_default_image   = isset( $settings['social_default_image'] ) ? $settings['social_default_image'] : '';
     $facebook_page_url      = isset( $settings['facebook_page_url'] ) ? $settings['facebook_page_url'] : '';
@@ -144,6 +177,8 @@ function be_schema_engine_render_social_media_page() {
     ?>
     <div class="wrap beseo-wrap beseo-social-wrap">
         <h1><?php esc_html_e( 'BE SEO – Social Media', 'beseo' ); ?></h1>
+
+        <?php settings_errors( 'be_schema_social' ); ?>
 
         <p class="description">
             <?php esc_html_e(
@@ -332,6 +367,23 @@ function be_schema_engine_render_social_media_page() {
             .be-schema-social-panel-active {
                 display: block;
             }
+
+            .be-schema-social-section {
+                border: 1px solid #ccd0d4;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 16px;
+                background: #f9fafb;
+                color: #111;
+            }
+
+            .be-schema-social-section-title {
+                display: block;
+                margin: -15px -15px 12px;
+                padding: 12px 15px;
+                background: #e1e4e8;
+                color: #111;
+            }
         </style>
 
         <p>
@@ -377,115 +429,133 @@ function be_schema_engine_render_social_media_page() {
                      class="be-schema-social-tab-panel be-schema-social-tab-panel-active">
                     <h2><?php esc_html_e( 'Social Dashboard', 'beseo' ); ?></h2>
 
-                    <table class="form-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row">
-                                    <?php esc_html_e( 'Global Default Image', 'beseo' ); ?>
-                                </th>
-                                <td>
-                                    <div class="be-schema-image-field">
-                                        <input type="text"
-                                               id="be_schema_global_default_image"
-                                               name="be_schema_global_default_image"
-                                               value="<?php echo esc_url( $global_default_image ); ?>"
-                                               class="regular-text" />
-                                        <button type="button"
-                                                class="button be-schema-image-select"
-                                                data-target-input="be_schema_global_default_image"
-                                                data-target-preview="be_schema_global_default_image_preview">
-                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                        </button>
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Global Defaults', 'beseo' ); ?></h4>
+                        <table class="form-table">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Global Default Image', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <div class="be-schema-image-field">
+                                            <input type="text"
+                                                   id="be_schema_global_default_image"
+                                                   name="be_schema_global_default_image"
+                                                   value="<?php echo esc_url( $global_default_image ); ?>"
+                                                   class="regular-text" />
+                                            <button type="button"
+                                                    class="button be-schema-image-select"
+                                                    data-target-input="be_schema_global_default_image"
+                                                    data-target-preview="be_schema_global_default_image_preview">
+                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                            </button>
                                         <button type="button"
                                                 class="button be-schema-image-clear"
                                                 data-target-input="be_schema_global_default_image"
                                                 data-target-preview="be_schema_global_default_image_preview">
                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                         </button>
-                                    </div>
-                                    <p class="description be-schema-social-description">
-                                        <?php esc_html_e(
-                                            'Used as a final fallback when there is no featured image and no network-specific default image. This applies to both OpenGraph and Twitter.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                    <div id="be_schema_global_default_image_preview"
-                                         class="be-schema-image-preview">
-                                        <?php if ( $global_default_image ) : ?>
+                                        </div>
+                                        <p class="description be-schema-social-description">
+                                            <?php esc_html_e(
+                                                'Used as a final fallback when there is no featured image and no network-specific default image. This applies to both OpenGraph and Twitter.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                        <div id="be_schema_global_default_image_preview"
+                                             class="be-schema-image-preview">
+                                            <?php if ( $global_default_image ) : ?>
+                                                <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Safety', 'beseo' ); ?></h4>
+                        <p class="description be-schema-social-description" style="margin-top:0;">
+                            <?php esc_html_e( 'Use dry run to compute values but skip outputting OpenGraph and Twitter meta tags on the front end.', 'beseo' ); ?>
+                        </p>
+                        <label>
+                            <input type="checkbox"
+                                   name="be_schema_social_dry_run"
+                                   value="1"
+                                   <?php checked( $social_dry_run ); ?> />
+                            <?php esc_html_e( 'Enable social dry run (do not output meta tags)', 'beseo' ); ?>
+                        </label>
+                    </div>
+
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h4>
+                        <div class="be-schema-social-mini-summary" style="margin-top:0;">
+                            <p class="be-schema-social-description">
+                                <?php esc_html_e(
+                                    'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
+                                    'beseo'
+                                ); ?>
+                            </p>
+                            <ul>
+                                <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'beseo' ); ?></li>
+                                <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
+                                <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
+                            </ul>
+
+                            <p class="be-schema-social-description">
+                                <?php esc_html_e(
+                                    'Below is a quick preview of the images that will be used when there is no featured image on a page:',
+                                    'beseo'
+                                ); ?>
+                            </p>
+
+                            <div class="be-schema-social-mini-summary-images">
+                                <div>
+                                    <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
+                                    <?php if ( $global_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
                                             <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        </div>
+                                        <code><?php echo esc_html( $global_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
 
-                    <!-- Tiny "what image did we pick?" style summary -->
-                    <div class="be-schema-social-mini-summary">
-                        <h3><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h3>
-                        <p class="be-schema-social-description">
-                            <?php esc_html_e(
-                                'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
-                                'beseo'
-                            ); ?>
-                        </p>
-                        <ul>
-                            <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'beseo' ); ?></li>
-                            <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
-                            <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
-                        </ul>
+                                <div>
+                                    <strong><?php esc_html_e( 'Facebook Default OG Image', 'beseo' ); ?></strong>
+                                    <?php if ( $facebook_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
+                                            <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
+                                        </div>
+                                        <code><?php echo esc_html( $facebook_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
 
-                        <p class="be-schema-social-description">
-                            <?php esc_html_e(
-                                'Below is a quick preview of the images that will be used when there is no featured image on a page:',
-                                'beseo'
-                            ); ?>
-                        </p>
-
-                        <div class="be-schema-social-mini-summary-images">
-                            <div>
-                                <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
-                                <?php if ( $global_default_image ) : ?>
-                                    <div class="be-schema-image-preview">
-                                        <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                    </div>
-                                    <code><?php echo esc_html( $global_default_image ); ?></code>
-                                <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
-                                <?php endif; ?>
+                                <div>
+                                    <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
+                                    <?php if ( $twitter_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
+                                            <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
+                                        </div>
+                                        <code><?php echo esc_html( $twitter_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
                             </div>
 
-                            <div>
-                                <strong><?php esc_html_e( 'Facebook Default OG Image', 'beseo' ); ?></strong>
-                                <?php if ( $facebook_default_image ) : ?>
-                                    <div class="be-schema-image-preview">
-                                        <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
-                                    </div>
-                                    <code><?php echo esc_html( $facebook_default_image ); ?></code>
-                                <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                <?php endif; ?>
-                            </div>
-
-                            <div>
-                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
-                                <?php if ( $twitter_default_image ) : ?>
-                                    <div class="be-schema-image-preview">
-                                        <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                    </div>
-                                    <code><?php echo esc_html( $twitter_default_image ); ?></code>
-                                <?php else : ?>
-                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                <?php endif; ?>
-                            </div>
+                            <p class="be-schema-social-description" style="margin-top: 8px;">
+                                <?php esc_html_e(
+                                    'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
+                                    'beseo'
+                                ); ?>
+                            </p>
                         </div>
-
-                        <p class="be-schema-social-description" style="margin-top: 8px;">
-                            <?php esc_html_e(
-                                'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
-                                'beseo'
-                            ); ?>
-                        </p>
                     </div>
                 </div>
 
@@ -527,159 +597,167 @@ function be_schema_engine_render_social_media_page() {
                             </ul>
                         </div>
 
-                        <div class="be-schema-social-panels">
-                            <div id="be-schema-facebook-overview" class="be-schema-social-panel be-schema-social-panel-active">
-                                <h3><?php esc_html_e( 'Overview', 'beseo' ); ?></h3>
-                                <label>
-                                    <input type="checkbox"
-                                           name="be_schema_og_enabled"
-                                           value="1"
-                                           <?php checked( $og_enabled ); ?> />
-                                    <?php esc_html_e(
-                                        'Enable OpenGraph output (og:* tags) for supported pages.',
-                                        'beseo'
-                                    ); ?>
-                                </label>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'When enabled, the plugin will output OpenGraph tags for pages and posts using the rules described below.',
-                                        'beseo'
-                                    ); ?>
-                                </p>
-                            </div>
+                            <div class="be-schema-social-panels">
+                                <div id="be-schema-facebook-overview" class="be-schema-social-panel be-schema-social-panel-active">
+                                    <div class="be-schema-social-section">
+                                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Overview', 'beseo' ); ?></h4>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_og_enabled"
+                                                   value="1"
+                                                   <?php checked( $og_enabled ); ?> />
+                                            <?php esc_html_e(
+                                                'Enable OpenGraph output (og:* tags) for supported pages.',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-social-description">
+                                            <?php esc_html_e(
+                                                'When enabled, the plugin will output OpenGraph tags for pages and posts using the rules described below.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </div>
+                                </div>
 
-                            <div id="be-schema-facebook-status" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Status', 'beseo' ); ?></h3>
-                                <p>
-                                    <span class="be-schema-social-status-pill <?php echo $og_enabled ? '' : 'off'; ?>">
-                                        <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'beseo' ) : esc_html__( 'OpenGraph: OFF', 'beseo' ); ?>
-                                    </span>
-                                </p>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'Status reflects the current admin toggle; page-level availability still depends on featured images and defaults.',
-                                        'beseo'
-                                    ); ?>
-                                </p>
-                            </div>
+                                <div id="be-schema-facebook-status" class="be-schema-social-panel">
+                                    <div class="be-schema-social-section">
+                                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Status', 'beseo' ); ?></h4>
+                                        <p>
+                                            <span class="be-schema-social-status-pill <?php echo $og_enabled ? '' : 'off'; ?>">
+                                                <?php echo $og_enabled ? esc_html__( 'OpenGraph: ON', 'beseo' ) : esc_html__( 'OpenGraph: OFF', 'beseo' ); ?>
+                                            </span>
+                                        </p>
+                                        <p class="description be-schema-social-description">
+                                            <?php esc_html_e(
+                                                'Status reflects the current admin toggle; page-level availability still depends on featured images and defaults.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </div>
+                                </div>
 
-                            <div id="be-schema-facebook-content" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Content', 'beseo' ); ?></h3>
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <input type="text"
-                                                       name="be_schema_facebook_page_url"
-                                                       value="<?php echo esc_url( $facebook_page_url ); ?>"
-                                                       class="regular-text" />
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Optional. A public Facebook Page URL for your site or organisation.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
+                                <div id="be-schema-facebook-content" class="be-schema-social-panel">
+                                    <div class="be-schema-social-section">
+                                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_facebook_page_url"
+                                                               value="<?php echo esc_url( $facebook_page_url ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-social-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A public Facebook Page URL for your site or organisation.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
-                                                    <input type="text"
-                                                           id="be_schema_facebook_default_image"
-                                                           name="be_schema_facebook_default_image"
-                                                           value="<?php echo esc_url( $facebook_default_image ); ?>"
-                                                           class="regular-text" />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            data-target-input="be_schema_facebook_default_image"
-                                                            data-target-preview="be_schema_facebook_default_image_preview">
-                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            data-target-input="be_schema_facebook_default_image"
-                                                            data-target-preview="be_schema_facebook_default_image_preview">
-                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                    </button>
-                                                </div>
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_facebook_default_image_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $facebook_default_image ) : ?>
-                                                        <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-image-field">
+                                                            <input type="text"
+                                                                   id="be_schema_facebook_default_image"
+                                                                   name="be_schema_facebook_default_image"
+                                                                   value="<?php echo esc_url( $facebook_default_image ); ?>"
+                                                                   class="regular-text" />
+                                                            <button type="button"
+                                                                    class="button be-schema-image-select"
+                                                                    data-target-input="be_schema_facebook_default_image"
+                                                                    data-target-preview="be_schema_facebook_default_image_preview">
+                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="button be-schema-image-clear"
+                                                                    data-target-input="be_schema_facebook_default_image"
+                                                                    data-target-preview="be_schema_facebook_default_image_preview">
+                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                            </button>
+                                                        </div>
+                                                        <p class="description be-schema-social-description">
+                                                            <?php esc_html_e(
+                                                                'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                        <div id="be_schema_facebook_default_image_preview"
+                                                             class="be-schema-image-preview">
+                                                            <?php if ( $facebook_default_image ) : ?>
+                                                                <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Facebook App ID', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <input type="text"
-                                                       name="be_schema_facebook_app_id"
-                                                       value="<?php echo esc_attr( $facebook_app_id ); ?>"
-                                                       class="regular-text" />
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Facebook App ID', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_facebook_app_id"
+                                                               value="<?php echo esc_attr( $facebook_app_id ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-social-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <textarea
-                                                    name="be_schema_facebook_notes"
-                                                    rows="4"
-                                                    class="large-text code"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Free-form notes for your own reference. This is never output on the front end.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <textarea
+                                                            name="be_schema_facebook_notes"
+                                                            rows="4"
+                                                            class="large-text code"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
+                                                        <p class="description be-schema-social-description">
+                                                            <?php esc_html_e(
+                                                                'Free-form notes for your own reference. This is never output on the front end.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
 
-                            <div id="be-schema-facebook-tools" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Tools', 'beseo' ); ?></h3>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'Use Facebook Sharing Debugger to refresh scraped data after changing images or titles.',
-                                        'beseo'
-                                    ); ?>
-                                    <br />
-                                    <a href="https://developers.facebook.com/tools/debug/"
-                                       target="_blank" rel="noopener noreferrer">
-                                        <?php esc_html_e( 'Open Facebook Sharing Debugger', 'beseo' ); ?>
-                                    </a>
-                                </p>
+                                <div id="be-schema-facebook-tools" class="be-schema-social-panel">
+                                    <div class="be-schema-social-section">
+                                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Tools', 'beseo' ); ?></h4>
+                                        <p class="description be-schema-social-description">
+                                            <?php esc_html_e(
+                                                'Use Facebook Sharing Debugger to refresh scraped data after changing images or titles.',
+                                                'beseo'
+                                            ); ?>
+                                            <br />
+                                            <a href="https://developers.facebook.com/tools/debug/"
+                                               target="_blank" rel="noopener noreferrer">
+                                                <?php esc_html_e( 'Open Facebook Sharing Debugger', 'beseo' ); ?>
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
                 <!-- TWITTER TAB -->
                 <div id="be-schema-social-tab-twitter" class="be-schema-social-tab-panel">
@@ -721,159 +799,167 @@ function be_schema_engine_render_social_media_page() {
 
                         <div class="be-schema-social-panels">
                             <div id="be-schema-twitter-overview" class="be-schema-social-panel be-schema-social-panel-active">
-                                <h3><?php esc_html_e( 'Overview', 'beseo' ); ?></h3>
-                                <label>
-                                    <input type="checkbox"
-                                           name="be_schema_twitter_enabled"
-                                           value="1"
-                                           <?php checked( $twitter_enabled ); ?> />
-                                    <?php esc_html_e(
-                                        'Enable Twitter Cards (twitter:* tags) for supported pages.',
-                                        'beseo'
-                                    ); ?>
-                                </label>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'When enabled, the plugin will output Twitter Card tags for pages and posts using the rules described below.',
-                                        'beseo'
-                                    ); ?>
-                                </p>
+                                <div class="be-schema-social-section">
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Overview', 'beseo' ); ?></h4>
+                                    <label>
+                                        <input type="checkbox"
+                                               name="be_schema_twitter_enabled"
+                                               value="1"
+                                               <?php checked( $twitter_enabled ); ?> />
+                                        <?php esc_html_e(
+                                            'Enable Twitter Cards (twitter:* tags) for supported pages.',
+                                            'beseo'
+                                        ); ?>
+                                    </label>
+                                    <p class="description be-schema-social-description">
+                                        <?php esc_html_e(
+                                            'When enabled, the plugin will output Twitter Card tags for pages and posts using the rules described below.',
+                                            'beseo'
+                                        ); ?>
+                                    </p>
+                                </div>
                             </div>
 
                             <div id="be-schema-twitter-status" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Status', 'beseo' ); ?></h3>
-                                <p>
-                                    <span class="be-schema-social-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
-                                        <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'beseo' ) : esc_html__( 'Twitter Cards: OFF', 'beseo' ); ?>
-                                    </span>
-                                </p>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'Status reflects the current admin toggle; page-level availability still depends on featured images and defaults.',
-                                        'beseo'
-                                    ); ?>
-                                </p>
+                                <div class="be-schema-social-section">
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Status', 'beseo' ); ?></h4>
+                                    <p>
+                                        <span class="be-schema-social-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
+                                            <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'beseo' ) : esc_html__( 'Twitter Cards: OFF', 'beseo' ); ?>
+                                        </span>
+                                    </p>
+                                    <p class="description be-schema-social-description">
+                                        <?php esc_html_e(
+                                            'Status reflects the current admin toggle; page-level availability still depends on featured images and defaults.',
+                                            'beseo'
+                                        ); ?>
+                                    </p>
+                                </div>
                             </div>
 
                             <div id="be-schema-twitter-content" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Content', 'beseo' ); ?></h3>
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <input type="text"
-                                                       name="be_schema_twitter_handle"
-                                                       value="<?php echo esc_attr( $twitter_handle ); ?>"
-                                                       class="regular-text" />
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Default Card Type', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <select name="be_schema_twitter_card_type">
-                                                    <option value="summary"
-                                                        <?php selected( $twitter_card_type, 'summary' ); ?>>
-                                                        <?php esc_html_e( 'summary', 'beseo' ); ?>
-                                                    </option>
-                                                    <option value="summary_large_image"
-                                                        <?php selected( $twitter_card_type, 'summary_large_image' ); ?>>
-                                                        <?php esc_html_e( 'summary_large_image', 'beseo' ); ?>
-                                                    </option>
-                                                </select>
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'This value is used for twitter:card on pages that do not specify a per-post override.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
+                                <div class="be-schema-social-section">
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
+                                    <table class="form-table">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?>
+                                                </th>
+                                                <td>
                                                     <input type="text"
-                                                           id="be_schema_twitter_default_image"
-                                                           name="be_schema_twitter_default_image"
-                                                           value="<?php echo esc_url( $twitter_default_image ); ?>"
+                                                           name="be_schema_twitter_handle"
+                                                           value="<?php echo esc_attr( $twitter_handle ); ?>"
                                                            class="regular-text" />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            data-target-input="be_schema_twitter_default_image"
-                                                            data-target-preview="be_schema_twitter_default_image_preview">
-                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            data-target-input="be_schema_twitter_default_image"
-                                                            data-target-preview="be_schema_twitter_default_image_preview">
-                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                    </button>
-                                                </div>
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                                <div id="be_schema_twitter_default_image_preview"
-                                                     class="be-schema-image-preview">
-                                                    <?php if ( $twitter_default_image ) : ?>
-                                                        <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    <p class="description be-schema-social-description">
+                                                        <?php esc_html_e(
+                                                            'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                </td>
+                                            </tr>
 
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <textarea
-                                                    name="be_schema_twitter_notes"
-                                                    rows="4"
-                                                    class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
-                                                <p class="description be-schema-social-description">
-                                                    <?php esc_html_e(
-                                                        'Free-form notes for your own reference. This is never output on the front end.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Default Card Type', 'beseo' ); ?>
+                                                </th>
+                                                <td>
+                                                    <select name="be_schema_twitter_card_type">
+                                                        <option value="summary"
+                                                            <?php selected( $twitter_card_type, 'summary' ); ?>>
+                                                            <?php esc_html_e( 'summary', 'beseo' ); ?>
+                                                        </option>
+                                                        <option value="summary_large_image"
+                                                            <?php selected( $twitter_card_type, 'summary_large_image' ); ?>>
+                                                            <?php esc_html_e( 'summary_large_image', 'beseo' ); ?>
+                                                        </option>
+                                                    </select>
+                                                    <p class="description be-schema-social-description">
+                                                        <?php esc_html_e(
+                                                            'This value is used for twitter:card on pages that do not specify a per-post override.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?>
+                                                </th>
+                                                <td>
+                                                    <div class="be-schema-image-field">
+                                                        <input type="text"
+                                                               id="be_schema_twitter_default_image"
+                                                               name="be_schema_twitter_default_image"
+                                                               value="<?php echo esc_url( $twitter_default_image ); ?>"
+                                                               class="regular-text" />
+                                                        <button type="button"
+                                                                class="button be-schema-image-select"
+                                                                data-target-input="be_schema_twitter_default_image"
+                                                                data-target-preview="be_schema_twitter_default_image_preview">
+                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="button be-schema-image-clear"
+                                                                data-target-input="be_schema_twitter_default_image"
+                                                                data-target-preview="be_schema_twitter_default_image_preview">
+                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                        </button>
+                                                    </div>
+                                                    <p class="description be-schema-social-description">
+                                                        <?php esc_html_e(
+                                                            'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                    <div id="be_schema_twitter_default_image_preview"
+                                                         class="be-schema-image-preview">
+                                                        <?php if ( $twitter_default_image ) : ?>
+                                                            <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
+                                                </th>
+                                                <td>
+                                                    <textarea
+                                                        name="be_schema_twitter_notes"
+                                                        rows="4"
+                                                        class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
+                                                    <p class="description be-schema-social-description">
+                                                        <?php esc_html_e(
+                                                            'Free-form notes for your own reference. This is never output on the front end.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <div id="be-schema-twitter-tools" class="be-schema-social-panel">
-                                <h3><?php esc_html_e( 'Tools', 'beseo' ); ?></h3>
-                                <p class="description be-schema-social-description">
-                                    <?php esc_html_e(
-                                        'Use Twitter Card Validator to preview and clear cache after changing images or titles.',
-                                        'beseo'
-                                    ); ?>
-                                    <br />
-                                    <a href="https://cards-dev.twitter.com/validator"
-                                       target="_blank" rel="noopener noreferrer">
-                                        <?php esc_html_e( 'Open Twitter Card Validator', 'beseo' ); ?>
-                                    </a>
-                                </p>
+                                <div class="be-schema-social-section">
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Tools', 'beseo' ); ?></h4>
+                                    <p class="description be-schema-social-description">
+                                        <?php esc_html_e(
+                                            'Use Twitter Card Validator to preview and clear cache after changing images or titles.',
+                                            'beseo'
+                                        ); ?>
+                                        <br />
+                                        <a href="https://cards-dev.twitter.com/validator"
+                                           target="_blank" rel="noopener noreferrer">
+                                            <?php esc_html_e( 'Open Twitter Card Validator', 'beseo' ); ?>
+                                        </a>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>

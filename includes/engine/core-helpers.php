@@ -43,6 +43,7 @@ function be_schema_engine_get_settings() {
 
 		// Debug flag (in addition to WP_DEBUG / BE_SCHEMA_DEBUG).
 		'debug'             => '0',
+		'dry_run'           => '0',
 
 		// Entity toggles.
 		'person_enabled'        => '0',
@@ -107,6 +108,49 @@ function be_schema_globally_disabled() {
 	$settings = be_schema_engine_get_settings();
 
 	return ( $settings['enabled'] !== '1' );
+}
+
+/**
+ * Dry-run mode for schema output.
+ *
+ * When enabled, schema renderers log debug events but do not emit JSON-LD.
+ *
+ * @return bool
+ */
+function be_schema_is_dry_run() {
+	$settings = be_schema_engine_get_settings();
+	return ( isset( $settings['dry_run'] ) && '1' === (string) $settings['dry_run'] );
+}
+
+/**
+ * Helper to log a dry-run skip event.
+ *
+ * @param string $context Context label (homepage, post, breadcrumbs, etc.).
+ * @param array  $data    Optional metadata for the log.
+ *
+ * @return void
+ */
+function be_schema_log_dry_run( $context, $data = array() ) {
+	if ( function_exists( 'be_schema_debug_event' ) ) {
+		be_schema_debug_event(
+			'schema_dry_run',
+			array(
+				'context' => $context,
+				'data'    => $data,
+			)
+		);
+		return;
+	}
+
+	// Fallback log.
+	error_log(
+		'BE_SCHEMA_DRY_RUN ' . wp_json_encode(
+			array(
+				'context' => $context,
+				'data'    => $data,
+			)
+		)
+	);
 }
 
 /**

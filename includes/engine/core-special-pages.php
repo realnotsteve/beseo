@@ -252,6 +252,18 @@ function be_schema_output_homepage_schema() {
 		);
 	}
 
+	if ( function_exists( 'be_schema_is_dry_run' ) && be_schema_is_dry_run() ) {
+		if ( function_exists( 'be_schema_log_dry_run' ) ) {
+			be_schema_log_dry_run(
+				'homepage',
+				array(
+					'url' => home_url( '/' ),
+				)
+			);
+		}
+		return;
+	}
+
 	// If the front page is a static page, respect a per-page disable meta.
 	$post_id = 0;
 	if ( is_singular() ) {
@@ -407,6 +419,19 @@ function be_schema_output_special_page_schema() {
 				'url'       => get_permalink( $post_id ),
 			)
 		);
+	}
+
+	if ( function_exists( 'be_schema_is_dry_run' ) && be_schema_is_dry_run() ) {
+		if ( function_exists( 'be_schema_log_dry_run' ) ) {
+			be_schema_log_dry_run(
+				'special_page',
+				array(
+					'page_type' => $page_type,
+					'post_id'   => $post_id,
+				)
+			);
+		}
+		return;
 	}
 
 	$schema_type = $type_map[ $page_type ];

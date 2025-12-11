@@ -18,6 +18,25 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Option name: be_schema_engine_settings
  */
+
+// Basic URL validator for admin inputs (http/https only).
+if ( ! function_exists( 'be_schema_engine_validate_url_field' ) ) {
+    function be_schema_engine_validate_url_field( $raw_value, $label, &$errors ) {
+        $raw_value = isset( $raw_value ) ? trim( (string) $raw_value ) : '';
+        if ( '' === $raw_value ) {
+            return '';
+        }
+
+        $sanitized = esc_url_raw( $raw_value );
+        if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
+            $errors[] = sprintf( /* translators: %s: field label */ __( '%s must be a valid URL (http/https).', 'beseo' ), $label );
+            return '';
+        }
+
+        return $sanitized;
+    }
+}
+
 function be_schema_engine_save_settings() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
@@ -37,10 +56,13 @@ function be_schema_engine_save_settings() {
         $settings = array();
     }
 
+    $validation_errors = array();
+
     // Global toggles.
     $settings['enabled']           = isset( $_POST['be_schema_enabled'] ) ? '1' : '0';
     $settings['elementor_enabled'] = isset( $_POST['be_schema_elementor_enabled'] ) ? '1' : '0';
     $settings['debug']             = isset( $_POST['be_schema_debug'] ) ? '1' : '0';
+    $settings['dry_run']           = isset( $_POST['be_schema_dry_run'] ) ? '1' : '0';
 
     // Mirror debug into a dedicated debug_enabled key for engine helpers.
     $settings['debug_enabled'] = $settings['debug'];
@@ -105,9 +127,11 @@ function be_schema_engine_save_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_org_legal_name'] ) )
         : '';
 
-    $settings['org_url'] = isset( $_POST['be_schema_org_url'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_org_url'] ) )
-        : '';
+    $settings['org_url'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_org_url'] ) ? wp_unslash( $_POST['be_schema_org_url'] ) : '',
+        __( 'Organisation URL', 'beseo' ),
+        $validation_errors
+    );
 
     // Shared site logo.
     $settings['org_logo_enabled'] = isset( $_POST['be_schema_org_logo_enabled'] ) ? '1' : '0';
@@ -135,38 +159,56 @@ function be_schema_engine_save_settings() {
     $settings['publisher_enabled'] = isset( $_POST['be_schema_publisher_enabled'] ) ? '1' : '0';
 
     $settings['copyright_year'] = isset( $_POST['be_schema_copyright_year'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_copyright_year'] ) )
+        ? preg_replace( '/[^0-9]/', '', sanitize_text_field( wp_unslash( $_POST['be_schema_copyright_year'] ) ) )
         : '';
+    if ( $settings['copyright_year'] && strlen( $settings['copyright_year'] ) < 4 ) {
+        $validation_errors[] = __( 'Copyright Year should be 4 digits (e.g., 2024).', 'beseo' );
+        $settings['copyright_year'] = '';
+    }
 
-    $settings['license_url'] = isset( $_POST['be_schema_license_url'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_license_url'] ) )
-        : '';
+    $settings['license_url'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_license_url'] ) ? wp_unslash( $_POST['be_schema_license_url'] ) : '',
+        __( 'License URL', 'beseo' ),
+        $validation_errors
+    );
 
-    $settings['publishing_principles'] = isset( $_POST['be_schema_publishing_principles'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_publishing_principles'] ) )
-        : '';
+    $settings['publishing_principles'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_publishing_principles'] ) ? wp_unslash( $_POST['be_schema_publishing_principles'] ) : '',
+        __( 'Publishing Principles URL', 'beseo' ),
+        $validation_errors
+    );
 
-    $settings['corrections_policy'] = isset( $_POST['be_schema_corrections_policy'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_corrections_policy'] ) )
-        : '';
+    $settings['corrections_policy'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_corrections_policy'] ) ? wp_unslash( $_POST['be_schema_corrections_policy'] ) : '',
+        __( 'Corrections Policy URL', 'beseo' ),
+        $validation_errors
+    );
 
-    $settings['ownership_funding'] = isset( $_POST['be_schema_ownership_funding'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_ownership_funding'] ) )
-        : '';
+    $settings['ownership_funding'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_ownership_funding'] ) ? wp_unslash( $_POST['be_schema_ownership_funding'] ) : '',
+        __( 'Ownership / Funding Info URL', 'beseo' ),
+        $validation_errors
+    );
 
     $settings['publisher_custom_name'] = isset( $_POST['be_schema_publisher_custom_name'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_publisher_custom_name'] ) )
         : '';
 
-    $settings['publisher_custom_url'] = isset( $_POST['be_schema_publisher_custom_url'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_custom_url'] ) )
-        : '';
+    $settings['publisher_custom_url'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_publisher_custom_url'] ) ? wp_unslash( $_POST['be_schema_publisher_custom_url'] ) : '',
+        __( 'Custom Publisher URL', 'beseo' ),
+        $validation_errors
+    );
 
     $settings['publisher_custom_logo'] = isset( $_POST['be_schema_publisher_custom_logo'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_custom_logo'] ) )
         : '';
 
     update_option( 'be_schema_engine_settings', $settings );
+
+    foreach ( $validation_errors as $message ) {
+        add_settings_error( 'be_schema_engine', 'be_schema_engine_validation', $message, 'error' );
+    }
 }
 
 /**
@@ -197,6 +239,8 @@ function be_schema_engine_render_schema_page() {
     $enabled           = ! empty( $settings['enabled'] ) && '1' === $settings['enabled'];
     $elementor_enabled = ! empty( $settings['elementor_enabled'] ) && '1' === $settings['elementor_enabled'];
     $debug_enabled     = ! empty( $settings['debug'] ) && '1' === $settings['debug'];
+    $dry_run           = ! empty( $settings['dry_run'] ) && '1' === $settings['dry_run'];
+    $wp_debug          = defined( 'WP_DEBUG' ) && WP_DEBUG;
 
     // Ensure debug_enabled mirrors debug for consistency in code.
     if ( isset( $settings['debug'] ) ) {
@@ -267,6 +311,9 @@ function be_schema_engine_render_schema_page() {
 
     $org_name_trim = trim( (string) $org_name );
     $org_logo_ok   = ! empty( $org_logo );
+
+    // Surface any validation errors from save.
+    settings_errors( 'be_schema_engine' );
 
     ?>
     <div class="wrap beseo-wrap beseo-schema-wrap">
@@ -345,6 +392,13 @@ function be_schema_engine_render_schema_page() {
             .be-schema-status-pill.off {
                 background: #fbeaea;
                 color: #8a1f11;
+            }
+
+            .be-schema-info-box {
+                margin-top: 12px;
+                padding: 12px;
+                border-left: 4px solid #ccd0d4;
+                background: #f8f9fa;
             }
 
             /* Vertical nav inside Website tab */
@@ -494,7 +548,7 @@ function be_schema_engine_render_schema_page() {
             .be-schema-identity-option {
                 display: flex;
                 align-items: center;
-                gap: 20px;
+                gap: 8px;
                 flex-wrap: nowrap;
             }
 
@@ -502,7 +556,7 @@ function be_schema_engine_render_schema_page() {
                 display: flex;
                 align-items: center;
                 justify-content: flex-start;
-                flex: 0 0 420px;
+                flex: 0 0 380px;
             }
 
             .be-schema-identity-toggle label {
@@ -520,8 +574,19 @@ function be_schema_engine_render_schema_page() {
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                font-weight: 600;
                 margin: 0;
+            }
+
+            .be-schema-identity-toggle label {
+                font-weight: 600;
+            }
+
+            .be-schema-identity-priority label {
+                font-weight: 400;
+            }
+
+            .be-schema-identity-priority label.be-identity-radio-active {
+                font-weight: 700;
             }
 
             .be-schema-website-nav a.be-schema-website-tab-disabled {
@@ -571,6 +636,42 @@ function be_schema_engine_render_schema_page() {
                 border-left: 3px solid #ccd0d4;
                 padding-left: 12px;
                 margin-top: 8px;
+            }
+
+            .be-schema-honorifics {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .be-schema-honorific-field {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .be-schema-honorific-field span {
+                font-weight: 600;
+            }
+
+            .be-schema-honorific-field input[type="text"] {
+                width: 180px;
+            }
+
+            .be-schema-status-pill {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                margin-right: 6px;
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-status-pill.off {
+                background: #fbeaea;
+                color: #8a1f11;
             }
 
             .be-schema-conditional-block.is-disabled {
@@ -649,7 +750,7 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-settings"
                            class="be-schema-tab-link be-schema-tab-active"
                            data-schema-tab="settings">
-                            <?php esc_html_e( 'Settings', 'beseo' ); ?>
+                            <?php esc_html_e( 'Dashboard', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
@@ -668,94 +769,155 @@ function be_schema_engine_render_schema_page() {
                     </li>
                 </ul>
 
-                <!-- SETTINGS TAB -->
+                <!-- DASHBOARD TAB -->
                 <div id="be-schema-tab-settings"
                      class="be-schema-tab-panel be-schema-tab-panel-active">
-                    <h2><?php esc_html_e( 'Global Settings', 'beseo' ); ?></h2>
+                    <h2><?php esc_html_e( 'Global Dashboard', 'beseo' ); ?></h2>
 
-                    <table class="form-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row">
-                                    <?php esc_html_e( 'Enable Schema Engine', 'beseo' ); ?>
-                                </th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox"
-                                               name="be_schema_enabled"
-                                               value="1"
-                                               <?php checked( $enabled ); ?> />
-                                        <?php esc_html_e(
-                                            'Allow BE SEO to output JSON-LD schema.',
-                                            'beseo'
-                                        ); ?>
-                                    </label>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'If this is disabled, the plugin will not output any schema, regardless of page or Elementor settings.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                </td>
-                            </tr>
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Engine', 'beseo' ); ?></h4>
+                        <table class="form-table">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Enable Schema Engine', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_enabled"
+                                                   value="1"
+                                                   <?php checked( $enabled ); ?> />
+                                            <?php esc_html_e(
+                                                'Allow BE SEO to output JSON-LD schema.',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'If this is disabled, the plugin will not output any schema, regardless of page or Elementor settings.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </td>
+                                </tr>
 
-                            <tr>
-                                <th scope="row">
-                                    <?php esc_html_e( 'Enable Elementor Schema', 'beseo' ); ?>
-                                </th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox"
-                                               name="be_schema_elementor_enabled"
-                                               value="1"
-                                               <?php checked( $elementor_enabled ); ?> />
-                                        <?php esc_html_e(
-                                            'Allow Elementor-driven schema for supported widgets and page types.',
-                                            'beseo'
-                                        ); ?>
-                                    </label>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'When enabled, Elementor page settings and widget controls can emit additional JSON-LD (subject to per-page safety checks).',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Enable Elementor Schema', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_elementor_enabled"
+                                                   value="1"
+                                                   <?php checked( $elementor_enabled ); ?> />
+                                            <?php esc_html_e(
+                                                'Allow Elementor-driven schema for supported widgets and page types.',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'When enabled, Elementor page settings and widget controls can emit additional JSON-LD (subject to per-page safety checks).',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <tr>
-                                <th scope="row">
-                                    <?php esc_html_e( 'Debug Logging', 'beseo' ); ?>
-                                </th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox"
-                                               name="be_schema_debug"
-                                               value="1"
-                                               <?php checked( $debug_enabled ); ?> />
-                                        <?php esc_html_e(
-                                            'Log a combined @graph snapshot to the PHP error log on each request (when WP_DEBUG is true).',
-                                            'beseo'
-                                        ); ?>
-                                    </label>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'When enabled (and WP_DEBUG is on), the plugin writes a single BE_SCHEMA_DEBUG_GRAPH payload to the error log. This is useful for validating what the plugin thinks it is outputting.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Debug & Safety', 'beseo' ); ?></h4>
+                        <table class="form-table">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Debug Logging', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_debug"
+                                                   value="1"
+                                                   <?php checked( $debug_enabled ); ?> />
+                                            <?php esc_html_e(
+                                                'Log a combined @graph snapshot to the PHP error log on each request (when WP_DEBUG is true).',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'When enabled (and WP_DEBUG is on), the plugin writes a single BE_SCHEMA_DEBUG_GRAPH payload to the error log. This is useful for validating what the plugin thinks it is outputting.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
 
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'You can also force debug via the BE_SCHEMA_DEBUG constant in wp-config.php. Constants always win over admin settings.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                </td>
-                            </tr>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'You can also force debug via the BE_SCHEMA_DEBUG constant in wp-config.php. Constants always win over admin settings.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
 
-                        </tbody>
-                    </table>
+                                        <div class="be-schema-info-box">
+                                            <p style="margin: 0 0 6px;">
+                                                <strong><?php esc_html_e( 'Debug readiness', 'beseo' ); ?></strong>
+                                            </p>
+                                            <p style="margin: 0;">
+                                                <span class="be-schema-status-pill <?php echo $wp_debug ? '' : 'off'; ?>">
+                                                    <?php echo $wp_debug ? esc_html__( 'WP_DEBUG: ON', 'beseo' ) : esc_html__( 'WP_DEBUG: OFF', 'beseo' ); ?>
+                                                </span>
+                                                <span class="be-schema-status-pill <?php echo $debug_enabled ? '' : 'off'; ?>">
+                                                    <?php echo $debug_enabled ? esc_html__( 'Admin Debug: ON', 'beseo' ) : esc_html__( 'Admin Debug: OFF', 'beseo' ); ?>
+                                                </span>
+                                                <span class="be-schema-status-pill <?php echo $const_debug ? '' : 'off'; ?>">
+                                                    <?php echo $const_debug ? esc_html__( 'BE_SCHEMA_DEBUG constant: ON', 'beseo' ) : esc_html__( 'Constant: OFF', 'beseo' ); ?>
+                                                </span>
+                                            </p>
+                                            <?php if ( ! $wp_debug ) : ?>
+                                                <p class="description" style="margin: 6px 0 0;">
+                                                    <?php esc_html_e( 'Debug output requires WP_DEBUG to be enabled.', 'beseo' ); ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td colspan="2">
+                                        <hr class="be-schema-global-divider" />
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Schema Dry Run (No Output)', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_dry_run"
+                                                   value="1"
+                                                   <?php checked( $dry_run ); ?> />
+                                            <?php esc_html_e(
+                                                'Compute and log schema (if debug is on) but do not emit JSON-LD markup.',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'Use this as a safety toggle when testing—no schema will be printed on the front end while enabled.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
                 </div>
 
@@ -799,171 +961,178 @@ function be_schema_engine_render_schema_page() {
                         <div class="be-schema-overview-panels">
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
-                                <div class="be-schema-settings-snapshot">
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'A compact view of the current be_schema_engine_settings option, useful for debugging and verifying that values are saved as expected.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                    <?php if ( ! empty( $settings ) && is_array( $settings ) ) : ?>
-                                        <table>
-                                            <thead>
-                                                <tr>
-                                                    <th class="be-schema-settings-snapshot-key">
-                                                        <?php esc_html_e( 'Key', 'beseo' ); ?>
-                                                    </th>
-                                                    <th class="be-schema-settings-snapshot-value">
-                                                        <?php esc_html_e( 'Value', 'beseo' ); ?>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ( $settings as $key => $value ) : ?>
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Individual Schema', 'beseo' ); ?></h4>
+                                    <div class="be-schema-settings-snapshot">
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'A compact view of the current be_schema_engine_settings option, useful for debugging and verifying that values are saved as expected.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                        <?php if ( ! empty( $settings ) && is_array( $settings ) ) : ?>
+                                            <table>
+                                                <thead>
                                                     <tr>
-                                                        <td class="be-schema-settings-snapshot-key">
-                                                            <?php echo esc_html( $key ); ?>
-                                                        </td>
-                                                        <td class="be-schema-settings-snapshot-value">
-                                                            <?php
-                                                            if ( is_bool( $value ) ) {
-                                                                echo $value ? esc_html__( 'true', 'beseo' ) : esc_html__( 'false', 'beseo' );
-                                                            } elseif ( is_array( $value ) ) {
-                                                                echo empty( $value ) ? '-' : esc_html( wp_json_encode( $value ) );
-                                                            } else {
-                                                                $string_value = (string) $value;
-                                                                if ( '' === trim( $string_value ) ) {
-                                                                    $string_value = '-';
-                                                                } elseif ( mb_strlen( $string_value ) > 140 ) {
-                                                                    $string_value = mb_substr( $string_value, 0, 140 ) . '…';
-                                                                }
-                                                                echo esc_html( $string_value );
-                                                            }
-                                                            ?>
-                                                        </td>
+                                                        <th class="be-schema-settings-snapshot-key">
+                                                            <?php esc_html_e( 'Key', 'beseo' ); ?>
+                                                        </th>
+                                                        <th class="be-schema-settings-snapshot-value">
+                                                            <?php esc_html_e( 'Value', 'beseo' ); ?>
+                                                        </th>
                                                     </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
-                                    <?php else : ?>
-                                        <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
-                                    <?php endif; ?>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ( $settings as $key => $value ) : ?>
+                                                        <tr>
+                                                            <td class="be-schema-settings-snapshot-key">
+                                                                <?php echo esc_html( $key ); ?>
+                                                            </td>
+                                                            <td class="be-schema-settings-snapshot-value">
+                                                                <?php
+                                                                if ( is_bool( $value ) ) {
+                                                                    echo $value ? esc_html__( 'true', 'beseo' ) : esc_html__( 'false', 'beseo' );
+                                                                } elseif ( is_array( $value ) ) {
+                                                                    echo empty( $value ) ? '-' : esc_html( wp_json_encode( $value ) );
+                                                                } else {
+                                                                    $string_value = (string) $value;
+                                                                    if ( '' === trim( $string_value ) ) {
+                                                                        $string_value = '-';
+                                                                    } elseif ( mb_strlen( $string_value ) > 140 ) {
+                                                                        $string_value = mb_substr( $string_value, 0, 140 ) . '…';
+                                                                    }
+                                                                    echo esc_html( $string_value );
+                                                                }
+                                                                ?>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        <?php else : ?>
+                                            <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
 
                             <div id="be-schema-overview-wordpress" class="be-schema-overview-panel">
-                                <div class="be-schema-settings-snapshot">
-                                    <h3><?php esc_html_e( 'wp-config Overrides', 'beseo' ); ?></h3>
-                                    <ul class="be-schema-description">
-                                        <li>
-                                            <code>BE_SCHEMA_DISABLE_ALL</code>:
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'wp-config Overrides', 'beseo' ); ?></h4>
+                                    <div class="be-schema-settings-snapshot">
+                                        <ul class="be-schema-description">
+                                            <li>
+                                                <code>BE_SCHEMA_DISABLE_ALL</code>:
+                                                <?php esc_html_e(
+                                                    'When true, disables all schema output from this plugin, regardless of admin settings.',
+                                                    'beseo'
+                                                ); ?>
+                                                <?php if ( $const_disable_all ) : ?>
+                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
+                                                <?php endif; ?>
+                                            </li>
+                                            <li>
+                                                <code>BE_SCHEMA_DISABLE_ELEMENTOR</code>:
+                                                <?php esc_html_e(
+                                                    'When true, disables only Elementor-specific schema.',
+                                                    'beseo'
+                                                ); ?>
+                                                <?php if ( $const_disable_elementor ) : ?>
+                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
+                                                <?php endif; ?>
+                                            </li>
+                                            <li>
+                                                <code>BE_SCHEMA_DEBUG</code>:
+                                                <?php esc_html_e(
+                                                    'When true, forces debug logging even if the admin setting is off.',
+                                                    'beseo'
+                                                ); ?>
+                                                <?php if ( $const_debug ) : ?>
+                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
+                                                <?php endif; ?>
+                                            </li>
+                                        </ul>
+                                        <p class="description be-schema-description">
                                             <?php esc_html_e(
-                                                'When true, disables all schema output from this plugin, regardless of admin settings.',
+                                                'Use these constants sparingly, for emergency switches or local development. For day-to-day control, prefer the admin settings above.',
                                                 'beseo'
                                             ); ?>
-                                            <?php if ( $const_disable_all ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                            <?php endif; ?>
-                                        </li>
-                                        <li>
-                                            <code>BE_SCHEMA_DISABLE_ELEMENTOR</code>:
-                                            <?php esc_html_e(
-                                                'When true, disables only Elementor-specific schema.',
-                                                'beseo'
-                                            ); ?>
-                                            <?php if ( $const_disable_elementor ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                            <?php endif; ?>
-                                        </li>
-                                        <li>
-                                            <code>BE_SCHEMA_DEBUG</code>:
-                                            <?php esc_html_e(
-                                                'When true, forces debug logging even if the admin setting is off.',
-                                                'beseo'
-                                            ); ?>
-                                            <?php if ( $const_debug ) : ?>
-                                                <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                            <?php endif; ?>
-                                        </li>
-                                    </ul>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'Use these constants sparingly, for emergency switches or local development. For day-to-day control, prefer the admin settings above.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
                             <div id="be-schema-overview-health" class="be-schema-overview-panel">
-                                <div class="be-schema-health-table">
-                                    <h3><?php esc_html_e( 'Schema Health Check', 'beseo' ); ?></h3>
-                                    <p class="description be-schema-description">
-                                        <?php esc_html_e(
-                                            'A quick, read-only summary of core site entities used by the schema engine.',
-                                            'beseo'
-                                        ); ?>
-                                    </p>
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
-                                                <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
-                                                <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
-                                                <th><?php esc_html_e( 'Image / Logo', 'beseo' ); ?></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td><?php esc_html_e( 'Person', 'beseo' ); ?></td>
-                                                <td><?php echo $person_enabled ? '✅' : '⛔'; ?></td>
-                                                <td>
-                                                    <?php
-                                                    if ( $person_name_effective ) {
-                                                        printf(
-                                                            /* translators: %s: site title used as person name */
-                                                            esc_html__( 'Site title: %s', 'beseo' ),
-                                                            esc_html( $person_name_effective )
-                                                        );
-                                                    } else {
-                                                        echo '⚠ ' . esc_html__( 'No effective name resolved', 'beseo' );
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    if ( $person_image_ok ) {
-                                                        echo '✅';
-                                                    } else {
-                                                        echo esc_html__( 'Not set (allowed; logo fallback may be used)', 'beseo' );
-                                                    }
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><?php esc_html_e( 'Organisation', 'beseo' ); ?></td>
-                                                <td><?php echo $organization_enabled ? '✅' : '⛔'; ?></td>
-                                                <td>
-                                                    <?php
-                                                    if ( $org_name_trim ) {
-                                                        echo esc_html( $org_name_trim );
-                                                    } else {
-                                                        echo '⚠ ' . esc_html__( 'Missing organisation name', 'beseo' );
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    if ( $org_logo_ok ) {
-                                                        echo '✅';
-                                                    } else {
-                                                        echo esc_html__( 'Not set (allowed)', 'beseo' );
-                                                    }
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Schema Health Check', 'beseo' ); ?></h4>
+                                    <div class="be-schema-health-table">
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'A quick, read-only summary of core site entities used by the schema engine.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
+                                                    <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
+                                                    <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
+                                                    <th><?php esc_html_e( 'Image / Logo', 'beseo' ); ?></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><?php esc_html_e( 'Person', 'beseo' ); ?></td>
+                                                    <td><?php echo $person_enabled ? '✅' : '⛔'; ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $person_name_effective ) {
+                                                            printf(
+                                                                /* translators: %s: site title used as person name */
+                                                                esc_html__( 'Site title: %s', 'beseo' ),
+                                                                esc_html( $person_name_effective )
+                                                            );
+                                                        } else {
+                                                            echo '⚠ ' . esc_html__( 'No effective name resolved', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $person_image_ok ) {
+                                                            echo '✅';
+                                                        } else {
+                                                            echo esc_html__( 'Not set (allowed; logo fallback may be used)', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><?php esc_html_e( 'Organisation', 'beseo' ); ?></td>
+                                                    <td><?php echo $organization_enabled ? '✅' : '⛔'; ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $org_name_trim ) {
+                                                            echo esc_html( $org_name_trim );
+                                                        } else {
+                                                            echo '⚠ ' . esc_html__( 'Missing organisation name', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $org_logo_ok ) {
+                                                            echo '✅';
+                                                        } else {
+                                                            echo esc_html__( 'Not set (allowed)', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1357,93 +1526,35 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- PERSON PANEL -->
                             <div id="be-schema-website-person" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Person', 'beseo' ); ?></h3>
-
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <label>
-                                                    <input type="checkbox"
-                                                           name="be_schema_person_enabled"
-                                                           value="1"
-                                                           class="be-schema-toggle-block"
-                                                           data-target-block="be-schema-person-block"
-                                                           <?php checked( $person_enabled ); ?> />
-                                                    <?php esc_html_e(
-                                                        'Include a Person node in the site-level schema.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </label>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <div id="be-schema-person-block"
-                                     class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Person Details', 'beseo' ); ?></h4>
+                                    <p>
+                                        <span class="be-schema-status-pill <?php echo $person_enabled ? '' : 'off'; ?>">
+                                            <?php echo $person_enabled ? esc_html__( 'Person: ON', 'beseo' ) : esc_html__( 'Person: OFF', 'beseo' ); ?>
+                                        </span>
+                                    </p>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Profile Image', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-image-field">
-                                                        <input type="text"
-                                                               id="be_schema_person_image_url"
-                                                               name="be_schema_person_image_url"
-                                                               value="<?php echo esc_url( $person_image_url ); ?>"
-                                                               class="regular-text" />
-                                                        <button type="button"
-                                                                class="button be-schema-image-select"
-                                                                data-target-input="be_schema_person_image_url"
-                                                                data-target-preview="be_schema_person_image_url_preview">
-                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                        </button>
-                                                        <button type="button"
-                                                                class="button be-schema-image-clear"
-                                                                data-target-input="be_schema_person_image_url"
-                                                                data-target-preview="be_schema_person_image_url_preview">
-                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                        </button>
-                                                    </div>
-                                                    <p class="description be-schema-description">
+                                                    <label>
+                                                        <input type="checkbox"
+                                                               name="be_schema_person_enabled"
+                                                               value="1"
+                                                               class="be-schema-toggle-block"
+                                                               data-target-block="be-schema-person-block"
+                                                               <?php checked( $person_enabled ); ?> />
                                                         <?php esc_html_e(
-                                                            'Optional. If left empty, the Person entity can fall back to the shared site logo.',
+                                                            'Include a Person node in the site-level schema.',
                                                             'beseo'
                                                         ); ?>
-                                                    </p>
-                                                    <div id="be_schema_person_image_url_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $person_image_url ) : ?>
-                                                            <img src="<?php echo esc_url( $person_image_url ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_person_honorific_prefix"
-                                                           value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
-                                                           class="regular-text" />
+                                                    </label>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
-                                                            'Optional. For example: Dr, Prof, Mr, Ms, etc.',
+                                                            'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
@@ -1452,22 +1563,123 @@ function be_schema_engine_render_schema_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Person Name', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <input type="text"
-                                                           name="be_schema_person_honorific_suffix"
-                                                           value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
+                                                           name="be_schema_person_name"
+                                                           value="<?php echo esc_attr( $person_name ); ?>"
                                                            class="regular-text" />
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
-                                                            'Optional. For example: PhD, MD, CPA, etc.',
+                                                            'If empty, defaults to the Site Title.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
                                                 </td>
                                             </tr>
+                                        </tbody>
+                                    </table>
 
+                                    <div id="be-schema-person-block"
+                                         class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Description', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <textarea
+                                                            name="be_schema_person_description"
+                                                            rows="3"
+                                                            class="large-text code"><?php echo esc_textarea( $person_description ); ?></textarea>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A short bio or summary for the Person entity.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Profile Image', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-image-field">
+                                                            <input type="text"
+                                                                   id="be_schema_person_image_url"
+                                                                   name="be_schema_person_image_url"
+                                                                   value="<?php echo esc_url( $person_image_url ); ?>"
+                                                                   class="regular-text" />
+                                                            <button type="button"
+                                                                    class="button be-schema-image-select"
+                                                                    data-target-input="be_schema_person_image_url"
+                                                                    data-target-preview="be_schema_person_image_url_preview">
+                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="button be-schema-image-clear"
+                                                                    data-target-input="be_schema_person_image_url"
+                                                                    data-target-preview="be_schema_person_image_url_preview">
+                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                            </button>
+                                                        </div>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. If left empty, the Person entity can fall back to the shared site logo.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                        <div id="be_schema_person_image_url_preview"
+                                                             class="be-schema-image-preview">
+                                                            <?php if ( $person_image_url ) : ?>
+                                                                <img src="<?php echo esc_url( $person_image_url ); ?>" alt="" />
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Honorifics', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-honorifics">
+                                                            <label class="be-schema-honorific-field">
+                                                                <span><?php esc_html_e( 'Prefix', 'beseo' ); ?></span>
+                                                                <input type="text"
+                                                                       name="be_schema_person_honorific_prefix"
+                                                                       value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
+                                                                       class="regular-text" />
+                                                            </label>
+                                                            <label class="be-schema-honorific-field">
+                                                                <span><?php esc_html_e( 'Suffix', 'beseo' ); ?></span>
+                                                                <input type="text"
+                                                                       name="be_schema_person_honorific_suffix"
+                                                                       value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
+                                                                       class="regular-text" />
+                                                            </label>
+                                                        </div>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. Prefix examples: Dr, Prof, Mr, Ms. Suffix examples: PhD, MD, CPA.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Person Links', 'beseo' ); ?></h4>
+                                    <table class="form-table">
+                                        <tbody>
                                             <tr>
                                                 <th scope="row">
                                                     <?php esc_html_e( 'SameAs URLs', 'beseo' ); ?>
@@ -1492,326 +1704,338 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- ORGANISATION PANEL -->
                             <div id="be-schema-website-organization" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Organisation', 'beseo' ); ?></h3>
-
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Enable Organisation Entity', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <label>
-                                                    <input type="checkbox"
-                                                           name="be_schema_organization_enabled"
-                                                           value="1"
-                                                           class="be-schema-toggle-block"
-                                                           data-target-block="be-schema-organization-block"
-                                                           <?php checked( $organization_enabled ); ?> />
-                                                    <?php esc_html_e(
-                                                        'Include an Organisation node for this site.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </label>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'When enabled, the site will include an Organisation entity that can be used as the primary about/publisher for the WebSite, and as the default publisher for BlogPosting.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <div id="be-schema-organization-block"
-                                     class="be-schema-conditional-block <?php echo $organization_enabled ? '' : 'is-disabled'; ?>">
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Organisation Details', 'beseo' ); ?></h4>
+                                    <p>
+                                        <span class="be-schema-status-pill <?php echo $organization_enabled ? '' : 'off'; ?>">
+                                            <?php echo $organization_enabled ? esc_html__( 'Organisation: ON', 'beseo' ) : esc_html__( 'Organisation: OFF', 'beseo' ); ?>
+                                        </span>
+                                    </p>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Organisation Name', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Enable Organisation Entity', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <input type="text"
-                                                           name="be_schema_org_name"
-                                                           value="<?php echo esc_attr( $org_name ); ?>"
-                                                           class="regular-text" />
+                                                    <label>
+                                                        <input type="checkbox"
+                                                               name="be_schema_organization_enabled"
+                                                               value="1"
+                                                               class="be-schema-toggle-block"
+                                                               data-target-block="be-schema-organization-block"
+                                                               <?php checked( $organization_enabled ); ?> />
+                                                        <?php esc_html_e(
+                                                            'Include an Organisation node for this site.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </label>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
-                                                            'The public name of the organisation.',
+                                                            'When enabled, the site will include an Organisation entity that can be used as the primary about/publisher for the WebSite, and as the default publisher for BlogPosting.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Legal Name', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_org_legal_name"
-                                                           value="<?php echo esc_attr( $org_legal_name ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. The legal name of the organisation, if different from the public name.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Organisation URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_org_url"
-                                                           value="<?php echo esc_url( $org_url ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. If empty, the site URL is used.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Shared Logo (Read-Only)', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'The Organisation uses the shared site logo configured on the Global tab.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div class="be-schema-image-preview">
-                                                        <?php if ( $org_logo ) : ?>
-                                                            <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
-                                                        <?php else : ?>
-                                                            <em><?php esc_html_e( 'No shared logo selected yet.', 'beseo' ); ?></em>
-                                                        <?php endif; ?>
-                                                    </div>
                                                 </td>
                                             </tr>
                                         </tbody>
                                     </table>
+
+                                    <div id="be-schema-organization-block"
+                                         class="be-schema-conditional-block <?php echo $organization_enabled ? '' : 'is-disabled'; ?>">
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Organisation Name', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_org_name"
+                                                               value="<?php echo esc_attr( $org_name ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'The public name of the organisation.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Legal Name', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_org_legal_name"
+                                                               value="<?php echo esc_attr( $org_legal_name ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. The legal name of the organisation, if different from the public name.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Organisation URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_org_url"
+                                                               value="<?php echo esc_url( $org_url ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. If empty, the site URL is used.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Shared Logo (Read-Only)', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'The Organisation uses the shared site logo configured on the Global tab.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                        <div class="be-schema-image-preview">
+                                                            <?php if ( $org_logo ) : ?>
+                                                                <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
+                                                            <?php else : ?>
+                                                                <em><?php esc_html_e( 'No shared logo selected yet.', 'beseo' ); ?></em>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- PUBLISHER PANEL -->
                             <div id="be-schema-website-publisher" class="be-schema-website-panel">
-                                <h3><?php esc_html_e( 'Publisher', 'beseo' ); ?></h3>
-
-                                <table class="form-table">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row">
-                                                <?php esc_html_e( 'Enable WebSite.publisher', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <label>
-                                                    <input type="checkbox"
-                                                           name="be_schema_publisher_enabled"
-                                                           value="1"
-                                                           class="be-schema-toggle-block"
-                                                           data-target-block="be-schema-publisher-block"
-                                                           <?php checked( $publisher_enabled ); ?> />
-                                                    <?php esc_html_e(
-                                                        'Attach a Publisher entity to the WebSite.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </label>
-                                                <p class="description be-schema-description">
-                                                    <?php esc_html_e(
-                                                        'When enabled, the WebSite.publisher property can reference either the site Person, the Organisation, or a dedicated custom publisher organisation, depending on your configuration.',
-                                                        'beseo'
-                                                    ); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <div id="be-schema-publisher-block"
-                                     class="be-schema-conditional-block <?php echo $publisher_enabled ? '' : 'is-disabled'; ?>">
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Publisher Details', 'beseo' ); ?></h4>
+                                    <p>
+                                        <span class="be-schema-status-pill <?php echo $publisher_enabled ? '' : 'off'; ?>">
+                                            <?php echo $publisher_enabled ? esc_html__( 'Publisher: ON', 'beseo' ) : esc_html__( 'Publisher: OFF', 'beseo' ); ?>
+                                        </span>
+                                    </p>
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Copyright Year', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Enable WebSite.publisher', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <input type="text"
-                                                           name="be_schema_copyright_year"
-                                                           value="<?php echo esc_attr( $copyright_year ); ?>"
-                                                           class="regular-text"
-                                                           style="max-width: 120px;" />
+                                                    <label>
+                                                        <input type="checkbox"
+                                                               name="be_schema_publisher_enabled"
+                                                               value="1"
+                                                               class="be-schema-toggle-block"
+                                                               data-target-block="be-schema-publisher-block"
+                                                               <?php checked( $publisher_enabled ); ?> />
+                                                        <?php esc_html_e(
+                                                            'Attach a Publisher entity to the WebSite.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </label>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
-                                                            'Optional. Used for descriptive publishing metadata; not all validators require this.',
+                                                            'When enabled, the WebSite.publisher property can reference either the site Person, the Organisation, or a dedicated custom publisher organisation, depending on your configuration.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'License URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_license_url"
-                                                           value="<?php echo esc_url( $license_url ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A URL describing the license under which the site content is published.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_publishing_principles"
-                                                           value="<?php echo esc_url( $publishing_principles ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A page describing your editorial standards or publishing principles.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_corrections_policy"
-                                                           value="<?php echo esc_url( $corrections_policy ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A page explaining how corrections or updates are handled.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_ownership_funding"
-                                                           value="<?php echo esc_url( $ownership_funding ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A page describing ownership or funding information for the publisher.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_publisher_custom_name"
-                                                           value="<?php echo esc_attr( $publisher_custom_name ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_publisher_custom_url"
-                                                           value="<?php echo esc_url( $publisher_custom_url ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. The URL for the custom publisher organisation.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <div class="be-schema-image-field">
-                                                        <input type="text"
-                                                               id="be_schema_publisher_custom_logo"
-                                                               name="be_schema_publisher_custom_logo"
-                                                               value="<?php echo esc_url( $publisher_custom_logo ); ?>"
-                                                               class="regular-text" />
-                                                        <button type="button"
-                                                                class="button be-schema-image-select"
-                                                                data-target-input="be_schema_publisher_custom_logo"
-                                                                data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                        </button>
-                                                        <button type="button"
-                                                                class="button be-schema-image-clear"
-                                                                data-target-input="be_schema_publisher_custom_logo"
-                                                                data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                        </button>
-                                                    </div>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_publisher_custom_logo_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $publisher_custom_logo ) : ?>
-                                                            <img src="<?php echo esc_url( $publisher_custom_logo ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
                                                 </td>
                                             </tr>
                                         </tbody>
                                     </table>
+
+                                    <div id="be-schema-publisher-block"
+                                         class="be-schema-conditional-block <?php echo $publisher_enabled ? '' : 'is-disabled'; ?>">
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Copyright Year', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_copyright_year"
+                                                               value="<?php echo esc_attr( $copyright_year ); ?>"
+                                                               class="regular-text"
+                                                               style="max-width: 120px;" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. Used for descriptive publishing metadata; not all validators require this.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'License URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_license_url"
+                                                               value="<?php echo esc_url( $license_url ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A URL describing the license under which the site content is published.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_publishing_principles"
+                                                               value="<?php echo esc_url( $publishing_principles ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A page describing your editorial standards or publishing principles.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_corrections_policy"
+                                                               value="<?php echo esc_url( $corrections_policy ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A page explaining how corrections or updates are handled.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_ownership_funding"
+                                                               value="<?php echo esc_url( $ownership_funding ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A page describing ownership or funding information for the publisher.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_publisher_custom_name"
+                                                               value="<?php echo esc_attr( $publisher_custom_name ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text"
+                                                               name="be_schema_publisher_custom_url"
+                                                               value="<?php echo esc_url( $publisher_custom_url ); ?>"
+                                                               class="regular-text" />
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. The URL for the custom publisher organisation.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-image-field">
+                                                            <input type="text"
+                                                                   id="be_schema_publisher_custom_logo"
+                                                                   name="be_schema_publisher_custom_logo"
+                                                                   value="<?php echo esc_url( $publisher_custom_logo ); ?>"
+                                                                   class="regular-text" />
+                                                            <button type="button"
+                                                                    class="button be-schema-image-select"
+                                                                    data-target-input="be_schema_publisher_custom_logo"
+                                                                    data-target-preview="be_schema_publisher_custom_logo_preview">
+                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="button be-schema-image-clear"
+                                                                    data-target-input="be_schema_publisher_custom_logo"
+                                                                    data-target-preview="be_schema_publisher_custom_logo_preview">
+                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                            </button>
+                                                        </div>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                        <div id="be_schema_publisher_custom_logo_preview"
+                                                             class="be-schema-image-preview">
+                                                            <?php if ( $publisher_custom_logo ) : ?>
+                                                                <img src="<?php echo esc_url( $publisher_custom_logo ); ?>" alt="" />
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
@@ -2123,6 +2347,28 @@ function be_schema_engine_render_schema_page() {
                     });
                     updateIdentityTabLink(checkbox);
                 });
+
+                // Identity radio font weight: highlight only the checked one.
+                var identityRadios = document.querySelectorAll('.be-schema-identity-radio');
+
+                function refreshIdentityRadios() {
+                    identityRadios.forEach(function (radio) {
+                        var label = radio.closest('label');
+                        if (! label) {
+                            return;
+                        }
+                        if (radio.checked) {
+                            label.classList.add('be-identity-radio-active');
+                        } else {
+                            label.classList.remove('be-identity-radio-active');
+                        }
+                    });
+                }
+
+                identityRadios.forEach(function (radio) {
+                    radio.addEventListener('change', refreshIdentityRadios);
+                });
+                refreshIdentityRadios();
             });
         </script>
     </div>
