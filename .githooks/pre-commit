@@ -85,9 +85,7 @@ def staged_files():
     except Exception:
         return []
 
-def build_summary(files, env_msg):
-    if env_msg:
-        return env_msg
+def categorize(files):
     parts = []
     def add_part(part):
         if part not in parts:
@@ -105,14 +103,28 @@ def build_summary(files, env_msg):
             add_part("tests")
         if f in ("beseo-devnotes.json", "BE_SEO-Dev_Notes.json"):
             add_part("devnotes")
+    return parts
+
+def build_summary(files, env_msg, parts):
+    if env_msg:
+        return env_msg
     if not parts:
         return "BESEO: update"
     return "BESEO: " + " + ".join(parts)
 
+def build_description(env_desc, parts, files, summary):
+    if env_desc and env_desc.strip():
+        return env_desc.strip()
+    if parts:
+        return "Areas touched: " + ", ".join(parts) + "."
+    if files:
+        return "Update touching staged files."
+    return summary or "BESEO: update"
+
 files = staged_files()
-summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"))
-# Description is user-provided (BESEO_CHANGELOG_DESC) or a neutral placeholder.
-description = os.environ.get("BESEO_CHANGELOG_DESC", "See details below.")
+parts = categorize(files)
+summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"), parts)
+description = build_description(os.environ.get("BESEO_CHANGELOG_DESC"), parts, files, summary)
 
 header = "# Changelog"
 today = datetime.datetime.now().strftime("%Y-%m-%d")

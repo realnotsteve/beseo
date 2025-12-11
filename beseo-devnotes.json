@@ -26,6 +26,7 @@
       "enable_command": "git config core.hooksPath .githooks",
       "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates beseo.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
       "changelog": "CHANGELOG.md is auto-maintained by the pre-commit hook.",
+      "description_logic": "Changelog Summary is built from touched areas unless BESEO_COMMIT_MSG is set; Description uses BESEO_CHANGELOG_DESC when provided, otherwise auto 'Areas touched: ...' or a neutral message. File list stays in Details only.",
       "runtime": "Requires python3 (preferred) or python in PATH; hook exits if neither is available."
     },
     "prepare_commit_msg": {

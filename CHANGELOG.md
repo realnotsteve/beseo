@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.47] - 2025-12-10
+- Bump type: patch
+- Summary: BESEO: tooling + devnotes
+- Description: Areas touched: tooling, devnotes.
+- Details:
+- .githooks/pre-commit
+- beseo-devnotes.json
+
 ## [1.3.46] - 2025-12-10
 - Bump type: patch
 - Summary: BESEO: tooling + devnotes
