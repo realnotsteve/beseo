@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.39] - 2025-12-10
+- Bump type: patch
+- Files:
+- BE_SEO-Dev_Notes.json
+
 ## [1.3.38] - 2025-12-10
 - Bump type: patch
 - Files:
