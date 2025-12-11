@@ -5,28 +5,25 @@ The format follows clear, human-readable version entries grouped by change type.
 
 ---
 
-## [1.3.48] - 2025-12-11
+## [1.3.49] - 2025-12-11
 BESEO: tooling + devnotes
-
-### Added
-- (none)
 
 ### Changed
 - Touched areas: tooling, devnotes.
 
-### Fixed
-- (none)
+### Files
+- .githooks/pre-commit
+- CHANGELOG.md
+- beseo-devnotes.json
 
-### Removed
-- (none)
 
-### Security
-- (none)
+## [1.3.48] - 2025-12-11
+BESEO: tooling + devnotes
 
-### Upgrade Notes
-- (none)
+### Changed
+- Touched areas: tooling, devnotes.
 
-### Details
+### Files
 - .githooks/pre-commit
 - CHANGELOG.md
 - beseo-devnotes.json
@@ -35,25 +32,10 @@ BESEO: tooling + devnotes
 ## [1.3.47] - 2025-12-10
 BESEO: tooling + devnotes.
 
-### Added
-- (none)
-
 ### Changed
 - Touched areas: tooling, devnotes.
 
-### Fixed
-- (none)
-
-### Removed
-- (none)
-
-### Security
-- (none)
-
-### Upgrade Notes
-- (none)
-
-### Details
+### Files
 - .githooks/pre-commit
 - beseo-devnotes.json
 

@@ -128,10 +128,10 @@ def build_changed_items(parts, files, focus_line):
         return ["Updated staged files."]
     return [focus_line or "Maintenance."]
 
-def section_block(title, items):
+def add_section(buf, title, items):
     if not items:
-        items = ["(none)"]
-    return [f"### {title}"] + [f"- {item}" for item in items] + [""]
+        return
+    buf.extend([f"### {title}"] + [f"- {item}" for item in items] + [""])
 
 files = staged_files()
 parts = categorize(files)
@@ -154,13 +154,13 @@ entry_lines = [
     "",
 ]
 
-entry_lines += section_block("Added", [])
-entry_lines += section_block("Changed", changed_items)
-entry_lines += section_block("Fixed", [])
-entry_lines += section_block("Removed", [])
-entry_lines += section_block("Security", [])
-entry_lines += section_block("Upgrade Notes", [])
-entry_lines += section_block("Details", files if files else ["(no staged files listed)"])
+add_section(entry_lines, "Added", [])
+add_section(entry_lines, "Changed", changed_items)
+add_section(entry_lines, "Fixed", [])
+add_section(entry_lines, "Removed", [])
+add_section(entry_lines, "Security", [])
+add_section(entry_lines, "Upgrade Notes", [])
+add_section(entry_lines, "Files", files)
 
 entry = "\n".join(entry_lines) + "\n\n"
 if os.path.exists(path):
