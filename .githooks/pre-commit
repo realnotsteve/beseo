@@ -107,26 +107,38 @@ def categorize(files):
 
 def build_summary(parts, env_msg):
     if env_msg:
-        return env_msg
+        return env_msg.strip()
     if not parts:
-        return "BESEO: update"
-    return "BESEO: " + " + ".join(parts)
+        return "update"
+    return " + ".join(parts)
+
+def normalize_summary_text(text):
+    if not text:
+        return ""
+    clean = text.strip()
+    if clean.lower().startswith("beseo:"):
+        clean = clean.split(":", 1)[1].strip()
+    if clean:
+        clean = clean[0].upper() + clean[1:]
+    if clean and clean[-1] not in ".!?":
+        clean += "."
+    return clean
 
 def build_focus_line(summary, parts, env_desc):
-    if env_desc and env_desc.strip():
-        return env_desc.strip()
-    if summary:
-        return summary
-    if parts:
-        return "Focus on " + " + ".join(parts) + "."
-    return "BESEO: update."
+    base = env_desc.strip() if env_desc and env_desc.strip() else ""
+    if not base:
+        base = summary if summary else ("Focus on " + " + ".join(parts) if parts else "Update")
+    base = normalize_summary_text(base)
+    if not base:
+        base = "Update."
+    return "Summary: " + base, base
 
-def build_changed_items(parts, files, focus_line):
+def build_changed_items(parts, files, summary_text):
     if parts:
         return ["Touched areas: " + ", ".join(parts) + "."]
     if files:
         return ["Updated staged files."]
-    return [focus_line or "Maintenance."]
+    return [summary_text or "Maintenance."]
 
 def add_section(buf, title, items):
     if not items:
@@ -136,16 +148,15 @@ def add_section(buf, title, items):
 files = staged_files()
 parts = categorize(files)
 summary = build_summary(parts, os.environ.get("BESEO_COMMIT_MSG"))
-focus_line = build_focus_line(summary, parts, os.environ.get("BESEO_CHANGELOG_DESC"))
-changed_items = build_changed_items(parts, files, focus_line)
+focus_line, summary_text = build_focus_line(summary, parts, os.environ.get("BESEO_CHANGELOG_DESC"))
+changed_items = build_changed_items(parts, files, summary_text)
 
 header = "\n".join([
     "# Changelog",
     "",
-    "All notable changes to this project will be documented in this file.  ",
-    "The format follows clear, human-readable version entries grouped by change type.",
+    "All notable changes to this project will be documented in this file. The format follows clear, human-readable version entries grouped by change type.",
     "",
-    "---",
+    "<hr />",
 ])
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 entry_lines = [

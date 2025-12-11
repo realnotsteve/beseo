@@ -264,20 +264,15 @@ function be_schema_engine_render_overview_page() {
             color: #000000ff;
         }
         .be-schema-hero-changelog .be-changelog-heading {
-            margin: 0 0 6px; /* subtitles spacing */
+            margin: 0 0 6px 0; /* subtitles spacing */
             color: #5a3554ff;
         }
         .be-schema-hero-changelog .be-changelog-title {
             margin-top: 0;
         }
         .be-schema-hero-changelog .be-changelog-version {
-            margin: 12px 0 12px 0; /* controls space above/below the version/date heading */
+            margin: 0 0 12px 0; /* controls space below the version/date heading */
             color: #333692ff;
-        }
-        .be-schema-hero-changelog .be-changelog-bump {
-            font-weight: 600;
-            margin: 4px 0 0;
-            color: #5a3554ff;
         }
         .be-schema-hero-changelog .be-changelog-hr {
             border: 0;
@@ -296,7 +291,7 @@ function be_schema_engine_render_overview_page() {
             padding-left: 0;
         }
         .be-schema-hero-changelog li {
-            margin: 0 0 4px;
+            margin: 0 0 1px;
             padding-left: 0;
         }
         .be-schema-hero-changelog ul.be-changelog-files li {
