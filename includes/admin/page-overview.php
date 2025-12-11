@@ -98,15 +98,8 @@ function be_schema_engine_render_overview_page() {
                 continue;
             }
 
-            if ( preg_match( '/^-\\s*Bump type:\\s*(.+)$/i', $trim, $m ) ) {
-                $close_list();
-                $html .= '<p class="be-changelog-bump">Bump type: ' . esc_html( $m[1] ) . '</p>';
-                continue;
-            }
-
             if ( preg_match( '/^-\\s*Files:?$/i', $trim ) ) {
                 $close_list();
-               /* $html          .= '<p class="be-changelog-files-label">Files</p>'; */
                 $html          .= '<ul class="be-changelog-files">';
                 $open_list_type = 'files';
                 continue;
@@ -197,11 +190,14 @@ function be_schema_engine_render_overview_page() {
          h2 {font-size: 36px;}
         .beseo-overview-wrap {
             margin-top: 20px; /* preserve top spacing; use WP's default horizontal gutters */
+            min-height: 100vh; /* stretch hero to bottom */
         }
         .be-schema-overview-hero {
             background-image: url('<?php echo esc_url( $hero_image_url ); ?>');
             background-size: cover;
             background-position: center;
+            min-height: 100vh;
+            height: 100%;
             border-radius: 8px;
             padding: 24px;
             flex: 1;
@@ -265,22 +261,24 @@ function be_schema_engine_render_overview_page() {
         }
         .be-schema-hero-changelog .be-changelog-heading {
             margin: 0 0 6px 0; /* subtitles spacing */
-            color: #5a3554ff;
         }
         .be-schema-hero-changelog .be-changelog-title {
-            margin-top: 0;
+            margin: 0 0 8px 0; /* match left hero spacing */
         }
         .be-schema-hero-changelog .be-changelog-version {
-            margin: 0 0 12px 0; /* controls space below the version/date heading */
-            color: #333692ff;
+            margin: 10px 0 6px 0; /* controls space above/below the version/date heading */
+            color: #195fafff;
+        }
+        .be-schema-hero-changelog p {
+            margin: 0 0 8px 0; /* match left hero spacing */
         }
         .be-schema-hero-changelog .be-changelog-hr {
             border: 0;
             border-top: 1px solid rgba(0, 0, 0, 0.2);
-            margin: 8px 0;
+            margin: 14px 0;
         }
         .be-schema-hero-changelog ul {
-            margin: 6px 0 10px 18px;
+            margin: 4px 0 8px 18px;
             padding-left: 0;
             list-style: disc outside;
             color: #000000ff;
@@ -316,8 +314,9 @@ function be_schema_engine_render_overview_page() {
             padding-left: 18px;
         }
         .be-schema-hero-devnotes li {
-            margin-bottom: 4px;
+            margin-bottom: 8px;
             font-size: 12px;
+            line-height: 1.4;
         }
         .be-schema-overview-hero .be-schema-hero-content a {
             color: #000;
@@ -358,7 +357,7 @@ function be_schema_engine_render_overview_page() {
                 $version = defined( 'BE_SCHEMA_ENGINE_VERSION' ) ? BE_SCHEMA_ENGINE_VERSION : '';
                 ?>
                 <div class="be-schema-hero-content">
-                    <h2 style="margin-bottom: 8px"><?php esc_html_e( 'Description', 'beseo' ); ?></h2>
+                    <h2 style="margin-bottom: 18px; margin-top: 14px"><?php esc_html_e( 'Description', 'beseo' ); ?></h2>
 
                     <p class="description">
                         <?php
