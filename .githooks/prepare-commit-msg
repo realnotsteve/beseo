@@ -14,6 +14,49 @@ if grep -Eq '^[[:space:]]*[^#[:space:]]+' "$msg_file"; then
   exit 0
 fi
 
-# Default human-centered message (override with BESEO_COMMIT_MSG env if desired).
-default_msg="${BESEO_COMMIT_MSG:-BESEO: streamline overview UX and tooling}"
-printf '%s\n' "$default_msg" > "$msg_file"
+staged_files="$(git diff --cached --name-only)"
+
+# If no staged files, keep a simple default.
+if [[ -z "$staged_files" ]]; then
+  default_msg="${BESEO_COMMIT_MSG:-BESEO: update}"
+  printf '%s\n' "$default_msg" > "$msg_file"
+  exit 0
+fi
+
+# Build a quick summary from touched areas unless BESEO_COMMIT_MSG is set.
+if [[ -n "${BESEO_COMMIT_MSG:-}" ]]; then
+  summary="${BESEO_COMMIT_MSG}"
+else
+  summary_parts=()
+  add_part() {
+    local part="$1"
+    for existing in "${summary_parts[@]:-}"; do
+      [[ "$existing" == "$part" ]] && return 0
+    done
+    summary_parts+=("$part")
+  }
+
+  while IFS= read -r f; do
+    [[ "$f" == includes/admin/page-schema.php* ]] && add_part "schema admin"
+    [[ "$f" == includes/admin/page-social-media.php* ]] && add_part "social admin"
+    [[ "$f" == includes/engine/* ]] && add_part "engine"
+    [[ "$f" == .githooks/* ]] && add_part "tooling"
+    [[ "$f" == tests/* ]] && add_part "tests"
+    [[ "$f" == beseo-devnotes.json || "$f" == BE_SEO-Dev_Notes.json ]] && add_part "devnotes"
+  done <<<"$staged_files"
+
+  if [[ ${#summary_parts[@]} -eq 0 ]]; then
+    summary="BESEO: update"
+  else
+    summary="BESEO: $(IFS=' + '; echo "${summary_parts[*]}")"
+  fi
+fi
+
+{
+  printf '%s\n' "$summary"
+  echo
+  echo "Summary:"
+  while IFS= read -r f; do
+    printf -- "- %s\n" "$f"
+  done <<<"$staged_files"
+} > "$msg_file"
