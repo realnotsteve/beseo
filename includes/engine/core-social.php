@@ -408,6 +408,10 @@ function be_schema_output_social_meta() {
 		return;
 	}
 
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		return;
+	}
+
 	$url         = be_schema_social_get_url();
 	$title       = be_schema_social_get_title();
 	$description = be_schema_social_get_description();
@@ -463,6 +467,15 @@ function be_schema_output_social_meta() {
 		);
 
 		error_log( 'BE_SOCIAL_DEBUG ' . wp_json_encode( $debug_snapshot ) );
+
+		set_transient(
+			'be_social_last_debug',
+			array(
+				'time'     => time(),
+				'snapshot' => $debug_snapshot,
+			),
+			DAY_IN_SECONDS
+		);
 	}
 
 	if ( $dry_run ) {

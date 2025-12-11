@@ -312,6 +312,25 @@ function be_schema_engine_render_schema_page() {
     $org_name_trim = trim( (string) $org_name );
     $org_logo_ok   = ! empty( $org_logo );
 
+    // Publisher effective name/logo resolution (simplified: custom -> org -> person).
+    $publisher_name_effective = '';
+    if ( ! empty( $publisher_custom_name ) ) {
+        $publisher_name_effective = $publisher_custom_name;
+    } elseif ( $org_name_trim ) {
+        $publisher_name_effective = $org_name_trim;
+    } elseif ( $person_name_effective ) {
+        $publisher_name_effective = $person_name_effective;
+    }
+
+    $publisher_logo_ok = false;
+    if ( ! empty( $publisher_custom_logo ) ) {
+        $publisher_logo_ok = true;
+    } elseif ( $org_logo_ok ) {
+        $publisher_logo_ok = true;
+    } elseif ( $person_image_ok ) {
+        $publisher_logo_ok = true;
+    }
+
     // Surface any validation errors from save.
     settings_errors( 'be_schema_engine' );
 
@@ -399,6 +418,11 @@ function be_schema_engine_render_schema_page() {
                 padding: 12px;
                 border-left: 4px solid #ccd0d4;
                 background: #f8f9fa;
+            }
+
+            .be-schema-health-link {
+                display: inline-block;
+                margin-top: 6px;
             }
 
             /* Vertical nav inside Website tab */
@@ -962,6 +986,29 @@ function be_schema_engine_render_schema_page() {
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
                                 <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Last Debug Snapshot', 'beseo' ); ?></h4>
+                                    <?php
+                                    $last_debug = get_transient( 'be_schema_last_debug_graph' );
+                                    if ( $last_debug && isset( $last_debug['graph'] ) ) :
+                                        $last_debug_time = isset( $last_debug['time'] ) ? (int) $last_debug['time'] : 0;
+                                        ?>
+                                        <p class="description be-schema-description">
+                                            <?php
+                                            if ( $last_debug_time ) {
+                                                /* translators: %s: human time diff */
+                                                printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_debug_time, time() ) ) );
+                                            } else {
+                                                esc_html_e( 'Captured recently.', 'beseo' );
+                                            }
+                                            ?>
+                                        </p>
+                                        <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_debug['graph'], JSON_PRETTY_PRINT ) ); ?></pre>
+                                    <?php else : ?>
+                                        <p><em><?php esc_html_e( 'No debug snapshot found. Enable debug to capture the next graph.', 'beseo' ); ?></em></p>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="be-schema-global-section">
                                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Individual Schema', 'beseo' ); ?></h4>
                                     <div class="be-schema-settings-snapshot">
                                         <p class="description be-schema-description">
@@ -1075,11 +1122,12 @@ function be_schema_engine_render_schema_page() {
                                         <table>
                                             <thead>
                                                 <tr>
-                                                    <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
-                                                    <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
-                                                    <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
-                                                    <th><?php esc_html_e( 'Image / Logo', 'beseo' ); ?></th>
-                                                </tr>
+                                                <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Image / Logo', 'beseo' ); ?></th>
+                                                <th><?php esc_html_e( 'Issues', 'beseo' ); ?></th>
+                                            </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
@@ -1107,6 +1155,9 @@ function be_schema_engine_render_schema_page() {
                                                         }
                                                         ?>
                                                     </td>
+                                                    <td>
+                                                        <?php echo $person_enabled ? esc_html__( 'OK', 'beseo' ) : esc_html__( 'Disabled', 'beseo' ); ?>
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td><?php esc_html_e( 'Organisation', 'beseo' ); ?></td>
@@ -1126,6 +1177,74 @@ function be_schema_engine_render_schema_page() {
                                                             echo '✅';
                                                         } else {
                                                             echo esc_html__( 'Not set (allowed)', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        $org_issues = array();
+                                                        if ( $organization_enabled && ! $org_name_trim ) {
+                                                            $org_issues[] = sprintf(
+                                                                '<span class="be-schema-status-pill off">%s</span>',
+                                                                esc_html__( 'Name missing', 'beseo' )
+                                                            );
+                                                        }
+                                                        if ( $organization_enabled && ! $org_logo_ok ) {
+                                                            $org_issues[] = sprintf(
+                                                                '<span class="be-schema-status-pill off">%s</span>',
+                                                                esc_html__( 'Logo missing', 'beseo' )
+                                                            );
+                                                        }
+                                                        if ( empty( $org_issues ) ) {
+                                                            echo esc_html__( 'OK', 'beseo' );
+                                                        } else {
+                                                            echo implode( '<br />', $org_issues );
+                                                            echo '<br /><a class="be-schema-website-tab-link be-schema-health-link" data-website-tab="organization" href="#be-schema-website-organization">' . esc_html__( 'Go to Organisation', 'beseo' ) . '</a>';
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><?php esc_html_e( 'Publisher', 'beseo' ); ?></td>
+                                                    <td><?php echo $publisher_enabled ? '✅' : '⛔'; ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $publisher_name_effective ) {
+                                                            echo esc_html( $publisher_name_effective );
+                                                        } else {
+                                                            echo '⚠ ' . esc_html__( 'No publisher resolved', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        if ( $publisher_logo_ok ) {
+                                                            echo '✅';
+                                                        } else {
+                                                            echo esc_html__( 'Not set (allowed)', 'beseo' );
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        $publisher_issues = array();
+                                                        if ( $publisher_enabled && ! $publisher_name_effective ) {
+                                                            $publisher_issues[] = sprintf(
+                                                                '<span class="be-schema-status-pill off">%s</span>',
+                                                                esc_html__( 'Name missing', 'beseo' )
+                                                            );
+                                                        }
+                                                        if ( $publisher_enabled && ! $publisher_logo_ok ) {
+                                                            $publisher_issues[] = sprintf(
+                                                                '<span class="be-schema-status-pill off">%s</span>',
+                                                                esc_html__( 'Logo missing', 'beseo' )
+                                                            );
+                                                        }
+                                                        if ( empty( $publisher_issues ) ) {
+                                                            echo esc_html__( 'OK', 'beseo' );
+                                                        } else {
+                                                            echo implode( '<br />', $publisher_issues );
+                                                            echo '<br /><a class="be-schema-website-tab-link be-schema-health-link" data-website-tab="publisher" href="#be-schema-website-publisher">' . esc_html__( 'Go to Publisher', 'beseo' ) . '</a>';
                                                         }
                                                         ?>
                                                     </td>
@@ -2171,6 +2290,22 @@ function be_schema_engine_render_schema_page() {
                         event.preventDefault();
                         var tabKey = link.getAttribute('data-website-tab');
                         activateWebsiteTab(tabKey);
+                    });
+                });
+
+                // Health panel quick links to Website subtabs.
+                var healthLinks = document.querySelectorAll('.be-schema-health-link');
+                function openWebsiteTab(target) {
+                    activateSchemaTab('website');
+                    if (target) {
+                        activateWebsiteTab(target);
+                    }
+                }
+                healthLinks.forEach(function (link) {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        var target = link.getAttribute('data-website-tab');
+                        openWebsiteTab(target);
                     });
                 });
 

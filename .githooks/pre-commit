@@ -75,16 +75,51 @@ PY
 
 $PYTHON - "$CHANGELOG_FILE" "$new_version" "$BUMP" <<'PY'
 import sys, datetime, os, subprocess
+
 path, version, bump = sys.argv[1], sys.argv[2], sys.argv[3]
-files = []
-try:
-    out = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True)
-    files = [line for line in out.splitlines() if line.strip()]
-except Exception:
-    files = []
+
+def staged_files():
+    try:
+        out = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True)
+        return [line for line in out.splitlines() if line.strip()]
+    except Exception:
+        return []
+
+def build_summary(files, env_msg):
+    if env_msg:
+        return env_msg
+    parts = []
+    def add_part(part):
+        if part not in parts:
+            parts.append(part)
+    for f in files:
+        if f.startswith("includes/admin/page-schema.php"):
+            add_part("schema admin")
+        if f.startswith("includes/admin/page-social-media.php"):
+            add_part("social admin")
+        if f.startswith("includes/engine/"):
+            add_part("engine")
+        if f.startswith(".githooks/") or f.startswith(".github/"):
+            add_part("tooling")
+        if f.startswith("tests/"):
+            add_part("tests")
+        if f in ("beseo-devnotes.json", "BE_SEO-Dev_Notes.json"):
+            add_part("devnotes")
+    if not parts:
+        return "BESEO: update"
+    return "BESEO: " + " + ".join(parts)
+
+files = staged_files()
+summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"))
+
 header = "# Changelog"
 today = datetime.datetime.now().strftime("%Y-%m-%d")
-entry_lines = [f"## [{version}] - {today}", f"- Bump type: {bump}", "- Files:"]
+entry_lines = [
+    f"## [{version}] - {today}",
+    f"- Bump type: {bump}",
+    f"- Summary: {summary}",
+    "- Details:",
+]
 if files:
     entry_lines += [f"- {f}" for f in files]
 else:

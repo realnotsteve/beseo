@@ -114,11 +114,15 @@ function be_schema_globally_disabled() {
  * Dry-run mode for schema output.
  *
  * When enabled, schema renderers log debug events but do not emit JSON-LD.
+ * Never allow output on REST requests when dry run is on.
  *
  * @return bool
  */
 function be_schema_is_dry_run() {
 	$settings = be_schema_engine_get_settings();
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		return true;
+	}
 	return ( isset( $settings['dry_run'] ) && '1' === (string) $settings['dry_run'] );
 }
 

@@ -283,6 +283,28 @@ function be_schema_engine_render_overview_page() {
         .be-schema-hero-changelog .be-changelog-file {
             font-family: Menlo, Consolas, "Liberation Mono", monospace;
         }
+
+        .be-schema-hero-devnotes {
+            text-align: left;
+            margin-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 10px;
+        }
+
+        .be-schema-hero-devnotes h4 {
+            margin: 0 0 6px;
+            font-size: 14px;
+        }
+
+        .be-schema-hero-devnotes ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .be-schema-hero-devnotes li {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
         .be-schema-overview-hero .be-schema-hero-content a {
             color: #000;
             text-decoration: underline;
@@ -354,6 +376,16 @@ function be_schema_engine_render_overview_page() {
                         <a href="https://github.com/realnotsteve/beseo" style="margin-right: 1px;" target="_blank" rel="noopener noreferrer">GitHub</a><span style="vertical-align: -4px; margin-right: 6px;" class="dashicons dashicons-external"></span>
                         <a href="https://billevans.be" style="margin-left: 6px; margin-right: 1px;" target="_blank" rel="noopener noreferrer">Bill's Site</a><span style="vertical-align: -4px;" class="dashicons dashicons-external"></span>
                     </p>
+
+                    <div class="be-schema-hero-devnotes">
+                        <h4><?php esc_html_e( 'Dev Workflow', 'beseo' ); ?></h4>
+                        <ul>
+                            <li><?php esc_html_e( 'Pre-commit auto-bumps version/changelog; commit message is auto-built from staged files (override with BESEO_COMMIT_MSG).', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'Use Schema/Social dry-run toggles for safe testing; debug snapshots surface in Schema Snapshots and Social Dashboard when WP_DEBUG + Debug are on.', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'Manual test checklist: see tests/README.md.', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'Notes live in beseo-devnotes.json; keep it updated when making changes.', 'beseo' ); ?></li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="be-schema-hero-changelog" aria-label="<?php esc_attr_e( 'Changelog preview', 'beseo' ); ?>">

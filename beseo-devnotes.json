@@ -361,7 +361,8 @@
   ],
   "ux_notes": [
     "Schema Website entities (Person/Organisation/Publisher) now show inline status pills (ON/OFF) within their sections to surface current enable state.",
-    "Schema Settings debug row now includes a read-only debug readiness box showing WP_DEBUG, admin debug toggle, and BE_SCHEMA_DEBUG constant state."
+    "Schema Settings debug row now includes a read-only debug readiness box showing WP_DEBUG, admin debug toggle, and BE_SCHEMA_DEBUG constant state.",
+    "Schema Snapshots > Health: added Issues column with badges for missing org/publisher name/logo and quick links to the relevant Website subtabs."
   ],
   "testing_notes": [
     "Manual test checklist in tests/README.md covering schema/social URL validation, copyright-year check, dry-run behaviour, and debug readiness pills. No automated test suite wired up yet."
@@ -372,5 +373,13 @@
   ],
   "ux_notes_settings": [
     "Schema > Dashboard tab now uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls."
+  ],
+  "debug_notes": [
+    "Schema Snapshots tab surfaces the last BE_SCHEMA_DEBUG_GRAPH payload (stored for 24h) with timestamp.",
+    "Social Dashboard surfaces the last BE_SOCIAL_DEBUG snapshot (stored for 24h) with timestamp."
+  ],
+  "dev_workflow_notes": [
+    "Home hero panel lists dev workflow reminders: pre-commit auto bump + auto message, use dry-run toggles for testing, check tests/README.md, keep beseo-devnotes.json updated.",
+    "Changelog entries now include a generated Summary and Details list (from staged files or BESEO_COMMIT_MSG)."
   ]
 }

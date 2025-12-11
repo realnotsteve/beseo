@@ -152,6 +152,16 @@ function be_schema_debug_collect( array $graph ) {
 			)
 		)
 	);
+
+	// Store last debug snapshot for admin display (24h).
+	set_transient(
+		'be_schema_last_debug_graph',
+		array(
+			'time'  => time(),
+			'graph' => $graph,
+		),
+		DAY_IN_SECONDS
+	);
 }
 
 /**

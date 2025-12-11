@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.44] - 2025-12-10
+- Bump type: patch
+- Summary: BESEO: tooling + devnotes + schema admin + social admin + engine
+- Details:
+- .githooks/pre-commit
+- beseo-devnotes.json
+- includes/admin/page-overview.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/engine/core-debug.php
+- includes/engine/core-helpers.php
+- includes/engine/core-social.php
+
 ## [1.3.43] - 2025-12-10
 - Bump type: patch
 - Files:
