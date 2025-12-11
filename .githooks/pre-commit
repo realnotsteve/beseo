@@ -111,7 +111,8 @@ def build_summary(files, env_msg):
 
 files = staged_files()
 summary = build_summary(files, os.environ.get("BESEO_COMMIT_MSG"))
-description = os.environ.get("BESEO_CHANGELOG_DESC", summary)
+# Description is user-provided (BESEO_CHANGELOG_DESC) or a neutral placeholder.
+description = os.environ.get("BESEO_CHANGELOG_DESC", "See details below.")
 
 header = "# Changelog"
 today = datetime.datetime.now().strftime("%Y-%m-%d")
