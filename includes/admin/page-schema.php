@@ -662,6 +662,165 @@ function be_schema_engine_render_schema_page() {
                 margin-top: 8px;
             }
 
+            /* Person block tweaks */
+            #be-schema-person-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+            .be-schema-divider-line {
+                border: 0;
+                border-top: 1px solid #ccd0d4;
+                margin: 8px 0;
+            }
+            .be-schema-optional-controls {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                margin: 8px 0 12px;
+                padding-left: 0;
+                margin-left: 0;
+                padding-top: 2px;
+            }
+            .be-schema-optional-controls select {
+                min-width: 200px;
+            }
+            .be-schema-optional-fields .be-schema-optional-field {
+                border-left: 0;
+                padding-left: 0;
+                margin: 0 0 16px;
+            }
+<<<<<<< ours
+<<<<<<< ours
+            /* Person block layout (flex-table) */
+            .flex-table {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+<<<<<<< ours
+            .table-header,
+            .table-row {
+                display: flex;
+                width: 100%;
+            }
+            .table-cell {
+                flex: 1;
+                padding: 10px;
+                text-align: left;
+            }
+            .be-schema-person-flex {
+                gap: 0;
+            }
+            .table-cell.be-schema-field-label {
+=======
+            .be-schema-field {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .be-schema-field-label {
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+                flex: 0 0 auto;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+<<<<<<< ours
+            .table-cell.be-schema-field-control {
+=======
+            .be-schema-field-control {
+                flex: 1 1 0;
+                min-width: 260px;
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .be-schema-field-control input[type="text"],
+            .be-schema-field-control select,
+            .be-schema-field-control textarea {
+                align-self: flex-start;
+=======
+>>>>>>> theirs
+=======
+            #be-schema-person-block table.form-table th,
+            #be-schema-person-block table.form-table td {
+                padding-left: 0 !important;
+                text-align: left;
+                vertical-align: top;
+            }
+            #be-schema-person-block table.form-table th {
+                padding-right: 12px !important;
+                white-space: nowrap;
+            }
+            #be-schema-person-block table.form-table td {
+                padding-right: 0 !important;
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+            }
+            #be-schema-person-block tr.be-schema-optional-row th,
+            #be-schema-person-block tr.be-schema-optional-row td {
+                padding-left: 0 !important;
+                vertical-align: middle;
+<<<<<<< ours
+<<<<<<< ours
+            }
+=======
+            #be-schema-person-block table.form-table th,
+            #be-schema-person-block table.form-table td {
+                padding-left: 0 !important;
+                text-align: left;
+                vertical-align: top;
+            }
+            #be-schema-person-block table.form-table th {
+                padding-right: 12px !important;
+                white-space: nowrap;
+            }
+            #be-schema-person-block table.form-table td {
+                padding-right: 0 !important;
+            }
+            #be-schema-person-block tr.be-schema-optional-row th,
+            #be-schema-person-block tr.be-schema-optional-row td {
+                padding-left: 0 !important;
+                vertical-align: middle;
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+            }
+>>>>>>> theirs
+            #be-schema-person-block tr.be-schema-optional-row th {
+                line-height: 32px;
+            }
+            #be-schema-person-block .be-schema-optional-controls {
+                margin-left: 0;
+                align-items: center;
+            }
+            #be-schema-person-block tr.be-schema-person-enable-row th,
+            #be-schema-person-block tr.be-schema-person-enable-row td {
+                vertical-align: baseline !important;
+            }
+            #be-schema-person-block tr.be-schema-person-enable-row td label {
+                display: inline-flex;
+                align-items: baseline;
+            }
+            .be-schema-optional-field.is-hidden {
+                display: none;
+            }
+            .be-schema-optional-remove {
+                margin-bottom: 6px;
+            }
+
             .be-schema-honorifics {
                 display: flex;
                 flex-wrap: wrap;
@@ -781,7 +940,7 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-overview"
                            class="be-schema-tab-link"
                            data-schema-tab="overview">
-                            <?php esc_html_e( 'Snapshots', 'beseo' ); ?>
+                            <?php esc_html_e( 'Status', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
@@ -947,7 +1106,7 @@ function be_schema_engine_render_schema_page() {
 
                 <!-- OVERVIEW TAB -->
                 <div id="be-schema-tab-overview" class="be-schema-tab-panel">
-                    <h2><?php esc_html_e( 'Snapshots', 'beseo' ); ?></h2>
+                    <h2><?php esc_html_e( 'Status', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
                             'Quick, read-only views of the schema engine state, WordPress overrides, and site health.',
@@ -1652,70 +1811,30 @@ function be_schema_engine_render_schema_page() {
                                             <?php echo $person_enabled ? esc_html__( 'Person: ON', 'beseo' ) : esc_html__( 'Person: OFF', 'beseo' ); ?>
                                         </span>
                                     </p>
-                                    <table class="form-table">
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               name="be_schema_person_enabled"
-                                                               value="1"
-                                                               class="be-schema-toggle-block"
-                                                               data-target-block="be-schema-person-block"
-                                                               <?php checked( $person_enabled ); ?> />
-                                                        <?php esc_html_e(
-                                                            'Include a Person node in the site-level schema.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </label>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Person Name', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <input type="text"
-                                                           name="be_schema_person_name"
-                                                           value="<?php echo esc_attr( $person_name ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'If empty, defaults to the Site Title.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
                                     <div id="be-schema-person-block"
                                          class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
                                         <table class="form-table">
                                             <tbody>
-                                                <tr>
+                                                <tr class="be-schema-person-enable-row">
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Description', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <textarea
-                                                            name="be_schema_person_description"
-                                                            rows="3"
-                                                            class="large-text code"><?php echo esc_textarea( $person_description ); ?></textarea>
+                                                        <label>
+                                                            <input type="checkbox"
+                                                                   name="be_schema_person_enabled"
+                                                                   value="1"
+                                                                   class="be-schema-toggle-block"
+                                                                   data-target-block="be-schema-person-block"
+                                                                   <?php checked( $person_enabled ); ?> />
+                                                            <?php esc_html_e(
+                                                                'Include a Person node in the site-level schema.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </label>
                                                         <p class="description be-schema-description">
                                                             <?php esc_html_e(
-                                                                'Optional. A short bio or summary for the Person entity.',
+                                                                'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
                                                                 'beseo'
                                                             ); ?>
                                                         </p>
@@ -1724,70 +1843,126 @@ function be_schema_engine_render_schema_page() {
 
                                                 <tr>
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Profile Image', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Person Name', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-image-field">
-                                                            <input type="text"
-                                                                   id="be_schema_person_image_url"
-                                                                   name="be_schema_person_image_url"
-                                                                   value="<?php echo esc_url( $person_image_url ); ?>"
-                                                                   class="regular-text" />
-                                                            <button type="button"
-                                                                    class="button be-schema-image-select"
-                                                                    data-target-input="be_schema_person_image_url"
-                                                                    data-target-preview="be_schema_person_image_url_preview">
-                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                            </button>
-                                                            <button type="button"
-                                                                    class="button be-schema-image-clear"
-                                                                    data-target-input="be_schema_person_image_url"
-                                                                    data-target-preview="be_schema_person_image_url_preview">
-                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                            </button>
-                                                        </div>
+                                                        <input type="text"
+                                                               name="be_schema_person_name"
+                                                               value="<?php echo esc_attr( $person_name ); ?>"
+                                                               class="regular-text" />
                                                         <p class="description be-schema-description">
                                                             <?php esc_html_e(
-                                                                'Optional. If left empty, the Person entity can fall back to the shared site logo.',
+                                                                'If empty, defaults to the Site Title.',
                                                                 'beseo'
                                                             ); ?>
                                                         </p>
-                                                        <div id="be_schema_person_image_url_preview"
-                                                             class="be-schema-image-preview">
-                                                            <?php if ( $person_image_url ) : ?>
-                                                                <img src="<?php echo esc_url( $person_image_url ); ?>" alt="" />
-                                                            <?php endif; ?>
-                                                        </div>
                                                     </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="2"></td>
                                                 </tr>
 
                                                 <tr>
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Honorifics', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-honorifics">
-                                                            <label class="be-schema-honorific-field">
-                                                                <span><?php esc_html_e( 'Prefix', 'beseo' ); ?></span>
-                                                                <input type="text"
-                                                                       name="be_schema_person_honorific_prefix"
-                                                                       value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
-                                                                       class="regular-text" />
-                                                            </label>
-                                                            <label class="be-schema-honorific-field">
-                                                                <span><?php esc_html_e( 'Suffix', 'beseo' ); ?></span>
-                                                                <input type="text"
-                                                                       name="be_schema_person_honorific_suffix"
-                                                                       value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
-                                                                       class="regular-text" />
-                                                            </label>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="person">
+                                                            <label class="screen-reader-text" for="be-schema-person-optional"><?php esc_html_e( 'Add optional Person property', 'beseo' ); ?></label>
+                                                            <select id="be-schema-person-optional" aria-label="<?php esc_attr_e( 'Add optional Person property', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="description"><?php esc_html_e( 'Description', 'beseo' ); ?></option>
+                                                                <option value="profile_image"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></option>
+                                                                <option value="honorifics"><?php esc_html_e( 'Honorifics', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="person"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_person_optional" id="be_schema_person_optional" value="" />
                                                         </div>
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. Prefix examples: Dr, Prof, Mr, Ms. Suffix examples: PhD, MD, CPA.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
+
+                                                        <div class="be-schema-optional-fields" id="be-schema-person-optional-fields">
+                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="description">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="description">−</button>
+                                                                <label for="be_schema_person_description" class="screen-reader-text"><?php esc_html_e( 'Description', 'beseo' ); ?></label>
+                                                                <textarea
+                                                                    name="be_schema_person_description"
+                                                                    id="be_schema_person_description"
+                                                                    rows="3"
+                                                                    class="large-text code"><?php echo esc_textarea( $person_description ); ?></textarea>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A short bio or summary for the Person entity.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="profile_image">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="profile_image">−</button>
+                                                                <label for="be_schema_person_image_url" class="screen-reader-text"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_url"
+                                                                           name="be_schema_person_image_url"
+                                                                           value="<?php echo esc_url( $person_image_url ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_person_image_url"
+                                                                            data-target-preview="be_schema_person_image_url_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_person_image_url"
+                                                                            data-target-preview="be_schema_person_image_url_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. If left empty, the Person entity can fall back to the shared site logo.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_url_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_url ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_url ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="honorifics">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="honorifics">−</button>
+                                                                <div class="be-schema-honorifics">
+                                                                    <label class="be-schema-honorific-field">
+                                                                        <span><?php esc_html_e( 'Prefix', 'beseo' ); ?></span>
+                                                                        <input type="text"
+                                                                               name="be_schema_person_honorific_prefix"
+                                                                               value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
+                                                                               class="regular-text" />
+                                                                    </label>
+                                                                    <label class="be-schema-honorific-field">
+                                                                        <span><?php esc_html_e( 'Suffix', 'beseo' ); ?></span>
+                                                                        <input type="text"
+                                                                               name="be_schema_person_honorific_suffix"
+                                                                               value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
+                                                                               class="regular-text" />
+                                                                    </label>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. Prefix examples: Dr, Prof, Mr, Ms. Suffix examples: PhD, MD, CPA.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -2433,6 +2608,137 @@ function be_schema_engine_render_schema_page() {
                     });
                     toggleImageField(toggle);
                 });
+
+                // Person optional properties (Description, Profile Image, Honorifics).
+                (function () {
+                    var optionalContainer = document.getElementById('be-schema-person-optional-fields');
+                    var optionalSelect = document.getElementById('be-schema-person-optional');
+                    var optionalAdd = document.querySelector('[data-optional-add=\"person\"]');
+                    var optionalHidden = document.getElementById('be_schema_person_optional');
+
+                    if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
+                        return;
+                    }
+
+                    function getVisibleProps() {
+                        var props = [];
+                        optionalContainer.querySelectorAll('.be-schema-optional-field').forEach(function (field) {
+                            if (! field.classList.contains('is-hidden')) {
+                                var prop = field.getAttribute('data-optional-prop');
+                                if (prop) {
+                                    props.push(prop);
+                                }
+                            }
+                        });
+                        return props;
+                    }
+
+                    function syncHidden() {
+                        optionalHidden.value = getVisibleProps().join(',');
+                    }
+
+                    function syncAddButton() {
+                        var val = optionalSelect.value;
+                        var exists = val && getVisibleProps().indexOf(val) !== -1;
+                        var disabled = ! val || exists;
+                        optionalAdd.disabled = disabled;
+                        if (disabled) {
+                            optionalAdd.classList.add('disabled');
+                        } else {
+                            optionalAdd.classList.remove('disabled');
+                        }
+                    }
+
+                    function clearFields(field) {
+                        field.querySelectorAll('input[type=\"text\"], textarea').forEach(function (input) {
+                            input.value = '';
+                        });
+                        if (field.getAttribute('data-optional-prop') === 'profile_image') {
+                            var preview = document.getElementById('be_schema_person_image_url_preview');
+                            if (preview) {
+                                preview.innerHTML = '';
+                            }
+                        }
+                    }
+
+                    function showProp(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop=\"' + prop + '\"]');
+                        if (! field) {
+                            return;
+                        }
+                        field.classList.remove('is-hidden');
+                        syncHidden();
+                        syncAddButton();
+                    }
+
+                    function hideProp(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop=\"' + prop + '\"]');
+                        if (! field) {
+                            return;
+                        }
+                        clearFields(field);
+                        field.classList.add('is-hidden');
+                        syncHidden();
+                        syncAddButton();
+                    }
+
+                    function propHasValue(prop) {
+                        if (prop === 'description') {
+                            var desc = document.getElementById('be_schema_person_description');
+                            return desc && desc.value.trim().length > 0;
+                        }
+                        if (prop === 'profile_image') {
+                            var img = document.getElementById('be_schema_person_image_url');
+                            return img && img.value.trim().length > 0;
+                        }
+                        if (prop === 'honorifics') {
+                            var pre = document.querySelector('[name=\"be_schema_person_honorific_prefix\"]');
+                            var suf = document.querySelector('[name=\"be_schema_person_honorific_suffix\"]');
+                            return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
+                        }
+                        return false;
+                    }
+
+                    optionalSelect.addEventListener('change', syncAddButton);
+
+                    optionalAdd.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        var val = optionalSelect.value;
+                        if (! val) {
+                            return;
+                        }
+                        if (getVisibleProps().indexOf(val) !== -1) {
+                            return;
+                        }
+                        showProp(val);
+                        optionalSelect.value = '';
+                        syncAddButton();
+                    });
+
+                    optionalContainer.querySelectorAll('.be-schema-optional-remove').forEach(function (btn) {
+                        btn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            var prop = btn.getAttribute('data-optional-remove');
+                            hideProp(prop);
+                        });
+                    });
+
+                    var initial = [];
+                    if (optionalHidden.value) {
+                        initial = optionalHidden.value.split(',').map(function (s) {
+                            return s.trim();
+                        }).filter(Boolean);
+                    }
+
+                    ['description', 'profile_image', 'honorifics'].forEach(function (prop) {
+                        if (initial.indexOf(prop) !== -1 || propHasValue(prop)) {
+                            showProp(prop);
+                        }
+                    });
+
+                    syncHidden();
+                    syncAddButton();
+                })();
 
                 // Identity option enable/disable.
                 var identityCheckboxes = document.querySelectorAll('.be-schema-identity-checkbox');

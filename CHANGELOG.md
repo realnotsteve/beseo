@@ -4,45 +4,13 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
-## [1.3.53] - 2025-12-11
-Summary: Update.
+## [1.3.54] - 2025-12-12
+Summary: Schema admin.
 
 ### Changed
-- Updated staged files.
+- Touched areas: schema admin.
 
 ### Files
-- includes/admin/page-overview.php
-
-
-## [1.3.52] - 2025-12-11
-Summary: Update.
-
-### Changed
-- Updated staged files.
-
-### Files
-- includes/admin/page-overview.php
-
-
-## [1.3.51] - 2025-12-11
-Summary: Tooling + devnotes.
-
-### Changed
-- Touched areas: tooling, devnotes.
-
-### Files
-- .githooks/pre-commit
-- beseo-devnotes.json
-- includes/admin/page-overview.php
-
-
-## [1.3.50] - 2025-12-11
-Summary: Update.
-
-### Changed
-- Updated staged files.
-
-### Files
-- includes/admin/page-overview.php
+- includes/admin/page-schema.php
 
 
