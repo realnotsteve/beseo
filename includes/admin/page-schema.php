@@ -169,6 +169,7 @@ function be_schema_engine_save_settings() {
 
     // Publisher.
     $settings['publisher_enabled'] = isset( $_POST['be_schema_publisher_enabled'] ) ? '1' : '0';
+    $settings['publisher_dedicated_enabled'] = isset( $_POST['be_schema_publisher_dedicated_enabled'] ) ? '1' : '0';
 
     $settings['copyright_year'] = isset( $_POST['be_schema_copyright_year'] )
         ? preg_replace( '/[^0-9]/', '', sanitize_text_field( wp_unslash( $_POST['be_schema_copyright_year'] ) ) )
@@ -329,15 +330,16 @@ function be_schema_engine_render_schema_page() {
     $website_image_1_1  = isset( $settings['website_image_1_1'] ) ? $settings['website_image_1_1'] : '';
 
     // Publisher.
-    $publisher_enabled     = ! empty( $settings['publisher_enabled'] ) && '1' === $settings['publisher_enabled'];
-    $copyright_year        = isset( $settings['copyright_year'] ) ? $settings['copyright_year'] : '';
-    $license_url           = isset( $settings['license_url'] ) ? $settings['license_url'] : '';
-    $publishing_principles = isset( $settings['publishing_principles'] ) ? $settings['publishing_principles'] : '';
-    $corrections_policy    = isset( $settings['corrections_policy'] ) ? $settings['corrections_policy'] : '';
-    $ownership_funding     = isset( $settings['ownership_funding'] ) ? $settings['ownership_funding'] : '';
-    $publisher_custom_name = isset( $settings['publisher_custom_name'] ) ? $settings['publisher_custom_name'] : '';
-    $publisher_custom_url  = isset( $settings['publisher_custom_url'] ) ? $settings['publisher_custom_url'] : '';
-    $publisher_custom_logo = isset( $settings['publisher_custom_logo'] ) ? $settings['publisher_custom_logo'] : '';
+    $publisher_enabled             = ! empty( $settings['publisher_enabled'] ) && '1' === $settings['publisher_enabled'];
+    $publisher_dedicated_enabled   = isset( $settings['publisher_dedicated_enabled'] ) ? '1' === $settings['publisher_dedicated_enabled'] : false;
+    $copyright_year                = isset( $settings['copyright_year'] ) ? $settings['copyright_year'] : '';
+    $license_url                   = isset( $settings['license_url'] ) ? $settings['license_url'] : '';
+    $publishing_principles         = isset( $settings['publishing_principles'] ) ? $settings['publishing_principles'] : '';
+    $corrections_policy            = isset( $settings['corrections_policy'] ) ? $settings['corrections_policy'] : '';
+    $ownership_funding             = isset( $settings['ownership_funding'] ) ? $settings['ownership_funding'] : '';
+    $publisher_custom_name         = isset( $settings['publisher_custom_name'] ) ? $settings['publisher_custom_name'] : '';
+    $publisher_custom_url          = isset( $settings['publisher_custom_url'] ) ? $settings['publisher_custom_url'] : '';
+    $publisher_custom_logo         = isset( $settings['publisher_custom_logo'] ) ? $settings['publisher_custom_logo'] : '';
 
     // Constants / overrides for messaging.
     $const_disable_all       = defined( 'BE_SCHEMA_DISABLE_ALL' ) && BE_SCHEMA_DISABLE_ALL;
@@ -707,6 +709,23 @@ function be_schema_engine_render_schema_page() {
                 padding-left: 0;
             }
 
+            #be-schema-person-links-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            /* Organisation block */
+            #be-schema-organization-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            /* Publisher block */
+            #be-schema-publisher-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
             #be-schema-person-block table.form-table th,
             #be-schema-person-block table.form-table td {
                 padding-left: 0 !important;
@@ -732,12 +751,14 @@ function be_schema_engine_render_schema_page() {
                 line-height: 32px;
             }
 
-            #be-schema-person-block tr.be-schema-person-enable-row th,
-            #be-schema-person-block tr.be-schema-person-enable-row td {
+            .be-schema-person-enable-row th,
+            .be-schema-person-enable-row td {
                 vertical-align: baseline !important;
+                padding-left: 0 !important;
+                text-align: left;
             }
 
-            #be-schema-person-block tr.be-schema-person-enable-row td label {
+            .be-schema-person-enable-row td label {
                 display: inline-flex;
                 align-items: baseline;
                 gap: 6px;
@@ -1753,6 +1774,35 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- PERSON PANEL -->
                             <div id="be-schema-website-person" class="be-schema-website-panel">
+                                <table class="form-table be-schema-person-enable-table">
+                                    <tbody>
+                                        <tr class="be-schema-person-enable-row">
+                                            <th scope="row">
+                                                <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
+                                            </th>
+                                            <td>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           name="be_schema_person_enabled"
+                                                           value="1"
+                                                           class="be-schema-toggle-block"
+                                                           data-target-block="be-schema-person-block be-schema-person-links-block"
+                                                           <?php checked( $person_enabled ); ?> />
+                                                    <?php esc_html_e(
+                                                        'Include a Person node in the site-level schema.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </label>
+                                                <p class="description be-schema-description">
+                                                    <?php esc_html_e(
+                                                        'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                                 <div class="be-schema-global-section">
                                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Person Details', 'beseo' ); ?></h4>
                                     <p>
@@ -1764,32 +1814,6 @@ function be_schema_engine_render_schema_page() {
                                          class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
                                         <table class="form-table">
                                             <tbody>
-                                                <tr class="be-schema-person-enable-row">
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Enable Person Entity', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <label>
-                                                            <input type="checkbox"
-                                                                   name="be_schema_person_enabled"
-                                                                   value="1"
-                                                                   class="be-schema-toggle-block"
-                                                                   data-target-block="be-schema-person-block"
-                                                                   <?php checked( $person_enabled ); ?> />
-                                                            <?php esc_html_e(
-                                                                'Include a Person node in the site-level schema.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </label>
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'When enabled, the site will include a Person entity (usually the primary individual behind the site). The name itself is derived from other context, such as the site name or additional configuration.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
-
                                                 <tr>
                                                     <th scope="row">
                                                         <?php esc_html_e( 'Person Name', 'beseo' ); ?>
@@ -1921,32 +1945,65 @@ function be_schema_engine_render_schema_page() {
 
                                 <div class="be-schema-global-section">
                                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Person Links', 'beseo' ); ?></h4>
-                                    <table class="form-table">
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'SameAs URLs', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <textarea
-                                                        name="be_schema_person_sameas_raw"
-                                                        rows="5"
-                                                        class="large-text code"><?php echo esc_textarea( $person_sameas_raw ); ?></textarea>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'One URL per line, pointing to authoritative profiles for this person (for example, knowledge panels or professional profiles). These are used as Person.sameAs and are separate from social sharing settings.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <div id="be-schema-person-links-block"
+                                         class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'SameAs URLs', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <textarea
+                                                            name="be_schema_person_sameas_raw"
+                                                            rows="5"
+                                                            class="large-text code"><?php echo esc_textarea( $person_sameas_raw ); ?></textarea>
+                                                        <p class="description be-schema-description">
+                                                            <?php esc_html_e(
+                                                                'One URL per line, pointing to authoritative profiles for this person (for example, knowledge panels or professional profiles). These are used as Person.sameAs and are separate from social sharing settings.',
+                                                                'beseo'
+                                                            ); ?>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- ORGANISATION PANEL -->
                             <div id="be-schema-website-organization" class="be-schema-website-panel">
+                                <table class="form-table be-schema-person-enable-table">
+                                    <tbody>
+                                        <tr class="be-schema-person-enable-row">
+                                            <th scope="row">
+                                                <?php esc_html_e( 'Enable Organisation Entity', 'beseo' ); ?>
+                                            </th>
+                                            <td>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           name="be_schema_organization_enabled"
+                                                           value="1"
+                                                           class="be-schema-toggle-block"
+                                                           data-target-block="be-schema-organization-block"
+                                                           <?php checked( $organization_enabled ); ?> />
+                                                    <?php esc_html_e(
+                                                        'Include an Organisation node for this site.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </label>
+                                                <p class="description be-schema-description">
+                                                    <?php esc_html_e(
+                                                        'When enabled, the site will include an Organisation entity that can be used as the primary about/publisher for the WebSite, and as the default publisher for BlogPosting.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
                                 <div class="be-schema-global-section">
                                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Organisation Details', 'beseo' ); ?></h4>
                                     <p>
@@ -1954,36 +2011,6 @@ function be_schema_engine_render_schema_page() {
                                             <?php echo $organization_enabled ? esc_html__( 'Organisation: ON', 'beseo' ) : esc_html__( 'Organisation: OFF', 'beseo' ); ?>
                                         </span>
                                     </p>
-                                    <table class="form-table">
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Enable Organisation Entity', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               name="be_schema_organization_enabled"
-                                                               value="1"
-                                                               class="be-schema-toggle-block"
-                                                               data-target-block="be-schema-organization-block"
-                                                               <?php checked( $organization_enabled ); ?> />
-                                                        <?php esc_html_e(
-                                                            'Include an Organisation node for this site.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </label>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'When enabled, the site will include an Organisation entity that can be used as the primary about/publisher for the WebSite, and as the default publisher for BlogPosting.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
                                     <div id="be-schema-organization-block"
                                          class="be-schema-conditional-block <?php echo $organization_enabled ? '' : 'is-disabled'; ?>">
                                         <table class="form-table">
@@ -2070,45 +2097,46 @@ function be_schema_engine_render_schema_page() {
 
                             <!-- PUBLISHER PANEL -->
                             <div id="be-schema-website-publisher" class="be-schema-website-panel">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Publisher Details', 'beseo' ); ?></h4>
-                                    <p>
-                                        <span class="be-schema-status-pill <?php echo $publisher_enabled ? '' : 'off'; ?>">
-                                            <?php echo $publisher_enabled ? esc_html__( 'Publisher: ON', 'beseo' ) : esc_html__( 'Publisher: OFF', 'beseo' ); ?>
-                                        </span>
-                                    </p>
-                                    <table class="form-table">
-                                        <tbody>
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Enable WebSite.publisher', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <label>
-                                                        <input type="checkbox"
-                                                               name="be_schema_publisher_enabled"
-                                                               value="1"
-                                                               class="be-schema-toggle-block"
-                                                               data-target-block="be-schema-publisher-block"
-                                                               <?php checked( $publisher_enabled ); ?> />
-                                                        <?php esc_html_e(
-                                                            'Attach a Publisher entity to the WebSite.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </label>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'When enabled, the WebSite.publisher property can reference either the site Person, the Organisation, or a dedicated custom publisher organisation, depending on your configuration.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <table class="form-table be-schema-person-enable-table">
+                                    <tbody>
+                                        <tr class="be-schema-person-enable-row">
+                                            <th scope="row">
+                                                <?php esc_html_e( 'Enable WebSite.publisher', 'beseo' ); ?>
+                                            </th>
+                                            <td>
+                                                <label>
+                                                    <input type="checkbox"
+                                                           name="be_schema_publisher_enabled"
+                                                           value="1"
+                                                           class="be-schema-toggle-block"
+                                                           data-target-block="be-schema-publisher-block"
+                                                           <?php checked( $publisher_enabled ); ?> />
+                                                    <?php esc_html_e(
+                                                        'Attach a Publisher entity to the WebSite.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </label>
+                                                <p class="description be-schema-description">
+                                                    <?php esc_html_e(
+                                                        'When enabled, the WebSite.publisher property can reference either the site Person, the Organisation, or a dedicated custom publisher organisation, depending on your configuration.',
+                                                        'beseo'
+                                                    ); ?>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
 
-                                    <div id="be-schema-publisher-block"
-                                         class="be-schema-conditional-block <?php echo $publisher_enabled ? '' : 'is-disabled'; ?>">
+                                <p>
+                                    <span class="be-schema-status-pill <?php echo $publisher_enabled ? '' : 'off'; ?>">
+                                        <?php echo $publisher_enabled ? esc_html__( 'Publisher: ON', 'beseo' ) : esc_html__( 'Publisher: OFF', 'beseo' ); ?>
+                                    </span>
+                                </p>
+
+                                <div id="be-schema-publisher-block"
+                                     class="be-schema-conditional-block <?php echo $publisher_enabled ? '' : 'is-disabled'; ?>">
+                                    <div class="be-schema-global-section">
+                                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Entity', 'beseo' ); ?></h4>
                                         <table class="form-table">
                                             <tbody>
                                                 <tr>
@@ -2199,6 +2227,28 @@ function be_schema_engine_render_schema_page() {
                                                                 'beseo'
                                                             ); ?>
                                                         </p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="be-schema-global-section">
+                                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Dedicated', 'beseo' ); ?></h4>
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Dedicated Publisher', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <label>
+                                                            <input type="checkbox"
+                                                                   name="be_schema_publisher_dedicated_enabled"
+                                                                   value="1"
+                                                                   <?php checked( $publisher_dedicated_enabled ); ?> />
+                                                            <?php esc_html_e( 'Use a dedicated publisher entity.', 'beseo' ); ?>
+                                                        </label>
                                                     </td>
                                                 </tr>
 
@@ -2437,20 +2487,24 @@ function be_schema_engine_render_schema_page() {
                 var toggles = document.querySelectorAll('.be-schema-toggle-block');
 
                 function updateConditionalBlock(toggle) {
-                    var targetId = toggle.getAttribute('data-target-block');
-                    if (! targetId) {
+                    var targetIds = toggle.getAttribute('data-target-block');
+                    if (! targetIds) {
                         return;
                     }
-                    var block = document.getElementById(targetId);
-                    if (! block) {
-                        return;
-                    }
-
-                    if (toggle.checked) {
-                        block.classList.remove('is-disabled');
-                    } else {
-                        block.classList.add('is-disabled');
-                    }
+                    targetIds.split(/\s+/).forEach(function (targetId) {
+                        if (! targetId) {
+                            return;
+                        }
+                        var block = document.getElementById(targetId);
+                        if (! block) {
+                            return;
+                        }
+                        if (toggle.checked) {
+                            block.classList.remove('is-disabled');
+                        } else {
+                            block.classList.add('is-disabled');
+                        }
+                    });
                 }
 
                 toggles.forEach(function (toggle) {
