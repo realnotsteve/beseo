@@ -103,6 +103,10 @@ function be_schema_engine_save_social_settings() {
         ? wp_kses_post( wp_unslash( $_POST['be_schema_facebook_notes'] ) )
         : '';
 
+    $settings['facebook_optional'] = isset( $_POST['be_schema_facebook_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_facebook_optional'] ) )
+        : '';
+
     // TWITTER TAB -------------------------------.
 
     $settings['twitter_handle'] = isset( $_POST['be_schema_twitter_handle'] )
@@ -121,6 +125,10 @@ function be_schema_engine_save_social_settings() {
 
     $settings['twitter_notes'] = isset( $_POST['be_schema_twitter_notes'] )
         ? wp_kses_post( wp_unslash( $_POST['be_schema_twitter_notes'] ) )
+        : '';
+
+    $settings['twitter_optional'] = isset( $_POST['be_schema_twitter_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_optional'] ) )
         : '';
 
     update_option( 'be_schema_social_settings', $settings );
@@ -168,11 +176,56 @@ function be_schema_engine_render_social_media_page() {
     $facebook_default_image = isset( $settings['facebook_default_image'] ) ? $settings['facebook_default_image'] : '';
     $facebook_app_id        = isset( $settings['facebook_app_id'] ) ? $settings['facebook_app_id'] : '';
     $facebook_notes         = isset( $settings['facebook_notes'] ) ? $settings['facebook_notes'] : '';
+    $facebook_optional_raw  = isset( $settings['facebook_optional'] ) ? $settings['facebook_optional'] : '';
 
     $twitter_handle        = isset( $settings['twitter_handle'] ) ? $settings['twitter_handle'] : '';
     $twitter_card_type     = isset( $settings['twitter_card_type'] ) ? $settings['twitter_card_type'] : 'summary_large_image';
     $twitter_default_image = isset( $settings['twitter_default_image'] ) ? $settings['twitter_default_image'] : '';
     $twitter_notes         = isset( $settings['twitter_notes'] ) ? $settings['twitter_notes'] : '';
+    $twitter_optional_raw  = isset( $settings['twitter_optional'] ) ? $settings['twitter_optional'] : '';
+
+    $facebook_optional_props = array();
+    if ( ! empty( $facebook_optional_raw ) ) {
+        $facebook_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $facebook_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $facebook_page_url ) && ! in_array( 'facebook_page_url', $facebook_optional_props, true ) ) {
+        $facebook_optional_props[] = 'facebook_page_url';
+    }
+    if ( ! empty( $facebook_default_image ) && ! in_array( 'facebook_default_image', $facebook_optional_props, true ) ) {
+        $facebook_optional_props[] = 'facebook_default_image';
+    }
+    if ( ! empty( $facebook_app_id ) && ! in_array( 'facebook_app_id', $facebook_optional_props, true ) ) {
+        $facebook_optional_props[] = 'facebook_app_id';
+    }
+    if ( ! empty( $facebook_notes ) && ! in_array( 'facebook_notes', $facebook_optional_props, true ) ) {
+        $facebook_optional_props[] = 'facebook_notes';
+    }
+    $facebook_optional_serialized = implode( ',', $facebook_optional_props );
+
+    $twitter_optional_props = array();
+    if ( ! empty( $twitter_optional_raw ) ) {
+        $twitter_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $twitter_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $twitter_handle ) && ! in_array( 'twitter_handle', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_handle';
+    }
+    if ( ! empty( $twitter_default_image ) && ! in_array( 'twitter_default_image', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_default_image';
+    }
+    if ( ! empty( $twitter_notes ) && ! in_array( 'twitter_notes', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_notes';
+    }
+    $twitter_optional_serialized = implode( ',', $twitter_optional_props );
 
     ?>
     <div class="wrap beseo-wrap beseo-social-wrap">
@@ -253,6 +306,44 @@ function be_schema_engine_render_social_media_page() {
             .be-schema-social-status-pill.off {
                 background: #fbeaea;
                 color: #8a1f11;
+            }
+
+            #be-schema-facebook-content .be-schema-optional-row th,
+            #be-schema-facebook-content .be-schema-optional-row td,
+            #be-schema-twitter-content .be-schema-optional-row th,
+            #be-schema-twitter-content .be-schema-optional-row td {
+                vertical-align: middle;
+            }
+
+            .be-schema-optional-controls {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                margin: 8px 0 12px;
+                padding-left: 0;
+            }
+
+            .be-schema-optional-controls select {
+                min-width: 220px;
+            }
+
+            .be-schema-optional-controls.is-disabled {
+                opacity: 0.55;
+            }
+
+            .be-schema-optional-fields .be-schema-optional-field {
+                border-left: 0;
+                padding-left: 0;
+                margin: 0 0 16px;
+            }
+
+            .be-schema-optional-field.is-hidden {
+                display: none;
+            }
+
+            .be-schema-optional-remove {
+                margin-bottom: 6px;
             }
 
             .be-schema-image-field {
@@ -660,103 +751,121 @@ function be_schema_engine_render_social_media_page() {
                                     </div>
                                 </div>
 
-                                <div id="be-schema-facebook-content" class="be-schema-social-panel">
-                                    <div class="be-schema-social-section">
-                                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
-                                        <table class="form-table">
-                                            <tbody>
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_facebook_page_url"
-                                                               value="<?php echo esc_url( $facebook_page_url ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-social-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A public Facebook Page URL for your site or organisation.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                            <div id="be-schema-facebook-content" class="be-schema-social-panel">
+                                <div class="be-schema-social-section">
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
+                                    <table class="form-table">
+                                        <tbody>
+                                            <tr class="be-schema-optional-row">
+                                                <th scope="row">
+                                                    <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
+                                                </th>
+                                                <td>
+                                                    <div class="be-schema-optional-controls" data-optional-scope="facebook">
+                                                        <label class="screen-reader-text" for="be-schema-facebook-optional"><?php esc_html_e( 'Add optional Facebook property', 'beseo' ); ?></label>
+                                                        <select id="be-schema-facebook-optional" aria-label="<?php esc_attr_e( 'Add optional Facebook property', 'beseo' ); ?>">
+                                                            <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                            <option value="facebook_page_url"><?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?></option>
+                                                            <option value="facebook_default_image"><?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?></option>
+                                                            <option value="facebook_app_id"><?php esc_html_e( 'Facebook App ID', 'beseo' ); ?></option>
+                                                            <option value="facebook_notes"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></option>
+                                                        </select>
+                                                        <button type="button"
+                                                                class="button be-schema-optional-add"
+                                                                data-optional-add="facebook"
+                                                                disabled>
+                                                            +
+                                                        </button>
+                                                        <input type="hidden" name="be_schema_facebook_optional" id="be_schema_facebook_optional" value="<?php echo esc_attr( $facebook_optional_serialized ); ?>" />
+                                                    </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <div class="be-schema-image-field">
+                                                    <div class="be-schema-optional-fields" id="be-schema-facebook-optional-fields">
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'facebook_page_url', $facebook_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="facebook_page_url">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="facebook_page_url">−</button>
+                                                            <label for="be_schema_facebook_page_url" class="screen-reader-text"><?php esc_html_e( 'Facebook Page URL', 'beseo' ); ?></label>
                                                             <input type="text"
-                                                                   id="be_schema_facebook_default_image"
-                                                                   name="be_schema_facebook_default_image"
-                                                                   value="<?php echo esc_url( $facebook_default_image ); ?>"
+                                                                   name="be_schema_facebook_page_url"
+                                                                   id="be_schema_facebook_page_url"
+                                                                   value="<?php echo esc_url( $facebook_page_url ); ?>"
                                                                    class="regular-text" />
-                                                            <button type="button"
-                                                                    class="button be-schema-image-select"
-                                                                    data-target-input="be_schema_facebook_default_image"
-                                                                    data-target-preview="be_schema_facebook_default_image_preview">
-                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                            </button>
-                                                            <button type="button"
-                                                                    class="button be-schema-image-clear"
-                                                                    data-target-input="be_schema_facebook_default_image"
-                                                                    data-target-preview="be_schema_facebook_default_image_preview">
-                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                            </button>
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Optional. A public Facebook Page URL for your site or organisation.',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
                                                         </div>
-                                                        <p class="description be-schema-social-description">
-                                                            <?php esc_html_e(
-                                                                'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                        <div id="be_schema_facebook_default_image_preview"
-                                                             class="be-schema-image-preview">
-                                                            <?php if ( $facebook_default_image ) : ?>
-                                                                <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
-                                                            <?php endif; ?>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'facebook_default_image', $facebook_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="facebook_default_image">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="facebook_default_image">−</button>
+                                                            <label for="be_schema_facebook_default_image" class="screen-reader-text"><?php esc_html_e( 'Default Facebook OG Image', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <input type="text"
+                                                                       id="be_schema_facebook_default_image"
+                                                                       name="be_schema_facebook_default_image"
+                                                                       value="<?php echo esc_url( $facebook_default_image ); ?>"
+                                                                       class="regular-text" />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        data-target-input="be_schema_facebook_default_image"
+                                                                        data-target-preview="be_schema_facebook_default_image_preview">
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        data-target-input="be_schema_facebook_default_image"
+                                                                        data-target-preview="be_schema_facebook_default_image_preview">
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                            </div>
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Used for og:image when there is no featured image on a page. If empty, OpenGraph falls back to the Global default image (if set).',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                            <div id="be_schema_facebook_default_image_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $facebook_default_image ) : ?>
+                                                                    <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                </tr>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Facebook App ID', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_facebook_app_id"
-                                                               value="<?php echo esc_attr( $facebook_app_id ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-social-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'facebook_app_id', $facebook_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="facebook_app_id">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="facebook_app_id">−</button>
+                                                            <label for="be_schema_facebook_app_id" class="screen-reader-text"><?php esc_html_e( 'Facebook App ID', 'beseo' ); ?></label>
+                                                            <input type="text"
+                                                                   name="be_schema_facebook_app_id"
+                                                                   id="be_schema_facebook_app_id"
+                                                                   value="<?php echo esc_attr( $facebook_app_id ); ?>"
+                                                                   class="regular-text" />
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Optional. When set, the plugin outputs fb:app_id for Facebook debugging and analytics.',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                        </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <textarea
-                                                            name="be_schema_facebook_notes"
-                                                            rows="4"
-                                                            class="large-text code"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
-                                                        <p class="description be-schema-social-description">
-                                                            <?php esc_html_e(
-                                                                'Free-form notes for your own reference. This is never output on the front end.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'facebook_notes', $facebook_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="facebook_notes">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="facebook_notes">−</button>
+                                                            <label for="be_schema_facebook_notes" class="screen-reader-text"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></label>
+                                                            <textarea
+                                                                name="be_schema_facebook_notes"
+                                                                id="be_schema_facebook_notes"
+                                                                rows="4"
+                                                                class="large-text code"><?php echo esc_textarea( $facebook_notes ); ?></textarea>
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Free-form notes for your own reference. This is never output on the front end.',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -865,102 +974,97 @@ function be_schema_engine_render_social_media_page() {
                                     <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
-                                            <tr>
+                                            <tr class="be-schema-optional-row">
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <input type="text"
-                                                           name="be_schema_twitter_handle"
-                                                           value="<?php echo esc_attr( $twitter_handle ); ?>"
-                                                           class="regular-text" />
-                                                    <p class="description be-schema-social-description">
-                                                        <?php esc_html_e(
-                                                            'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Default Card Type', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <select name="be_schema_twitter_card_type">
-                                                        <option value="summary"
-                                                            <?php selected( $twitter_card_type, 'summary' ); ?>>
-                                                            <?php esc_html_e( 'summary', 'beseo' ); ?>
-                                                        </option>
-                                                        <option value="summary_large_image"
-                                                            <?php selected( $twitter_card_type, 'summary_large_image' ); ?>>
-                                                            <?php esc_html_e( 'summary_large_image', 'beseo' ); ?>
-                                                        </option>
-                                                    </select>
-                                                    <p class="description be-schema-social-description">
-                                                        <?php esc_html_e(
-                                                            'This value is used for twitter:card on pages that do not specify a per-post override.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <div class="be-schema-image-field">
-                                                        <input type="text"
-                                                               id="be_schema_twitter_default_image"
-                                                               name="be_schema_twitter_default_image"
-                                                               value="<?php echo esc_url( $twitter_default_image ); ?>"
-                                                               class="regular-text" />
+                                                    <div class="be-schema-optional-controls" data-optional-scope="twitter">
+                                                        <label class="screen-reader-text" for="be-schema-twitter-optional"><?php esc_html_e( 'Add optional Twitter property', 'beseo' ); ?></label>
+                                                        <select id="be-schema-twitter-optional" aria-label="<?php esc_attr_e( 'Add optional Twitter property', 'beseo' ); ?>">
+                                                            <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                            <option value="twitter_handle"><?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?></option>
+                                                            <option value="twitter_default_image"><?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?></option>
+                                                            <option value="twitter_notes"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></option>
+                                                        </select>
                                                         <button type="button"
-                                                                class="button be-schema-image-select"
-                                                                data-target-input="be_schema_twitter_default_image"
-                                                                data-target-preview="be_schema_twitter_default_image_preview">
-                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                class="button be-schema-optional-add"
+                                                                data-optional-add="twitter"
+                                                                disabled>
+                                                            +
                                                         </button>
-                                                        <button type="button"
-                                                                class="button be-schema-image-clear"
-                                                                data-target-input="be_schema_twitter_default_image"
-                                                                data-target-preview="be_schema_twitter_default_image_preview">
-                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                        </button>
+                                                        <input type="hidden" name="be_schema_twitter_optional" id="be_schema_twitter_optional" value="<?php echo esc_attr( $twitter_optional_serialized ); ?>" />
                                                     </div>
-                                                    <p class="description be-schema-social-description">
-                                                        <?php esc_html_e(
-                                                            'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_twitter_default_image_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $twitter_default_image ) : ?>
-                                                            <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
 
-                                            <tr>
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <textarea
-                                                        name="be_schema_twitter_notes"
-                                                        rows="4"
-                                                        class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
-                                                    <p class="description be-schema-social-description">
-                                                        <?php esc_html_e(
-                                                            'Free-form notes for your own reference. This is never output on the front end.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
+                                                    <div class="be-schema-optional-fields" id="be-schema-twitter-optional-fields">
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_handle', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_handle">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="twitter_handle">−</button>
+                                                            <label for="be_schema_twitter_handle" class="screen-reader-text"><?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?></label>
+                                                            <input type="text"
+                                                                   name="be_schema_twitter_handle"
+                                                                   id="be_schema_twitter_handle"
+                                                                   value="<?php echo esc_attr( $twitter_handle ); ?>"
+                                                                   class="regular-text" />
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_default_image', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_default_image">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="twitter_default_image">−</button>
+                                                            <label for="be_schema_twitter_default_image" class="screen-reader-text"><?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <input type="text"
+                                                                       id="be_schema_twitter_default_image"
+                                                                       name="be_schema_twitter_default_image"
+                                                                       value="<?php echo esc_url( $twitter_default_image ); ?>"
+                                                                       class="regular-text" />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        data-target-input="be_schema_twitter_default_image"
+                                                                        data-target-preview="be_schema_twitter_default_image_preview">
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        data-target-input="be_schema_twitter_default_image"
+                                                                        data-target-preview="be_schema_twitter_default_image_preview">
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                            </div>
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Used for twitter:image when there is no featured image on a page. If empty, Twitter falls back to the Global default image (if set).',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                            <div id="be_schema_twitter_default_image_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $twitter_default_image ) : ?>
+                                                                    <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_notes', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_notes">
+                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="twitter_notes">−</button>
+                                                            <label for="be_schema_twitter_notes" class="screen-reader-text"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></label>
+                                                            <textarea
+                                                                name="be_schema_twitter_notes"
+                                                                id="be_schema_twitter_notes"
+                                                                rows="4"
+                                                                class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Free-form notes for your own reference. This is never output on the front end.',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -1083,6 +1187,183 @@ function be_schema_engine_render_social_media_page() {
                         var tabKey = link.getAttribute('data-twitter-tab');
                         activateTwitterTab(tabKey);
                     });
+                });
+
+                function initOptionalProperties(config) {
+                    var optionalContainer = document.getElementById(config.containerId);
+                    var optionalSelect = document.getElementById(config.selectId);
+                    var optionalAdd = document.querySelector('[data-optional-add="' + config.scope + '"]');
+                    var optionalHidden = document.getElementById(config.hiddenInputId);
+
+                    if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
+                        return;
+                    }
+
+                    function getVisibleProps() {
+                        var props = [];
+                        optionalContainer.querySelectorAll('.be-schema-optional-field').forEach(function (field) {
+                            if (! field.classList.contains('is-hidden')) {
+                                var prop = field.getAttribute('data-optional-prop');
+                                if (prop) {
+                                    props.push(prop);
+                                }
+                            }
+                        });
+                        return props;
+                    }
+
+                    function syncHidden() {
+                        optionalHidden.value = getVisibleProps().join(',');
+                    }
+
+                    function syncAddButton() {
+                        var val = optionalSelect.value;
+                        var exists = val && getVisibleProps().indexOf(val) !== -1;
+                        var disabled = ! val || exists;
+                        optionalAdd.disabled = disabled;
+                        if (disabled) {
+                            optionalAdd.classList.add('disabled');
+                        } else {
+                            optionalAdd.classList.remove('disabled');
+                        }
+                    }
+
+                    function clearFields(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
+                        if (! field) {
+                            return;
+                        }
+                        field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
+                            input.value = '';
+                        });
+                        if (config.previewIds && config.previewIds[prop]) {
+                            var preview = document.getElementById(config.previewIds[prop]);
+                            if (preview) {
+                                preview.innerHTML = '';
+                            }
+                        }
+                    }
+
+                    function showProp(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
+                        if (! field) {
+                            return;
+                        }
+                        field.classList.remove('is-hidden');
+                        syncHidden();
+                        syncAddButton();
+                    }
+
+                    function hideProp(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
+                        if (! field) {
+                            return;
+                        }
+                        clearFields(prop);
+                        field.classList.add('is-hidden');
+                        syncHidden();
+                        syncAddButton();
+                    }
+
+                    function propHasValue(prop) {
+                        if (typeof config.propHasValue === 'function') {
+                            return config.propHasValue(prop);
+                        }
+                        return false;
+                    }
+
+                    optionalSelect.addEventListener('change', syncAddButton);
+
+                    optionalAdd.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        var val = optionalSelect.value;
+                        if (! val) {
+                            return;
+                        }
+                        if (getVisibleProps().indexOf(val) !== -1) {
+                            return;
+                        }
+                        showProp(val);
+                        optionalSelect.value = '';
+                        syncAddButton();
+                    });
+
+                    optionalContainer.querySelectorAll('.be-schema-optional-remove').forEach(function (btn) {
+                        btn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            var prop = btn.getAttribute('data-optional-remove');
+                            hideProp(prop);
+                        });
+                    });
+
+                    var initial = [];
+                    if (optionalHidden.value) {
+                        initial = optionalHidden.value.split(',').map(function (s) {
+                            return s.trim();
+                        }).filter(Boolean);
+                    }
+
+                    var knownProps = config.props && config.props.length
+                        ? config.props
+                        : Array.prototype.map.call(optionalContainer.querySelectorAll('.be-schema-optional-field'), function (field) {
+                            return field.getAttribute('data-optional-prop');
+                        });
+
+                    knownProps.forEach(function (prop) {
+                        if (initial.indexOf(prop) !== -1 || propHasValue(prop)) {
+                            showProp(prop);
+                        }
+                    });
+
+                    syncHidden();
+                    syncAddButton();
+                }
+
+                initOptionalProperties({
+                    scope: 'facebook',
+                    containerId: 'be-schema-facebook-optional-fields',
+                    selectId: 'be-schema-facebook-optional',
+                    hiddenInputId: 'be_schema_facebook_optional',
+                    props: ['facebook_page_url', 'facebook_default_image', 'facebook_app_id', 'facebook_notes'],
+                    previewIds: {
+                        facebook_default_image: 'be_schema_facebook_default_image_preview'
+                    },
+                    propHasValue: function (prop) {
+                        var map = {
+                            facebook_page_url: document.getElementById('be_schema_facebook_page_url'),
+                            facebook_app_id: document.getElementById('be_schema_facebook_app_id'),
+                            facebook_notes: document.getElementById('be_schema_facebook_notes')
+                        };
+                        if (prop === 'facebook_default_image') {
+                            var image = document.getElementById('be_schema_facebook_default_image');
+                            return !! (image && image.value.trim().length > 0);
+                        }
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
+
+                initOptionalProperties({
+                    scope: 'twitter',
+                    containerId: 'be-schema-twitter-optional-fields',
+                    selectId: 'be-schema-twitter-optional',
+                    hiddenInputId: 'be_schema_twitter_optional',
+                    props: ['twitter_handle', 'twitter_default_image', 'twitter_notes'],
+                    previewIds: {
+                        twitter_default_image: 'be_schema_twitter_default_image_preview'
+                    },
+                    propHasValue: function (prop) {
+                        var map = {
+                            twitter_handle: document.getElementById('be_schema_twitter_handle'),
+                            twitter_notes: document.getElementById('be_schema_twitter_notes')
+                        };
+                        if (prop === 'twitter_default_image') {
+                            var img = document.getElementById('be_schema_twitter_default_image');
+                            return !! (img && img.value.trim().length > 0);
+                        }
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
                 });
 
                 // Media pickers.

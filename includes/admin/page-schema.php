@@ -139,6 +139,10 @@ function be_schema_engine_save_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_org_legal_name'] ) )
         : '';
 
+    $settings['organization_optional'] = isset( $_POST['be_schema_org_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_org_optional'] ) )
+        : '';
+
     $settings['org_url'] = be_schema_engine_validate_url_field(
         isset( $_POST['be_schema_org_url'] ) ? wp_unslash( $_POST['be_schema_org_url'] ) : '',
         __( 'Organisation URL', 'beseo' ),
@@ -170,6 +174,10 @@ function be_schema_engine_save_settings() {
     // Publisher.
     $settings['publisher_enabled'] = isset( $_POST['be_schema_publisher_enabled'] ) ? '1' : '0';
     $settings['publisher_dedicated_enabled'] = isset( $_POST['be_schema_publisher_dedicated_enabled'] ) ? '1' : '0';
+
+    $settings['publisher_entity_optional'] = isset( $_POST['be_schema_publisher_entity_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_publisher_entity_optional'] ) )
+        : '';
 
     $settings['copyright_year'] = isset( $_POST['be_schema_copyright_year'] )
         ? preg_replace( '/[^0-9]/', '', sanitize_text_field( wp_unslash( $_POST['be_schema_copyright_year'] ) ) )
@@ -215,6 +223,10 @@ function be_schema_engine_save_settings() {
 
     $settings['publisher_custom_logo'] = isset( $_POST['be_schema_publisher_custom_logo'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_custom_logo'] ) )
+        : '';
+
+    $settings['publisher_dedicated_optional'] = isset( $_POST['be_schema_publisher_dedicated_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_publisher_dedicated_optional'] ) )
         : '';
 
     update_option( 'be_schema_engine_settings', $settings );
@@ -319,6 +331,25 @@ function be_schema_engine_render_schema_page() {
     $org_url              = isset( $settings['org_url'] ) ? $settings['org_url'] : '';
     $org_logo_enabled     = isset( $settings['org_logo_enabled'] ) ? '1' === $settings['org_logo_enabled'] : true;
     $org_logo             = isset( $settings['org_logo'] ) ? $settings['org_logo'] : '';
+    $organization_optional_raw = isset( $settings['organization_optional'] ) ? $settings['organization_optional'] : '';
+
+    $organization_optional_props = array();
+    if ( ! empty( $organization_optional_raw ) ) {
+        $organization_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $organization_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $org_legal_name ) && ! in_array( 'legal_name', $organization_optional_props, true ) ) {
+        $organization_optional_props[] = 'legal_name';
+    }
+    if ( ! empty( $org_url ) && ! in_array( 'org_url', $organization_optional_props, true ) ) {
+        $organization_optional_props[] = 'org_url';
+    }
+
+    $organization_optional_serialized = implode( ',', $organization_optional_props );
 
     // WebSite featured images.
     $website_image_16_9_enabled = isset( $settings['website_image_16_9_enabled'] ) ? '1' === $settings['website_image_16_9_enabled'] : true;
@@ -340,6 +371,67 @@ function be_schema_engine_render_schema_page() {
     $publisher_custom_name         = isset( $settings['publisher_custom_name'] ) ? $settings['publisher_custom_name'] : '';
     $publisher_custom_url          = isset( $settings['publisher_custom_url'] ) ? $settings['publisher_custom_url'] : '';
     $publisher_custom_logo         = isset( $settings['publisher_custom_logo'] ) ? $settings['publisher_custom_logo'] : '';
+    $publisher_entity_optional_raw = isset( $settings['publisher_entity_optional'] ) ? $settings['publisher_entity_optional'] : '';
+    $publisher_dedicated_optional_raw = isset( $settings['publisher_dedicated_optional'] ) ? $settings['publisher_dedicated_optional'] : '';
+
+    $publisher_entity_optional_props = array();
+    if ( ! empty( $publisher_entity_optional_raw ) ) {
+        $publisher_entity_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $publisher_entity_optional_raw )
+            )
+        );
+    }
+
+    if ( ! empty( $copyright_year ) && ! in_array( 'copyright_year', $publisher_entity_optional_props, true ) ) {
+        $publisher_entity_optional_props[] = 'copyright_year';
+    }
+    if ( ! empty( $license_url ) && ! in_array( 'license_url', $publisher_entity_optional_props, true ) ) {
+        $publisher_entity_optional_props[] = 'license_url';
+    }
+    if ( ! empty( $publishing_principles ) && ! in_array( 'publishing_principles', $publisher_entity_optional_props, true ) ) {
+        $publisher_entity_optional_props[] = 'publishing_principles';
+    }
+    if ( ! empty( $corrections_policy ) && ! in_array( 'corrections_policy', $publisher_entity_optional_props, true ) ) {
+        $publisher_entity_optional_props[] = 'corrections_policy';
+    }
+    if ( ! empty( $ownership_funding ) && ! in_array( 'ownership_funding', $publisher_entity_optional_props, true ) ) {
+        $publisher_entity_optional_props[] = 'ownership_funding';
+    }
+
+    $publisher_entity_optional_serialized = implode( ',', $publisher_entity_optional_props );
+
+    $publisher_dedicated_optional_props = array();
+    if ( ! empty( $publisher_dedicated_optional_raw ) ) {
+        $publisher_dedicated_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $publisher_dedicated_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $publisher_custom_name ) && ! in_array( 'custom_name', $publisher_dedicated_optional_props, true ) ) {
+        $publisher_dedicated_optional_props[] = 'custom_name';
+    }
+    if ( ! empty( $publisher_custom_url ) && ! in_array( 'custom_url', $publisher_dedicated_optional_props, true ) ) {
+        $publisher_dedicated_optional_props[] = 'custom_url';
+    }
+    if ( ! empty( $publisher_custom_logo ) && ! in_array( 'custom_logo', $publisher_dedicated_optional_props, true ) ) {
+        $publisher_dedicated_optional_props[] = 'custom_logo';
+    }
+
+    $publisher_dedicated_optional_serialized = implode( ',', $publisher_dedicated_optional_props );
+
+    if ( $publisher_enabled ) {
+        $publisher_type_label = $publisher_dedicated_enabled
+            ? __( 'Publisher Type: Dedicated', 'beseo' )
+            : __( 'Publisher Type: Reference', 'beseo' );
+        $publisher_type_class = '';
+    } else {
+        $publisher_type_label = __( 'Publisher Type: None', 'beseo' );
+        $publisher_type_class = 'off';
+    }
 
     // Constants / overrides for messaging.
     $const_disable_all       = defined( 'BE_SCHEMA_DISABLE_ALL' ) && BE_SCHEMA_DISABLE_ALL;
@@ -742,12 +834,12 @@ function be_schema_engine_render_schema_page() {
                 padding-right: 0 !important;
             }
 
-            #be-schema-person-block tr.be-schema-optional-row th,
-            #be-schema-person-block tr.be-schema-optional-row td {
+            .be-schema-optional-row th,
+            .be-schema-optional-row td {
                 vertical-align: middle;
             }
 
-            #be-schema-person-block tr.be-schema-optional-row th {
+            .be-schema-optional-row th {
                 line-height: 32px;
             }
 
@@ -771,6 +863,10 @@ function be_schema_engine_render_schema_page() {
                 gap: 8px;
                 margin: 8px 0 12px;
                 padding-left: 0;
+            }
+
+            .be-schema-optional-controls.is-disabled {
+                opacity: 0.55;
             }
 
             .be-schema-optional-controls select {
@@ -825,6 +921,11 @@ function be_schema_engine_render_schema_page() {
             .be-schema-status-pill.off {
                 background: #fbeaea;
                 color: #8a1f11;
+            }
+
+            .be-schema-status-pill.neutral {
+                background: #eef1f6;
+                color: #1f2d3d;
             }
 
             .be-schema-conditional-block.is-disabled {
@@ -1503,36 +1604,43 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
                                                         </div>
 
-                                                        <div class="be-schema-identity-option">
-                                                            <div class="be-schema-identity-toggle">
-                                                                <label for="be_schema_identity_publisher_checkbox">
-                                                                    <input type="checkbox"
-                                                                           class="be-schema-identity-checkbox"
-                                                                           id="be_schema_identity_publisher_checkbox"
-                                                                           name="be_schema_identity_publisher_enabled"
-                                                                           data-target-radio="be_schema_identity_publisher_radio"
-                                                                           data-target-tab="publisher"
-                                                                           <?php checked( $identity_publisher_enabled ); ?> />
-                                                                    <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'beseo' ); ?>
-                                                                </label>
-                                                            </div>
-                                                            <div class="be-schema-identity-priority">
-                                                                <label for="be_schema_identity_publisher_radio">
-                                                                    <input type="radio"
-                                                                           id="be_schema_identity_publisher_radio"
-                                                                           class="be-schema-identity-radio"
-                                                                           name="be_schema_site_identity_mode"
-                                                                           value="publisher"
-                                                                           <?php checked( 'publisher', $site_identity_mode ); ?>
-                                                                           <?php disabled( ! $identity_publisher_enabled ); ?> />
-                                                                    <?php esc_html_e( 'Priority', 'beseo' ); ?>
-                                                                </label>
-                                                            </div>
+                                                    <div class="be-schema-identity-option">
+                                                        <div class="be-schema-identity-toggle">
+                                                            <label for="be_schema_identity_publisher_checkbox">
+                                                                <input type="checkbox"
+                                                                       class="be-schema-identity-checkbox"
+                                                                       id="be_schema_identity_publisher_checkbox"
+                                                                       name="be_schema_identity_publisher_enabled"
+                                                                       data-target-radio="be_schema_identity_publisher_radio"
+                                                                       data-target-tab="publisher"
+                                                                       <?php checked( $identity_publisher_enabled ); ?>
+                                                                       <?php disabled( ! $publisher_enabled ); ?> />
+                                                                <?php esc_html_e( 'Publisher (Use Publisher Entity When Available)', 'beseo' ); ?>
+                                                            </label>
+                                                        </div>
+                                                        <div class="be-schema-identity-priority">
+                                                            <label for="be_schema_identity_publisher_radio">
+                                                                <input type="radio"
+                                                                       id="be_schema_identity_publisher_radio"
+                                                                       class="be-schema-identity-radio"
+                                                                       name="be_schema_site_identity_mode"
+                                                                       value="publisher"
+                                                                       <?php checked( 'publisher', $site_identity_mode ); ?>
+                                                                       <?php disabled( ! $identity_publisher_enabled || ! $publisher_enabled ); ?> />
+                                                                <?php esc_html_e( 'Priority', 'beseo' ); ?>
+                                                            </label>
                                                         </div>
                                                     </div>
+                                                </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'Controls which identity is prioritised for WebSite.about / WebSite.publisher. Other enabled entities remain in the graph as fallbacks.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Publisher identity can only be selected when WebSite.publisher is enabled on the Publisher tab; dedicated publisher is optional.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
@@ -2004,11 +2112,11 @@ function be_schema_engine_render_schema_page() {
                                     </tbody>
                                 </table>
 
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Organisation Details', 'beseo' ); ?></h4>
-                                    <p>
-                                        <span class="be-schema-status-pill <?php echo $organization_enabled ? '' : 'off'; ?>">
-                                            <?php echo $organization_enabled ? esc_html__( 'Organisation: ON', 'beseo' ) : esc_html__( 'Organisation: OFF', 'beseo' ); ?>
+                                    <div class="be-schema-global-section">
+                                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Organisation Details', 'beseo' ); ?></h4>
+                                        <p>
+                                            <span class="be-schema-status-pill <?php echo $organization_enabled ? '' : 'off'; ?>">
+                                                <?php echo $organization_enabled ? esc_html__( 'Organisation: ON', 'beseo' ) : esc_html__( 'Organisation: OFF', 'beseo' ); ?>
                                         </span>
                                     </p>
                                     <div id="be-schema-organization-block"
@@ -2033,39 +2141,60 @@ function be_schema_engine_render_schema_page() {
                                                     </td>
                                                 </tr>
 
-                                                <tr>
+                                                <tr class="be-schema-optional-row">
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Legal Name', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <input type="text"
-                                                               name="be_schema_org_legal_name"
-                                                               value="<?php echo esc_attr( $org_legal_name ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. The legal name of the organisation, if different from the public name.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="organisation">
+                                                            <label class="screen-reader-text" for="be-schema-org-optional"><?php esc_html_e( 'Add optional Organisation property', 'beseo' ); ?></label>
+                                                            <select id="be-schema-org-optional" aria-label="<?php esc_attr_e( 'Add optional Organisation property', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="legal_name"><?php esc_html_e( 'Legal Name', 'beseo' ); ?></option>
+                                                                <option value="org_url"><?php esc_html_e( 'Organisation URL', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="organisation"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_org_optional" id="be_schema_org_optional" value="<?php echo esc_attr( $organization_optional_serialized ); ?>" />
+                                                        </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Organisation URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_org_url"
-                                                               value="<?php echo esc_url( $org_url ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. If empty, the site URL is used.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
+                                                        <div class="be-schema-optional-fields" id="be-schema-org-optional-fields">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'legal_name', $organization_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="legal_name">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="legal_name">−</button>
+                                                                <label for="be_schema_org_legal_name" class="screen-reader-text"><?php esc_html_e( 'Legal Name', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_org_legal_name"
+                                                                       id="be_schema_org_legal_name"
+                                                                       value="<?php echo esc_attr( $org_legal_name ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. The legal name of the organisation, if different from the public name.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'org_url', $organization_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="org_url">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="org_url">−</button>
+                                                                <label for="be_schema_org_url" class="screen-reader-text"><?php esc_html_e( 'Organisation URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_org_url"
+                                                                       id="be_schema_org_url"
+                                                                       value="<?php echo esc_url( $org_url ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. If empty, the site URL is used.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                 </tr>
 
@@ -2131,6 +2260,15 @@ function be_schema_engine_render_schema_page() {
                                     <span class="be-schema-status-pill <?php echo $publisher_enabled ? '' : 'off'; ?>">
                                         <?php echo $publisher_enabled ? esc_html__( 'Publisher: ON', 'beseo' ) : esc_html__( 'Publisher: OFF', 'beseo' ); ?>
                                     </span>
+                                    <span id="be-schema-publisher-type-pill" class="be-schema-status-pill <?php echo esc_attr( $publisher_type_class ); ?>">
+                                        <?php echo esc_html( $publisher_type_label ); ?>
+                                    </span>
+                                </p>
+                                <p class="description be-schema-description">
+                                    <?php esc_html_e(
+                                        'Use this tab to enable WebSite.publisher; once enabled, you can select Publisher in Site Identity on the Global tab (Dedicated is optional).',
+                                        'beseo'
+                                    ); ?>
                                 </p>
 
                                 <div id="be-schema-publisher-block"
@@ -2139,94 +2277,112 @@ function be_schema_engine_render_schema_page() {
                                         <h4 class="be-schema-section-title"><?php esc_html_e( 'Entity', 'beseo' ); ?></h4>
                                         <table class="form-table">
                                             <tbody>
-                                                <tr>
+                                                <tr class="be-schema-optional-row">
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Copyright Year', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <input type="text"
-                                                               name="be_schema_copyright_year"
-                                                               value="<?php echo esc_attr( $copyright_year ); ?>"
-                                                               class="regular-text"
-                                                               style="max-width: 120px;" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. Used for descriptive publishing metadata; not all validators require this.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-entity">
+                                                            <label class="screen-reader-text" for="be-schema-publisher-entity-optional"><?php esc_html_e( 'Add optional Publisher property', 'beseo' ); ?></label>
+                                                            <select id="be-schema-publisher-entity-optional" aria-label="<?php esc_attr_e( 'Add optional Publisher property', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="copyright_year"><?php esc_html_e( 'Copyright Year', 'beseo' ); ?></option>
+                                                                <option value="license_url"><?php esc_html_e( 'License URL', 'beseo' ); ?></option>
+                                                                <option value="publishing_principles"><?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?></option>
+                                                                <option value="corrections_policy"><?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?></option>
+                                                                <option value="ownership_funding"><?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="publisher-entity"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_publisher_entity_optional" id="be_schema_publisher_entity_optional" value="<?php echo esc_attr( $publisher_entity_optional_serialized ); ?>" />
+                                                        </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'License URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_license_url"
-                                                               value="<?php echo esc_url( $license_url ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A URL describing the license under which the site content is published.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                        <div class="be-schema-optional-fields" id="be-schema-publisher-entity-optional-fields">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'copyright_year', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="copyright_year">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="copyright_year">−</button>
+                                                                <label for="be_schema_copyright_year" class="screen-reader-text"><?php esc_html_e( 'Copyright Year', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_copyright_year"
+                                                                       id="be_schema_copyright_year"
+                                                                       value="<?php echo esc_attr( $copyright_year ); ?>"
+                                                                       class="regular-text"
+                                                                       style="max-width: 120px;" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. Used for descriptive publishing metadata; not all validators require this.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_publishing_principles"
-                                                               value="<?php echo esc_url( $publishing_principles ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A page describing your editorial standards or publishing principles.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'license_url', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="license_url">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="license_url">−</button>
+                                                                <label for="be_schema_license_url" class="screen-reader-text"><?php esc_html_e( 'License URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_license_url"
+                                                                       id="be_schema_license_url"
+                                                                       value="<?php echo esc_url( $license_url ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A URL describing the license under which the site content is published.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_corrections_policy"
-                                                               value="<?php echo esc_url( $corrections_policy ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A page explaining how corrections or updates are handled.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'publishing_principles', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="publishing_principles">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="publishing_principles">−</button>
+                                                                <label for="be_schema_publishing_principles" class="screen-reader-text"><?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_publishing_principles"
+                                                                       id="be_schema_publishing_principles"
+                                                                       value="<?php echo esc_url( $publishing_principles ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A page describing your editorial standards or publishing principles.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
 
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_ownership_funding"
-                                                               value="<?php echo esc_url( $ownership_funding ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A page describing ownership or funding information for the publisher.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'corrections_policy', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="corrections_policy">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="corrections_policy">−</button>
+                                                                <label for="be_schema_corrections_policy" class="screen-reader-text"><?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_corrections_policy"
+                                                                       id="be_schema_corrections_policy"
+                                                                       value="<?php echo esc_url( $corrections_policy ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A page explaining how corrections or updates are handled.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'ownership_funding', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="ownership_funding">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="ownership_funding">−</button>
+                                                                <label for="be_schema_ownership_funding" class="screen-reader-text"><?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_ownership_funding"
+                                                                       id="be_schema_ownership_funding"
+                                                                       value="<?php echo esc_url( $ownership_funding ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A page describing ownership or funding information for the publisher.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -2252,77 +2408,96 @@ function be_schema_engine_render_schema_page() {
                                                     </td>
                                                 </tr>
 
-                                                <tr>
+                                                <tr class="be-schema-optional-row">
                                                     <th scope="row">
-                                                        <?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?>
+                                                        <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <input type="text"
-                                                               name="be_schema_publisher_custom_name"
-                                                               value="<?php echo esc_attr( $publisher_custom_name ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
-
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <input type="text"
-                                                               name="be_schema_publisher_custom_url"
-                                                               value="<?php echo esc_url( $publisher_custom_url ); ?>"
-                                                               class="regular-text" />
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. The URL for the custom publisher organisation.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
-
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <div class="be-schema-image-field">
-                                                            <input type="text"
-                                                                   id="be_schema_publisher_custom_logo"
-                                                                   name="be_schema_publisher_custom_logo"
-                                                                   value="<?php echo esc_url( $publisher_custom_logo ); ?>"
-                                                                   class="regular-text" />
+                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-dedicated">
+                                                            <label class="screen-reader-text" for="be-schema-publisher-dedicated-optional"><?php esc_html_e( 'Add optional dedicated publisher property', 'beseo' ); ?></label>
+                                                            <select id="be-schema-publisher-dedicated-optional" aria-label="<?php esc_attr_e( 'Add optional dedicated publisher property', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="custom_name"><?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?></option>
+                                                                <option value="custom_url"><?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?></option>
+                                                                <option value="custom_logo"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></option>
+                                                            </select>
                                                             <button type="button"
-                                                                    class="button be-schema-image-select"
-                                                                    data-target-input="be_schema_publisher_custom_logo"
-                                                                    data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                                <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="publisher-dedicated"
+                                                                    disabled>
+                                                                +
                                                             </button>
-                                                            <button type="button"
-                                                                    class="button be-schema-image-clear"
-                                                                    data-target-input="be_schema_publisher_custom_logo"
-                                                                    data-target-preview="be_schema_publisher_custom_logo_preview">
-                                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                            </button>
+                                                            <input type="hidden" name="be_schema_publisher_dedicated_optional" id="be_schema_publisher_dedicated_optional" value="<?php echo esc_attr( $publisher_dedicated_optional_serialized ); ?>" />
                                                         </div>
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                        <div id="be_schema_publisher_custom_logo_preview"
-                                                             class="be-schema-image-preview">
-                                                            <?php if ( $publisher_custom_logo ) : ?>
-                                                                <img src="<?php echo esc_url( $publisher_custom_logo ); ?>" alt="" />
-                                                            <?php endif; ?>
+
+                                                        <div class="be-schema-optional-fields" id="be-schema-publisher-dedicated-optional-fields">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'custom_name', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_name">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_name">−</button>
+                                                                <label for="be_schema_publisher_custom_name" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_publisher_custom_name"
+                                                                       id="be_schema_publisher_custom_name"
+                                                                       value="<?php echo esc_attr( $publisher_custom_name ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'custom_url', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_url">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_url">−</button>
+                                                                <label for="be_schema_publisher_custom_url" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_publisher_custom_url"
+                                                                       id="be_schema_publisher_custom_url"
+                                                                       value="<?php echo esc_url( $publisher_custom_url ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. The URL for the custom publisher organisation.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'custom_logo', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_logo">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_logo">−</button>
+                                                                <label for="be_schema_publisher_custom_logo" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_custom_logo"
+                                                                           name="be_schema_publisher_custom_logo"
+                                                                           value="<?php echo esc_url( $publisher_custom_logo ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_custom_logo"
+                                                                            data-target-preview="be_schema_publisher_custom_logo_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_custom_logo"
+                                                                            data-target-preview="be_schema_publisher_custom_logo_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_custom_logo_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_custom_logo ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_custom_logo ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -2612,12 +2787,11 @@ function be_schema_engine_render_schema_page() {
                     toggleImageField(toggle);
                 });
 
-                // Person optional properties (Description, Profile Image, Honorifics).
-                (function () {
-                    var optionalContainer = document.getElementById('be-schema-person-optional-fields');
-                    var optionalSelect = document.getElementById('be-schema-person-optional');
-                    var optionalAdd = document.querySelector('[data-optional-add="person"]');
-                    var optionalHidden = document.getElementById('be_schema_person_optional');
+                function initOptionalProperties(config) {
+                    var optionalContainer = document.getElementById(config.containerId);
+                    var optionalSelect = document.getElementById(config.selectId);
+                    var optionalAdd = document.querySelector('[data-optional-add="' + config.scope + '"]');
+                    var optionalHidden = document.getElementById(config.hiddenInputId);
 
                     if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
                         return;
@@ -2652,15 +2826,22 @@ function be_schema_engine_render_schema_page() {
                         }
                     }
 
-                    function clearFields(field) {
+                    function clearFields(prop) {
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
+                        if (! field) {
+                            return;
+                        }
                         field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
                             input.value = '';
                         });
-                        if (field.getAttribute('data-optional-prop') === 'profile_image') {
-                            var preview = document.getElementById('be_schema_person_image_url_preview');
+                        if (config.previewIds && config.previewIds[prop]) {
+                            var preview = document.getElementById(config.previewIds[prop]);
                             if (preview) {
                                 preview.innerHTML = '';
                             }
+                        }
+                        if (typeof config.onClear === 'function') {
+                            config.onClear(prop, field);
                         }
                     }
 
@@ -2679,25 +2860,15 @@ function be_schema_engine_render_schema_page() {
                         if (! field) {
                             return;
                         }
-                        clearFields(field);
+                        clearFields(prop);
                         field.classList.add('is-hidden');
                         syncHidden();
                         syncAddButton();
                     }
 
                     function propHasValue(prop) {
-                        if (prop === 'description') {
-                            var desc = document.getElementById('be_schema_person_description');
-                            return desc && desc.value.trim().length > 0;
-                        }
-                        if (prop === 'profile_image') {
-                            var img = document.getElementById('be_schema_person_image_url');
-                            return img && img.value.trim().length > 0;
-                        }
-                        if (prop === 'honorifics') {
-                            var pre = document.querySelector('[name="be_schema_person_honorific_prefix"]');
-                            var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
-                            return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
+                        if (typeof config.propHasValue === 'function') {
+                            return config.propHasValue(prop);
                         }
                         return false;
                     }
@@ -2733,7 +2904,13 @@ function be_schema_engine_render_schema_page() {
                         }).filter(Boolean);
                     }
 
-                    ['description', 'profile_image', 'honorifics'].forEach(function (prop) {
+                    var knownProps = config.props && config.props.length
+                        ? config.props
+                        : Array.prototype.map.call(optionalContainer.querySelectorAll('.be-schema-optional-field'), function (field) {
+                            return field.getAttribute('data-optional-prop');
+                        });
+
+                    knownProps.forEach(function (prop) {
                         if (initial.indexOf(prop) !== -1 || propHasValue(prop)) {
                             showProp(prop);
                         }
@@ -2741,6 +2918,169 @@ function be_schema_engine_render_schema_page() {
 
                     syncHidden();
                     syncAddButton();
+                }
+
+                initOptionalProperties({
+                    scope: 'person',
+                    containerId: 'be-schema-person-optional-fields',
+                    selectId: 'be-schema-person-optional',
+                    hiddenInputId: 'be_schema_person_optional',
+                    props: ['description', 'profile_image', 'honorifics'],
+                    previewIds: {
+                        profile_image: 'be_schema_person_image_url_preview'
+                    },
+                    propHasValue: function (prop) {
+                        if (prop === 'description') {
+                            var desc = document.getElementById('be_schema_person_description');
+                            return desc && desc.value.trim().length > 0;
+                        }
+                        if (prop === 'profile_image') {
+                            var img = document.getElementById('be_schema_person_image_url');
+                            return img && img.value.trim().length > 0;
+                        }
+                        if (prop === 'honorifics') {
+                            var pre = document.querySelector('[name="be_schema_person_honorific_prefix"]');
+                            var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
+                            return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
+                        }
+                        return false;
+                    }
+                });
+
+                initOptionalProperties({
+                    scope: 'publisher-entity',
+                    containerId: 'be-schema-publisher-entity-optional-fields',
+                    selectId: 'be-schema-publisher-entity-optional',
+                    hiddenInputId: 'be_schema_publisher_entity_optional',
+                    props: ['copyright_year', 'license_url', 'publishing_principles', 'corrections_policy', 'ownership_funding'],
+                    propHasValue: function (prop) {
+                        var map = {
+                            copyright_year: document.getElementById('be_schema_copyright_year'),
+                            license_url: document.getElementById('be_schema_license_url'),
+                            publishing_principles: document.getElementById('be_schema_publishing_principles'),
+                            corrections_policy: document.getElementById('be_schema_corrections_policy'),
+                            ownership_funding: document.getElementById('be_schema_ownership_funding')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
+
+                initOptionalProperties({
+                    scope: 'publisher-dedicated',
+                    containerId: 'be-schema-publisher-dedicated-optional-fields',
+                    selectId: 'be-schema-publisher-dedicated-optional',
+                    hiddenInputId: 'be_schema_publisher_dedicated_optional',
+                    props: ['custom_name', 'custom_url', 'custom_logo'],
+                    previewIds: {
+                        custom_logo: 'be_schema_publisher_custom_logo_preview'
+                    },
+                    propHasValue: function (prop) {
+                        if (prop === 'custom_logo') {
+                            var logo = document.getElementById('be_schema_publisher_custom_logo');
+                            return logo && logo.value.trim().length > 0;
+                        }
+                        var map = {
+                            custom_name: document.getElementById('be_schema_publisher_custom_name'),
+                            custom_url: document.getElementById('be_schema_publisher_custom_url')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
+
+                initOptionalProperties({
+                    scope: 'organisation',
+                    containerId: 'be-schema-org-optional-fields',
+                    selectId: 'be-schema-org-optional',
+                    hiddenInputId: 'be_schema_org_optional',
+                    props: ['legal_name', 'org_url'],
+                    propHasValue: function (prop) {
+                        var map = {
+                            legal_name: document.getElementById('be_schema_org_legal_name'),
+                            org_url: document.getElementById('be_schema_org_url')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
+
+                // Publisher dedicated optional: enable only when publisher + dedicated are on.
+                (function () {
+                    var publisherToggle = document.querySelector('input[name="be_schema_publisher_enabled"]');
+                    var dedicatedToggle = document.querySelector('input[name="be_schema_publisher_dedicated_enabled"]');
+                    var controls = document.querySelector('.be-schema-optional-controls[data-optional-scope="publisher-dedicated"]');
+                    var select = document.getElementById('be-schema-publisher-dedicated-optional');
+                    var add = document.querySelector('[data-optional-add="publisher-dedicated"]');
+                    var fields = document.getElementById('be-schema-publisher-dedicated-optional-fields');
+                    var typePill = document.getElementById('be-schema-publisher-type-pill');
+
+                    function updateTypePill() {
+                        if (! typePill) {
+                            return;
+                        }
+                        var publisherOn = !! (publisherToggle && publisherToggle.checked);
+                        var dedicatedOn = !! (publisherOn && dedicatedToggle && dedicatedToggle.checked);
+
+                        var label = '';
+                        if (! publisherOn) {
+                            label = '<?php echo esc_js( __( 'Publisher Type: None', 'beseo' ) ); ?>';
+                            typePill.classList.add('off');
+                            typePill.classList.remove('neutral');
+                        } else if (dedicatedOn) {
+                            label = '<?php echo esc_js( __( 'Publisher Type: Dedicated', 'beseo' ) ); ?>';
+                            typePill.classList.remove('off');
+                            typePill.classList.remove('neutral');
+                        } else {
+                            label = '<?php echo esc_js( __( 'Publisher Type: Reference', 'beseo' ) ); ?>';
+                            typePill.classList.remove('off');
+                            typePill.classList.remove('neutral');
+                        }
+
+                        typePill.textContent = label;
+                    }
+
+                    function setDedicatedOptionalEnabled() {
+                        var enabled = !! (publisherToggle && publisherToggle.checked && dedicatedToggle && dedicatedToggle.checked);
+
+                        if (controls) {
+                            controls.classList.toggle('is-disabled', ! enabled);
+                        }
+
+                        if (select) {
+                            select.disabled = ! enabled;
+                            if (enabled) {
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        }
+
+                        if (add) {
+                            add.disabled = ! enabled;
+                            if (! enabled) {
+                                add.classList.add('disabled');
+                            }
+                        }
+
+                        if (fields) {
+                            fields.querySelectorAll('.be-schema-optional-remove, .be-schema-image-select, .be-schema-image-clear').forEach(function (btn) {
+                                btn.disabled = ! enabled;
+                            });
+                            fields.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
+                                input.readOnly = ! enabled;
+                            });
+                        }
+
+                        updateTypePill();
+                    }
+
+                    if (publisherToggle) {
+                        publisherToggle.addEventListener('change', setDedicatedOptionalEnabled);
+                    }
+                    if (dedicatedToggle) {
+                        dedicatedToggle.addEventListener('change', setDedicatedOptionalEnabled);
+                    }
+
+                    setDedicatedOptionalEnabled();
                 })();
 
                 // Identity option enable/disable.
@@ -2779,7 +3119,7 @@ function be_schema_engine_render_schema_page() {
 
                 function updateIdentityTabLink(checkbox) {
                     var tabKey = checkbox.getAttribute('data-target-tab');
-                    if (! tabKey) {
+                    if (! tabKey || tabKey === 'publisher') {
                         return;
                     }
                     setWebsiteTabDisabled(tabKey, ! checkbox.checked);
@@ -2813,6 +3153,41 @@ function be_schema_engine_render_schema_page() {
                     radio.addEventListener('change', refreshIdentityRadios);
                 });
                 refreshIdentityRadios();
+
+                // Keep publisher identity availability in sync with the main publisher enable toggle.
+                (function () {
+                    var publisherToggle = document.querySelector('input[name="be_schema_publisher_enabled"]');
+                    var publisherIdentityCheckbox = document.getElementById('be_schema_identity_publisher_checkbox');
+                    var publisherIdentityRadio = document.getElementById('be_schema_identity_publisher_radio');
+
+                    function syncPublisherIdentityAvailability() {
+                        if (! publisherIdentityCheckbox || ! publisherIdentityRadio) {
+                            return;
+                        }
+                        var enabled = !! (publisherToggle && publisherToggle.checked);
+                        publisherIdentityCheckbox.disabled = ! enabled;
+                        publisherIdentityRadio.disabled = ! enabled;
+
+                        if (! enabled) {
+                            publisherIdentityCheckbox.checked = false;
+                            var wasChecked = publisherIdentityRadio.checked;
+                            publisherIdentityRadio.checked = false;
+                            var fallback = document.querySelector('.be-schema-identity-radio:not(:disabled)');
+                            if (wasChecked && fallback) {
+                                fallback.checked = true;
+                            }
+                        }
+
+                        updateIdentityOption(publisherIdentityCheckbox);
+                        updateIdentityTabLink(publisherIdentityCheckbox);
+                        refreshIdentityRadios();
+                    }
+
+                    if (publisherToggle) {
+                        publisherToggle.addEventListener('change', syncPublisherIdentityAvailability);
+                    }
+                    syncPublisherIdentityAvailability();
+                })();
             });
         </script>
     </div>
