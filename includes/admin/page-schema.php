@@ -100,6 +100,18 @@ function be_schema_engine_save_settings() {
     // Person.
     $settings['person_enabled'] = isset( $_POST['be_schema_person_enabled'] ) ? '1' : '0';
 
+    $settings['person_name'] = isset( $_POST['be_schema_person_name'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_name'] ) )
+        : '';
+
+    $settings['person_description'] = isset( $_POST['be_schema_person_description'] )
+        ? wp_kses_post( wp_unslash( $_POST['be_schema_person_description'] ) )
+        : '';
+
+    $settings['person_optional'] = isset( $_POST['be_schema_person_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_optional'] ) )
+        : '';
+
     $settings['person_image_url'] = isset( $_POST['be_schema_person_image_url'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_person_image_url'] ) )
         : '';
@@ -267,10 +279,37 @@ function be_schema_engine_render_schema_page() {
 
     // Person.
     $person_enabled          = ! empty( $settings['person_enabled'] ) && '1' === $settings['person_enabled'];
+    $person_name             = isset( $settings['person_name'] ) ? $settings['person_name'] : '';
+    $person_description      = isset( $settings['person_description'] ) ? $settings['person_description'] : '';
+    $person_optional_raw     = isset( $settings['person_optional'] ) ? $settings['person_optional'] : '';
     $person_image_url        = isset( $settings['person_image_url'] ) ? $settings['person_image_url'] : '';
     $person_honorific_prefix = isset( $settings['person_honorific_prefix'] ) ? $settings['person_honorific_prefix'] : '';
     $person_honorific_suffix = isset( $settings['person_honorific_suffix'] ) ? $settings['person_honorific_suffix'] : '';
     $person_sameas_raw       = isset( $settings['person_sameas_raw'] ) ? $settings['person_sameas_raw'] : '';
+
+    $person_optional_props = array();
+    if ( ! empty( $person_optional_raw ) ) {
+        $person_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $person_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $person_description ) && ! in_array( 'description', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'description';
+    }
+    if ( ! empty( $person_image_url ) && ! in_array( 'profile_image', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'profile_image';
+    }
+    if (
+        ( ! empty( $person_honorific_prefix ) || ! empty( $person_honorific_suffix ) )
+        && ! in_array( 'honorifics', $person_optional_props, true )
+    ) {
+        $person_optional_props[] = 'honorifics';
+    }
+
+    $person_optional_serialized = implode( ',', $person_optional_props );
 
     // Organisation.
     $organization_enabled = ! empty( $settings['organization_enabled'] ) && '1' === $settings['organization_enabled'];
@@ -662,16 +701,48 @@ function be_schema_engine_render_schema_page() {
                 margin-top: 8px;
             }
 
-            /* Person block tweaks */
+            /* Person block */
             #be-schema-person-block {
                 border-left: 0;
                 padding-left: 0;
             }
-            .be-schema-divider-line {
-                border: 0;
-                border-top: 1px solid #ccd0d4;
-                margin: 8px 0;
+
+            #be-schema-person-block table.form-table th,
+            #be-schema-person-block table.form-table td {
+                padding-left: 0 !important;
+                text-align: left;
+                vertical-align: top;
             }
+
+            #be-schema-person-block table.form-table th {
+                padding-right: 12px !important;
+                white-space: nowrap;
+            }
+
+            #be-schema-person-block table.form-table td {
+                padding-right: 0 !important;
+            }
+
+            #be-schema-person-block tr.be-schema-optional-row th,
+            #be-schema-person-block tr.be-schema-optional-row td {
+                vertical-align: middle;
+            }
+
+            #be-schema-person-block tr.be-schema-optional-row th {
+                line-height: 32px;
+            }
+
+            #be-schema-person-block tr.be-schema-person-enable-row th,
+            #be-schema-person-block tr.be-schema-person-enable-row td {
+                vertical-align: baseline !important;
+            }
+
+            #be-schema-person-block tr.be-schema-person-enable-row td label {
+                display: inline-flex;
+                align-items: baseline;
+                gap: 6px;
+            }
+
             .be-schema-optional-controls {
                 display: flex;
                 flex-wrap: wrap;
@@ -679,144 +750,22 @@ function be_schema_engine_render_schema_page() {
                 gap: 8px;
                 margin: 8px 0 12px;
                 padding-left: 0;
-                margin-left: 0;
-                padding-top: 2px;
             }
+
             .be-schema-optional-controls select {
                 min-width: 200px;
             }
+
             .be-schema-optional-fields .be-schema-optional-field {
                 border-left: 0;
                 padding-left: 0;
                 margin: 0 0 16px;
             }
-<<<<<<< ours
-<<<<<<< ours
-            /* Person block layout (flex-table) */
-            .flex-table {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-            }
-<<<<<<< ours
-            .table-header,
-            .table-row {
-                display: flex;
-                width: 100%;
-            }
-            .table-cell {
-                flex: 1;
-                padding: 10px;
-                text-align: left;
-            }
-            .be-schema-person-flex {
-                gap: 0;
-            }
-            .table-cell.be-schema-field-label {
-=======
-            .be-schema-field {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .be-schema-field-label {
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
-                flex: 0 0 auto;
-                font-weight: 600;
-                white-space: nowrap;
-            }
-<<<<<<< ours
-            .table-cell.be-schema-field-control {
-=======
-            .be-schema-field-control {
-                flex: 1 1 0;
-                min-width: 260px;
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .be-schema-field-control input[type="text"],
-            .be-schema-field-control select,
-            .be-schema-field-control textarea {
-                align-self: flex-start;
-=======
->>>>>>> theirs
-=======
-            #be-schema-person-block table.form-table th,
-            #be-schema-person-block table.form-table td {
-                padding-left: 0 !important;
-                text-align: left;
-                vertical-align: top;
-            }
-            #be-schema-person-block table.form-table th {
-                padding-right: 12px !important;
-                white-space: nowrap;
-            }
-            #be-schema-person-block table.form-table td {
-                padding-right: 0 !important;
->>>>>>> theirs
-=======
->>>>>>> theirs
-            }
-            #be-schema-person-block tr.be-schema-optional-row th,
-            #be-schema-person-block tr.be-schema-optional-row td {
-                padding-left: 0 !important;
-                vertical-align: middle;
-<<<<<<< ours
-<<<<<<< ours
-            }
-=======
-            #be-schema-person-block table.form-table th,
-            #be-schema-person-block table.form-table td {
-                padding-left: 0 !important;
-                text-align: left;
-                vertical-align: top;
-            }
-            #be-schema-person-block table.form-table th {
-                padding-right: 12px !important;
-                white-space: nowrap;
-            }
-            #be-schema-person-block table.form-table td {
-                padding-right: 0 !important;
-            }
-            #be-schema-person-block tr.be-schema-optional-row th,
-            #be-schema-person-block tr.be-schema-optional-row td {
-                padding-left: 0 !important;
-                vertical-align: middle;
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-            }
->>>>>>> theirs
-            #be-schema-person-block tr.be-schema-optional-row th {
-                line-height: 32px;
-            }
-            #be-schema-person-block .be-schema-optional-controls {
-                margin-left: 0;
-                align-items: center;
-            }
-            #be-schema-person-block tr.be-schema-person-enable-row th,
-            #be-schema-person-block tr.be-schema-person-enable-row td {
-                vertical-align: baseline !important;
-            }
-            #be-schema-person-block tr.be-schema-person-enable-row td label {
-                display: inline-flex;
-                align-items: baseline;
-            }
+
             .be-schema-optional-field.is-hidden {
                 display: none;
             }
+
             .be-schema-optional-remove {
                 margin-bottom: 6px;
             }
@@ -1280,7 +1229,7 @@ function be_schema_engine_render_schema_page() {
                                         </p>
                                         <table>
                                             <thead>
-                                                <tr>
+                                                <tr class="be-schema-person-enable-row">
                                                 <th><?php esc_html_e( 'Entity', 'beseo' ); ?></th>
                                                 <th><?php esc_html_e( 'Enabled', 'beseo' ); ?></th>
                                                 <th><?php esc_html_e( 'Name', 'beseo' ); ?></th>
@@ -1289,7 +1238,7 @@ function be_schema_engine_render_schema_page() {
                                             </tr>
                                             </thead>
                                             <tbody>
-                                                <tr>
+                                                <tr class="be-schema-person-enable-row">
                                                     <td><?php esc_html_e( 'Person', 'beseo' ); ?></td>
                                                     <td><?php echo $person_enabled ? '✅' : '⛔'; ?></td>
                                                     <td>
@@ -1318,7 +1267,7 @@ function be_schema_engine_render_schema_page() {
                                                         <?php echo $person_enabled ? esc_html__( 'OK', 'beseo' ) : esc_html__( 'Disabled', 'beseo' ); ?>
                                                     </td>
                                                 </tr>
-                                                <tr>
+                                                <tr class="be-schema-person-enable-row">
                                                     <td><?php esc_html_e( 'Organisation', 'beseo' ); ?></td>
                                                     <td><?php echo $organization_enabled ? '✅' : '⛔'; ?></td>
                                                     <td>
@@ -1862,7 +1811,7 @@ function be_schema_engine_render_schema_page() {
                                                     <td colspan="2"></td>
                                                 </tr>
 
-                                                <tr>
+                                                <tr class="be-schema-optional-row">
                                                     <th scope="row">
                                                         <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
@@ -1881,11 +1830,11 @@ function be_schema_engine_render_schema_page() {
                                                                     disabled>
                                                                 +
                                                             </button>
-                                                            <input type="hidden" name="be_schema_person_optional" id="be_schema_person_optional" value="" />
+                                                            <input type="hidden" name="be_schema_person_optional" id="be_schema_person_optional" value="<?php echo esc_attr( $person_optional_serialized ); ?>" />
                                                         </div>
 
                                                         <div class="be-schema-optional-fields" id="be-schema-person-optional-fields">
-                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="description">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'description', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="description">
                                                                 <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="description">−</button>
                                                                 <label for="be_schema_person_description" class="screen-reader-text"><?php esc_html_e( 'Description', 'beseo' ); ?></label>
                                                                 <textarea
@@ -1901,7 +1850,7 @@ function be_schema_engine_render_schema_page() {
                                                                 </p>
                                                             </div>
 
-                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="profile_image">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'profile_image', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="profile_image">
                                                                 <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="profile_image">−</button>
                                                                 <label for="be_schema_person_image_url" class="screen-reader-text"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></label>
                                                                 <div class="be-schema-image-field">
@@ -1937,7 +1886,7 @@ function be_schema_engine_render_schema_page() {
                                                                 </div>
                                                             </div>
 
-                                                            <div class="be-schema-optional-field is-hidden" data-optional-prop="honorifics">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'honorifics', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorifics">
                                                                 <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="honorifics">−</button>
                                                                 <div class="be-schema-honorifics">
                                                                     <label class="be-schema-honorific-field">
@@ -2613,7 +2562,7 @@ function be_schema_engine_render_schema_page() {
                 (function () {
                     var optionalContainer = document.getElementById('be-schema-person-optional-fields');
                     var optionalSelect = document.getElementById('be-schema-person-optional');
-                    var optionalAdd = document.querySelector('[data-optional-add=\"person\"]');
+                    var optionalAdd = document.querySelector('[data-optional-add="person"]');
                     var optionalHidden = document.getElementById('be_schema_person_optional');
 
                     if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
@@ -2650,7 +2599,7 @@ function be_schema_engine_render_schema_page() {
                     }
 
                     function clearFields(field) {
-                        field.querySelectorAll('input[type=\"text\"], textarea').forEach(function (input) {
+                        field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
                             input.value = '';
                         });
                         if (field.getAttribute('data-optional-prop') === 'profile_image') {
@@ -2662,7 +2611,7 @@ function be_schema_engine_render_schema_page() {
                     }
 
                     function showProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop=\"' + prop + '\"]');
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
                         if (! field) {
                             return;
                         }
@@ -2672,7 +2621,7 @@ function be_schema_engine_render_schema_page() {
                     }
 
                     function hideProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop=\"' + prop + '\"]');
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
                         if (! field) {
                             return;
                         }
@@ -2692,8 +2641,8 @@ function be_schema_engine_render_schema_page() {
                             return img && img.value.trim().length > 0;
                         }
                         if (prop === 'honorifics') {
-                            var pre = document.querySelector('[name=\"be_schema_person_honorific_prefix\"]');
-                            var suf = document.querySelector('[name=\"be_schema_person_honorific_suffix\"]');
+                            var pre = document.querySelector('[name="be_schema_person_honorific_prefix"]');
+                            var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
                             return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
                         }
                         return false;
