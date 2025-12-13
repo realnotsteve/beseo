@@ -52,9 +52,11 @@ function be_schema_engine_get_settings() {
 
 		// Person fields.
 		'person_url'            => '',
-		'person_alumni_of'      => '',
-		'person_job_title'      => '',
-		'person_affiliation'    => '',
+		'person_alumni_of'      => array(),
+		'person_job_title'      => array(),
+		'person_affiliation'    => array(),
+		'person_honorific_prefix' => array(),
+		'person_honorific_suffix' => array(),
 
 		// Site identity mode (how WebSite & publisher prioritise Person vs Organisation vs Publisher).
 		// Allowed values: 'person', 'organisation', 'publisher'.
@@ -97,6 +99,21 @@ function be_schema_engine_get_settings() {
 
 	$settings = get_option( 'be_schema_engine_settings', array() );
 	$cached   = wp_parse_args( $settings, $defaults );
+
+	// Normalize multi-valued person fields to arrays.
+	$multi_fields = array(
+		'person_alumni_of',
+		'person_job_title',
+		'person_affiliation',
+		'person_honorific_prefix',
+		'person_honorific_suffix',
+	);
+
+	foreach ( $multi_fields as $field ) {
+		if ( isset( $cached[ $field ] ) && ! is_array( $cached[ $field ] ) ) {
+			$cached[ $field ] = '' !== $cached[ $field ] ? array( $cached[ $field ] ) : array();
+		}
+	}
 
 	return $cached;
 }

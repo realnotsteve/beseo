@@ -37,6 +37,75 @@ if ( ! function_exists( 'be_schema_engine_validate_url_field' ) ) {
     }
 }
 
+if ( ! function_exists( 'be_schema_admin_sanitize_text_list' ) ) {
+    /**
+     * Sanitize a text field list (scalar or array) into a cleaned array.
+     *
+     * @param mixed $raw Raw value (string|array).
+     * @return array
+     */
+    function be_schema_admin_sanitize_text_list( $raw ) {
+        $values = array();
+
+        if ( is_array( $raw ) ) {
+            foreach ( $raw as $value ) {
+                $clean = sanitize_text_field( wp_unslash( $value ) );
+                if ( '' !== $clean ) {
+                    $values[] = $clean;
+                }
+            }
+        } else {
+            $clean = sanitize_text_field( wp_unslash( $raw ) );
+            if ( '' !== $clean ) {
+                $values[] = $clean;
+            }
+        }
+
+        return $values;
+    }
+}
+
+if ( ! function_exists( 'be_schema_admin_normalize_text_list' ) ) {
+    /**
+     * Normalize a stored text field list (string or array) into an array of strings.
+     *
+     * @param mixed $stored Stored value.
+     * @return array
+     */
+    function be_schema_admin_normalize_text_list( $stored ) {
+        if ( empty( $stored ) ) {
+            return array();
+        }
+
+        if ( is_array( $stored ) ) {
+            return array_values(
+                array_filter(
+                    $stored,
+                    function ( $val ) {
+                        return '' !== $val && null !== $val;
+                    }
+                )
+            );
+        }
+
+        $stored = trim( (string) $stored );
+
+        return '' === $stored ? array() : array( $stored );
+    }
+}
+
+if ( ! function_exists( 'be_schema_admin_ensure_list' ) ) {
+    /**
+     * Ensure a list has at least one (possibly empty) element for UI rendering.
+     *
+     * @param array $list Input list.
+     * @return array
+     */
+    function be_schema_admin_ensure_list( $list ) {
+        return ! empty( $list ) ? $list : array( '' );
+    }
+}
+
 function be_schema_engine_save_settings() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
@@ -120,29 +189,34 @@ function be_schema_engine_save_settings() {
         )
         : '';
 
-    $settings['person_alumni_of'] = isset( $_POST['be_schema_person_alumni_of'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_alumni_of'] ) )
-        : '';
+    $settings['person_alumni_of'] = array();
+    if ( isset( $_POST['be_schema_person_alumni_of'] ) ) {
+        $settings['person_alumni_of'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_alumni_of'] );
+    }
 
-    $settings['person_job_title'] = isset( $_POST['be_schema_person_job_title'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_job_title'] ) )
-        : '';
+    $settings['person_job_title'] = array();
+    if ( isset( $_POST['be_schema_person_job_title'] ) ) {
+        $settings['person_job_title'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_job_title'] );
+    }
 
-    $settings['person_affiliation'] = isset( $_POST['be_schema_person_affiliation'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_affiliation'] ) )
-        : '';
+    $settings['person_affiliation'] = array();
+    if ( isset( $_POST['be_schema_person_affiliation'] ) ) {
+        $settings['person_affiliation'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_affiliation'] );
+    }
 
     $settings['person_image_url'] = isset( $_POST['be_schema_person_image_url'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_person_image_url'] ) )
         : '';
 
-    $settings['person_honorific_prefix'] = isset( $_POST['be_schema_person_honorific_prefix'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_honorific_prefix'] ) )
-        : '';
+    $settings['person_honorific_prefix'] = array();
+    if ( isset( $_POST['be_schema_person_honorific_prefix'] ) ) {
+        $settings['person_honorific_prefix'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_honorific_prefix'] );
+    }
 
-    $settings['person_honorific_suffix'] = isset( $_POST['be_schema_person_honorific_suffix'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_honorific_suffix'] ) )
-        : '';
+    $settings['person_honorific_suffix'] = array();
+    if ( isset( $_POST['be_schema_person_honorific_suffix'] ) ) {
+        $settings['person_honorific_suffix'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_honorific_suffix'] );
+    }
 
     $settings['person_sameas_raw'] = isset( $_POST['be_schema_person_sameas_raw'] )
         ? wp_kses_post( wp_unslash( $_POST['be_schema_person_sameas_raw'] ) )
@@ -330,12 +404,12 @@ function be_schema_engine_render_schema_page() {
     $person_description      = isset( $settings['person_description'] ) ? $settings['person_description'] : '';
     $person_optional_raw     = isset( $settings['person_optional'] ) ? $settings['person_optional'] : '';
     $person_url              = isset( $settings['person_url'] ) ? $settings['person_url'] : '';
-    $person_alumni_of        = isset( $settings['person_alumni_of'] ) ? $settings['person_alumni_of'] : '';
-    $person_job_title        = isset( $settings['person_job_title'] ) ? $settings['person_job_title'] : '';
-    $person_affiliation      = isset( $settings['person_affiliation'] ) ? $settings['person_affiliation'] : '';
+    $person_alumni_of        = be_schema_admin_normalize_text_list( isset( $settings['person_alumni_of'] ) ? $settings['person_alumni_of'] : array() );
+    $person_job_title        = be_schema_admin_normalize_text_list( isset( $settings['person_job_title'] ) ? $settings['person_job_title'] : array() );
+    $person_affiliation      = be_schema_admin_normalize_text_list( isset( $settings['person_affiliation'] ) ? $settings['person_affiliation'] : array() );
     $person_image_url        = isset( $settings['person_image_url'] ) ? $settings['person_image_url'] : '';
-    $person_honorific_prefix = isset( $settings['person_honorific_prefix'] ) ? $settings['person_honorific_prefix'] : '';
-    $person_honorific_suffix = isset( $settings['person_honorific_suffix'] ) ? $settings['person_honorific_suffix'] : '';
+    $person_honorific_prefix = be_schema_admin_normalize_text_list( isset( $settings['person_honorific_prefix'] ) ? $settings['person_honorific_prefix'] : array() );
+    $person_honorific_suffix = be_schema_admin_normalize_text_list( isset( $settings['person_honorific_suffix'] ) ? $settings['person_honorific_suffix'] : array() );
     $person_sameas_raw       = isset( $settings['person_sameas_raw'] ) ? $settings['person_sameas_raw'] : '';
 
     $person_optional_props = array();
@@ -1016,6 +1090,34 @@ function be_schema_engine_render_schema_page() {
                 margin: 0;
                 display: inline-flex;
                 align-items: center;
+            }
+
+            .be-schema-repeatable {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .be-schema-repeatable-items {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .be-schema-repeatable-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .be-schema-repeatable-item input[type="text"] {
+                flex: 1 1 auto;
+            }
+
+            .be-schema-repeatable-add,
+            .be-schema-repeatable-remove {
+                padding-left: 10px;
+                padding-right: 10px;
             }
 
             #be-schema-website-images-optional-fields .be-schema-optional-field th {
@@ -1834,10 +1936,17 @@ function be_schema_engine_render_schema_page() {
                                                                 <?php disabled( ! $org_logo_enabled ); ?>>
                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                         </button>
+                                                        <span id="be_schema_org_logo_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                     </div>
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e(
                                                             'This logo is used by the Organisation entity, the WebSite entity, and as a fallback for the Person image when a dedicated profile picture is not provided.',
+                                                            'beseo'
+                                                        ); ?>
+                                                    </p>
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e(
+                                                            'Set a square image at 512x512 PNG with transparency if you have it.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
@@ -2259,7 +2368,7 @@ function be_schema_engine_render_schema_page() {
                                                                     class="large-text code"><?php echo esc_textarea( $person_description ); ?></textarea>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A short bio or summary for the Person entity.',
+                                                                        'A short bio or summary for the Person entity.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2286,10 +2395,11 @@ function be_schema_engine_render_schema_page() {
                                                                             data-target-preview="be_schema_person_image_url_preview">
                                                                         <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                     </button>
+                                                                    <span id="be_schema_person_image_url_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined Image', 'beseo' ); ?></span>
                                                                 </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. If left empty, the Person entity can fall back to the shared site logo.',
+                                                                        'If left empty, the Person entity can fall back to the shared site logo. Use a 1200x1200 WebP image.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2303,15 +2413,28 @@ function be_schema_engine_render_schema_page() {
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'honorific_prefix', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorific_prefix">
                                                                 <button type="button" class="button be-schema-optional-remove" data-optional-remove="honorific_prefix">−</button>
-                                                                <label for="be_schema_person_honorific_prefix" class="screen-reader-text"><?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       name="be_schema_person_honorific_prefix"
-                                                                       id="be_schema_person_honorific_prefix"
-                                                                       value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
-                                                                       class="regular-text" />
+                                                                <label for="be_schema_person_honorific_prefix_0" class="screen-reader-text"><?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?></label>
+                                                                <div class="be-schema-repeatable" data-repeatable-prop="honorific_prefix" data-repeatable-name="be_schema_person_honorific_prefix[]">
+                                                                    <div class="be-schema-repeatable-items">
+                                                                        <?php
+                                                                        $honorific_prefix_values = be_schema_admin_ensure_list( $person_honorific_prefix );
+                                                                        foreach ( $honorific_prefix_values as $idx => $value ) :
+                                                                        ?>
+                                                                        <div class="be-schema-repeatable-item">
+                                                                            <input type="text"
+                                                                                   name="be_schema_person_honorific_prefix[]"
+                                                                                   <?php echo 0 === $idx ? 'id="be_schema_person_honorific_prefix_0"' : ''; ?>
+                                                                                   value="<?php echo esc_attr( $value ); ?>"
+                                                                                   class="regular-text" />
+                                                                            <button type="button" class="button be-schema-repeatable-remove">−</button>
+                                                                        </div>
+                                                                        <?php endforeach; ?>
+                                                                    </div>
+                                                                    <button type="button" class="button be-schema-repeatable-add" data-repeatable-prop="honorific_prefix">+</button>
+                                                                </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Examples: Dr, Prof, Mr, Ms.',
+                                                                        'Examples: Dr, Prof, Mr, Ms.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2319,15 +2442,28 @@ function be_schema_engine_render_schema_page() {
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'honorific_suffix', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorific_suffix">
                                                                 <button type="button" class="button be-schema-optional-remove" data-optional-remove="honorific_suffix">−</button>
-                                                                <label for="be_schema_person_honorific_suffix" class="screen-reader-text"><?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       name="be_schema_person_honorific_suffix"
-                                                                       id="be_schema_person_honorific_suffix"
-                                                                       value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
-                                                                       class="regular-text" />
+                                                                <label for="be_schema_person_honorific_suffix_0" class="screen-reader-text"><?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?></label>
+                                                                <div class="be-schema-repeatable" data-repeatable-prop="honorific_suffix" data-repeatable-name="be_schema_person_honorific_suffix[]">
+                                                                    <div class="be-schema-repeatable-items">
+                                                                        <?php
+                                                                        $honorific_suffix_values = be_schema_admin_ensure_list( $person_honorific_suffix );
+                                                                        foreach ( $honorific_suffix_values as $idx => $value ) :
+                                                                        ?>
+                                                                        <div class="be-schema-repeatable-item">
+                                                                            <input type="text"
+                                                                                   name="be_schema_person_honorific_suffix[]"
+                                                                                   <?php echo 0 === $idx ? 'id="be_schema_person_honorific_suffix_0"' : ''; ?>
+                                                                                   value="<?php echo esc_attr( $value ); ?>"
+                                                                                   class="regular-text" />
+                                                                            <button type="button" class="button be-schema-repeatable-remove">−</button>
+                                                                        </div>
+                                                                        <?php endforeach; ?>
+                                                                    </div>
+                                                                    <button type="button" class="button be-schema-repeatable-add" data-repeatable-prop="honorific_suffix">+</button>
+                                                                </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Examples: PhD, MD, CPA.',
+                                                                        'Examples: PhD, MD, CPA.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2343,7 +2479,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A canonical URL for this person (for example, personal site or primary profile).',
+                                                                        'A canonical URL for this person (for example, personal site or primary profile).',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2351,15 +2487,28 @@ function be_schema_engine_render_schema_page() {
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'alumni_of', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="alumni_of">
                                                             <button type="button" class="button be-schema-optional-remove" data-optional-remove="alumni_of">−</button>
-                                                                <label for="be_schema_person_alumni_of" class="screen-reader-text"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       name="be_schema_person_alumni_of"
-                                                                       id="be_schema_person_alumni_of"
-                                                                       value="<?php echo esc_attr( $person_alumni_of ); ?>"
-                                                                       class="regular-text" />
+                                                                <label for="be_schema_person_alumni_of_0" class="screen-reader-text"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></label>
+                                                                <div class="be-schema-repeatable" data-repeatable-prop="alumni_of" data-repeatable-name="be_schema_person_alumni_of[]">
+                                                                    <div class="be-schema-repeatable-items">
+                                                                        <?php
+                                                                        $alumni_values = be_schema_admin_ensure_list( $person_alumni_of );
+                                                                        foreach ( $alumni_values as $idx => $value ) :
+                                                                        ?>
+                                                                        <div class="be-schema-repeatable-item">
+                                                                            <input type="text"
+                                                                                   name="be_schema_person_alumni_of[]"
+                                                                                   <?php echo 0 === $idx ? 'id="be_schema_person_alumni_of_0"' : ''; ?>
+                                                                                   value="<?php echo esc_attr( $value ); ?>"
+                                                                                   class="regular-text" />
+                                                                            <button type="button" class="button be-schema-repeatable-remove">−</button>
+                                                                        </div>
+                                                                        <?php endforeach; ?>
+                                                                    </div>
+                                                                    <button type="button" class="button be-schema-repeatable-add" data-repeatable-prop="alumni_of">+</button>
+                                                                </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. School or institution the person graduated from (text).',
+                                                                        'School or institution the person graduated from (text).',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2367,15 +2516,28 @@ function be_schema_engine_render_schema_page() {
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'job_title', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="job_title">
                                                             <button type="button" class="button be-schema-optional-remove" data-optional-remove="job_title">−</button>
-                                                                <label for="be_schema_person_job_title" class="screen-reader-text"><?php esc_html_e( 'Job Title', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       name="be_schema_person_job_title"
-                                                                       id="be_schema_person_job_title"
-                                                                       value="<?php echo esc_attr( $person_job_title ); ?>"
-                                                                       class="regular-text" />
+                                                                <label for="be_schema_person_job_title_0" class="screen-reader-text"><?php esc_html_e( 'Job Title', 'beseo' ); ?></label>
+                                                                <div class="be-schema-repeatable" data-repeatable-prop="job_title" data-repeatable-name="be_schema_person_job_title[]">
+                                                                    <div class="be-schema-repeatable-items">
+                                                                        <?php
+                                                                        $job_values = be_schema_admin_ensure_list( $person_job_title );
+                                                                        foreach ( $job_values as $idx => $value ) :
+                                                                        ?>
+                                                                        <div class="be-schema-repeatable-item">
+                                                                            <input type="text"
+                                                                                   name="be_schema_person_job_title[]"
+                                                                                   <?php echo 0 === $idx ? 'id="be_schema_person_job_title_0"' : ''; ?>
+                                                                                   value="<?php echo esc_attr( $value ); ?>"
+                                                                                   class="regular-text" />
+                                                                            <button type="button" class="button be-schema-repeatable-remove">−</button>
+                                                                        </div>
+                                                                        <?php endforeach; ?>
+                                                                    </div>
+                                                                    <button type="button" class="button be-schema-repeatable-add" data-repeatable-prop="job_title">+</button>
+                                                                </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Primary role or position for this person.',
+                                                                        'Primary role or position for this person.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2383,15 +2545,28 @@ function be_schema_engine_render_schema_page() {
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'affiliation', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="affiliation">
                                                             <button type="button" class="button be-schema-optional-remove" data-optional-remove="affiliation">−</button>
-                                                                <label for="be_schema_person_affiliation" class="screen-reader-text"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       name="be_schema_person_affiliation"
-                                                                       id="be_schema_person_affiliation"
-                                                                       value="<?php echo esc_attr( $person_affiliation ); ?>"
-                                                                       class="regular-text" />
+                                                                <label for="be_schema_person_affiliation_0" class="screen-reader-text"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></label>
+                                                                <div class="be-schema-repeatable" data-repeatable-prop="affiliation" data-repeatable-name="be_schema_person_affiliation[]">
+                                                                    <div class="be-schema-repeatable-items">
+                                                                        <?php
+                                                                        $affiliation_values = be_schema_admin_ensure_list( $person_affiliation );
+                                                                        foreach ( $affiliation_values as $idx => $value ) :
+                                                                        ?>
+                                                                        <div class="be-schema-repeatable-item">
+                                                                            <input type="text"
+                                                                                   name="be_schema_person_affiliation[]"
+                                                                                   <?php echo 0 === $idx ? 'id="be_schema_person_affiliation_0"' : ''; ?>
+                                                                                   value="<?php echo esc_attr( $value ); ?>"
+                                                                                   class="regular-text" />
+                                                                            <button type="button" class="button be-schema-repeatable-remove">−</button>
+                                                                        </div>
+                                                                        <?php endforeach; ?>
+                                                                    </div>
+                                                                    <button type="button" class="button be-schema-repeatable-add" data-repeatable-prop="affiliation">+</button>
+                                                                </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Organisation this person is affiliated with (text).',
+                                                                        'Organisation this person is affiliated with (text).',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2515,7 +2690,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. The legal name of the organisation, if different from the public name.',
+                                                                        'The legal name of the organisation, if different from the public name.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2531,7 +2706,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. If empty, the site URL is used.',
+                                                                        'If empty, the site URL is used.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2655,7 +2830,7 @@ function be_schema_engine_render_schema_page() {
                                                                        style="max-width: 120px;" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Used for descriptive publishing metadata; not all validators require this.',
+                                                                        'Used for descriptive publishing metadata; not all validators require this.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2671,7 +2846,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A URL describing the license under which the site content is published.',
+                                                                        'A URL describing the license under which the site content is published.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2687,7 +2862,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A page describing your editorial standards or publishing principles.',
+                                                                        'A page describing your editorial standards or publishing principles.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2703,7 +2878,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A page explaining how corrections or updates are handled.',
+                                                                        'A page explaining how corrections or updates are handled.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2719,7 +2894,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A page describing ownership or funding information for the publisher.',
+                                                                        'A page describing ownership or funding information for the publisher.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2784,7 +2959,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
+                                                                        'If set, the site can treat this as a dedicated publisher organisation instead of re-using the main Organisation.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2800,7 +2975,7 @@ function be_schema_engine_render_schema_page() {
                                                                        class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. The URL for the custom publisher organisation.',
+                                                                        'The URL for the custom publisher organisation.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2830,7 +3005,7 @@ function be_schema_engine_render_schema_page() {
                                                                 </div>
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
+                                                                        'A dedicated logo for the custom publisher organisation. If empty, the shared site logo may still be used depending on the site-entity logic.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -3032,11 +3207,102 @@ function be_schema_engine_render_schema_page() {
                     });
                 });
 
+                var repeatableAdders = {};
+
+                function repeatableHasValue(name) {
+                    var inputs = document.querySelectorAll('input[name="' + name + '"]');
+                    var has = false;
+                    inputs.forEach(function (input) {
+                        if (input.value && input.value.trim().length > 0) {
+                            has = true;
+                        }
+                    });
+                    return has;
+                }
+
+                function initRepeatableField(container) {
+                    var prop = container.getAttribute('data-repeatable-prop');
+                    var name = container.getAttribute('data-repeatable-name');
+                    var itemsWrap = container.querySelector('.be-schema-repeatable-items');
+                    var addBtn = container.querySelector('.be-schema-repeatable-add');
+
+                    function attachRemove(btn) {
+                        btn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            var item = btn.closest('.be-schema-repeatable-item');
+                            if (item && itemsWrap) {
+                                item.remove();
+                                if (! itemsWrap.children.length) {
+                                    addItem('');
+                                }
+                            }
+                        });
+                    }
+
+                    function addItem(value) {
+                        if (! itemsWrap || ! name) {
+                            return null;
+                        }
+                        var row = document.createElement('div');
+                        row.className = 'be-schema-repeatable-item';
+
+                        var input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = name;
+                        input.className = 'regular-text';
+                        input.value = value || '';
+                        row.appendChild(input);
+
+                        var removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'button be-schema-repeatable-remove';
+                        removeBtn.textContent = '−';
+                        row.appendChild(removeBtn);
+
+                        itemsWrap.appendChild(row);
+                        attachRemove(removeBtn);
+                        return input;
+                    }
+
+                    container.querySelectorAll('.be-schema-repeatable-remove').forEach(function (btn) {
+                        attachRemove(btn);
+                    });
+
+                    if (addBtn) {
+                        addBtn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            var input = addItem('');
+                            if (input) {
+                                input.focus();
+                            }
+                        });
+                    }
+
+                    if (prop) {
+                        repeatableAdders[prop] = function () {
+                            var input = addItem('');
+                            if (input) {
+                                input.focus();
+                            }
+                        };
+                    }
+
+                    if (itemsWrap && ! itemsWrap.children.length) {
+                        addItem('');
+                    }
+                }
+
+                document.querySelectorAll('.be-schema-repeatable').forEach(function (container) {
+                    initRepeatableField(container);
+                });
+
                 // Media pickers.
                 var selectButtons = document.querySelectorAll('.be-schema-image-select');
                 var clearButtons = document.querySelectorAll('.be-schema-image-clear');
 
                 var expectedImageDims = {
+                    'be_schema_person_image_url': { width: 1200, height: 1200, label: '1200x1200 WebP', mime: 'image/webp' },
+                    'be_schema_org_logo': { width: 512, height: 512, label: '512x512 PNG', mime: 'image/png' },
                     'be_schema_website_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
                     'be_schema_website_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
                     'be_schema_website_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
@@ -3045,11 +3311,31 @@ function be_schema_engine_render_schema_page() {
                 };
 
                 var imageStatusMap = {
+                    'be_schema_person_image_url': 'be_schema_person_image_url_status',
+                    'be_schema_org_logo': 'be_schema_org_logo_status',
                     'be_schema_website_image_16_9': 'be_schema_website_image_16_9_status',
                     'be_schema_website_image_4_3': 'be_schema_website_image_4_3_status',
                     'be_schema_website_image_1_1': 'be_schema_website_image_1_1_status',
                     'be_schema_website_image_3_4': 'be_schema_website_image_3_4_status',
                     'be_schema_website_image_9_16': 'be_schema_website_image_9_16_status'
+                };
+
+                var statusDisplayMap = {
+                    default: {
+                        undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
+                        verified: '<?php echo esc_js( __( 'Verified', 'beseo' ) ); ?>',
+                        resolution: '<?php echo esc_js( __( 'Resolution', 'beseo' ) ); ?>'
+                    },
+                    be_schema_person_image_url: {
+                        undefined: '<?php echo esc_js( __( 'Undefined Image', 'beseo' ) ); ?>',
+                        verified: '<?php echo esc_js( __( '1200x1200 WebP', 'beseo' ) ); ?>',
+                        resolution: '<?php echo esc_js( __( '1200x1200 WebP', 'beseo' ) ); ?>'
+                    },
+                    be_schema_org_logo: {
+                        undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
+                        verified: '<?php echo esc_js( __( '512 PNG', 'beseo' ) ); ?>',
+                        resolution: '<?php echo esc_js( __( '512 PNG', 'beseo' ) ); ?>'
+                    }
                 };
 
                 function setImageStatus(inputId, statusKey) {
@@ -3061,11 +3347,7 @@ function be_schema_engine_render_schema_page() {
                     if (! pill) {
                         return;
                     }
-                    var textMap = {
-                        undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
-                        verified: '<?php echo esc_js( __( 'Verified', 'beseo' ) ); ?>',
-                        resolution: '<?php echo esc_js( __( 'Resolution', 'beseo' ) ); ?>'
-                    };
+                    var textMap = statusDisplayMap[inputId] || statusDisplayMap.default;
                     pill.classList.remove('verified', 'resolution');
                     if (statusKey === 'verified') {
                         pill.classList.add('verified');
@@ -3106,11 +3388,25 @@ function be_schema_engine_render_schema_page() {
                         }
 
                         if (expected && attachment.width && attachment.height) {
-                            if (attachment.width !== expected.width || attachment.height !== expected.height) {
-                                setImageStatus(targetInputId, 'resolution');
-                            } else {
-                                setImageStatus(targetInputId, 'verified');
+                            var isCorrectSize = attachment.width === expected.width && attachment.height === expected.height;
+                            var mime = (attachment.mime || '').toLowerCase();
+                            var subtype = (attachment.subtype || '').toLowerCase();
+                            var expectedMime = (expected.mime || '').toLowerCase();
+                            var isCorrectType = true;
+                            if (expectedMime) {
+                                isCorrectType = (mime === expectedMime) || (!! subtype && expectedMime.endsWith(subtype));
                             }
+                            if (isCorrectSize && isCorrectType) {
+                                setImageStatus(targetInputId, 'verified');
+                            } else {
+                                setImageStatus(targetInputId, 'resolution');
+                            }
+                        } else if (expected && expected.mime) {
+                            var mimeOnly = (attachment.mime || '').toLowerCase();
+                            var subtypeOnly = (attachment.subtype || '').toLowerCase();
+                            var expectedMimeOnly = (expected.mime || '').toLowerCase();
+                            var typeMatchesOnly = (mimeOnly === expectedMimeOnly) || (!! subtypeOnly && expectedMimeOnly.endsWith(subtypeOnly));
+                            setImageStatus(targetInputId, typeMatchesOnly ? 'verified' : 'resolution');
                         } else {
                             setImageStatus(targetInputId, 'verified');
                         }
@@ -3199,6 +3495,7 @@ function be_schema_engine_render_schema_page() {
                         });
                     }
                     var singletonProps = config.singletons || [];
+                    var repeatableHandlers = config.repeatableHandlers || {};
 
                     if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
                         return;
@@ -3224,7 +3521,9 @@ function be_schema_engine_render_schema_page() {
                     function syncAddButton() {
                         var val = optionalSelect.value;
                         var exists = val && getVisibleProps().indexOf(val) !== -1;
-                        var disabled = ! val || exists;
+                        var isSingleton = val && singletonProps.indexOf(val) !== -1;
+                        var repeatable = val && repeatableHandlers[val];
+                        var disabled = ! val || (exists && (isSingleton || ! repeatable));
                         optionalAdd.disabled = disabled;
                         if (disabled) {
                             optionalAdd.classList.add('disabled');
@@ -3240,6 +3539,25 @@ function be_schema_engine_render_schema_page() {
                         }
                         field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
                             input.value = '';
+                        });
+                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
+                            var items = wrap.querySelectorAll('.be-schema-repeatable-item');
+                            items.forEach(function (item, idx) {
+                                if (idx === 0) {
+                                    var input = item.querySelector('input[type="text"]');
+                                    if (input) {
+                                        input.value = '';
+                                    }
+                                } else {
+                                    item.remove();
+                                }
+                            });
+                            if (! wrap.children.length) {
+                                var addButton = field.querySelector('.be-schema-repeatable-add');
+                                if (addButton) {
+                                    addButton.click();
+                                }
+                            }
                         });
                         if (config.previewIds && config.previewIds[prop]) {
                             var preview = document.getElementById(config.previewIds[prop]);
@@ -3261,12 +3579,64 @@ function be_schema_engine_render_schema_page() {
                         }
                     }
 
+                    function resetRepeatables(field) {
+                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
+                            var items = wrap.querySelectorAll('.be-schema-repeatable-item');
+                            items.forEach(function (item, idx) {
+                                var input = item.querySelector('input[type="text"]');
+                                if (idx === 0) {
+                                    if (input) {
+                                        input.value = '';
+                                    }
+                                } else {
+                                    item.remove();
+                                }
+                            });
+                            if (! wrap.children.length) {
+                                var addBtn = wrap.closest('.be-schema-repeatable') ? wrap.closest('.be-schema-repeatable').querySelector('.be-schema-repeatable-add') : null;
+                                if (addBtn) {
+                                    addBtn.click();
+                                }
+                            }
+                        });
+                    }
+
+                    function normalizeEmptyRepeatables(field) {
+                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
+                            var items = Array.prototype.slice.call(wrap.querySelectorAll('.be-schema-repeatable-item'));
+                            if (! items.length) {
+                                return;
+                            }
+                            var hasValue = items.some(function (item) {
+                                var input = item.querySelector('input[type="text"]');
+                                return input && input.value && input.value.trim().length > 0;
+                            });
+                            if (hasValue) {
+                                return;
+                            }
+                            items.forEach(function (item, idx) {
+                                if (idx === 0) {
+                                    var input = item.querySelector('input[type="text"]');
+                                    if (input) {
+                                        input.value = '';
+                                    }
+                                } else {
+                                    item.remove();
+                                }
+                            });
+                        });
+                    }
+
                     function showProp(prop) {
                         var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
                         if (! field) {
                             return;
                         }
+                        if (field.classList.contains('is-hidden')) {
+                            resetRepeatables(field);
+                        }
                         field.classList.remove('is-hidden');
+                        normalizeEmptyRepeatables(field);
                         setOptionDisabled(prop, true);
                         syncHidden();
                         syncAddButton();
@@ -3299,10 +3669,37 @@ function be_schema_engine_render_schema_page() {
                         if (! val) {
                             return;
                         }
-                        if (getVisibleProps().indexOf(val) !== -1) {
+                        var visible = getVisibleProps().indexOf(val) !== -1;
+                        var isSingleton = singletonProps.indexOf(val) !== -1;
+                        var repeatable = repeatableHandlers[val];
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + val + '"]');
+                        var wasHidden = field && field.classList.contains('is-hidden');
+                        if (visible && ! isSingleton) {
+                            if (repeatable) {
+                                repeatable();
+                                syncAddButton();
+                                return;
+                            }
+                        }
+                        if (visible) {
                             return;
                         }
                         showProp(val);
+                        if (repeatable && wasHidden && field) {
+                            field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
+                                wrap.querySelectorAll('.be-schema-repeatable-item').forEach(function (item) {
+                                    item.remove();
+                                });
+                                var addBtn = wrap.closest('.be-schema-repeatable') ? wrap.closest('.be-schema-repeatable').querySelector('.be-schema-repeatable-add') : null;
+                                if (addBtn) {
+                                    addBtn.click();
+                                }
+                            });
+                        }
+                        var field = optionalContainer.querySelector('[data-optional-prop="' + val + '"]');
+                        if (field) {
+                            normalizeEmptyRepeatables(field);
+                        }
                         optionalSelect.value = '';
                         syncAddButton();
                     });
@@ -3344,9 +3741,36 @@ function be_schema_engine_render_schema_page() {
                     selectId: 'be-schema-person-optional',
                     hiddenInputId: 'be_schema_person_optional',
                     props: ['description', 'profile_image', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
-                    singletons: ['description', 'profile_image', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
+                    singletons: ['description', 'profile_image', 'person_url'],
                     previewIds: {
                         profile_image: 'be_schema_person_image_url_preview'
+                    },
+                    repeatableHandlers: {
+                        honorific_prefix: function () {
+                            if (repeatableAdders.honorific_prefix) {
+                                repeatableAdders.honorific_prefix();
+                            }
+                        },
+                        honorific_suffix: function () {
+                            if (repeatableAdders.honorific_suffix) {
+                                repeatableAdders.honorific_suffix();
+                            }
+                        },
+                        alumni_of: function () {
+                            if (repeatableAdders.alumni_of) {
+                                repeatableAdders.alumni_of();
+                            }
+                        },
+                        job_title: function () {
+                            if (repeatableAdders.job_title) {
+                                repeatableAdders.job_title();
+                            }
+                        },
+                        affiliation: function () {
+                            if (repeatableAdders.affiliation) {
+                                repeatableAdders.affiliation();
+                            }
+                        }
                     },
                     propHasValue: function (prop) {
                         if (prop === 'description') {
@@ -3358,28 +3782,23 @@ function be_schema_engine_render_schema_page() {
                             return img && img.value.trim().length > 0;
                         }
                         if (prop === 'honorific_prefix') {
-                            var pre = document.querySelector('[name="be_schema_person_honorific_prefix"]');
-                            return pre && pre.value.trim().length > 0;
+                            return repeatableHasValue('be_schema_person_honorific_prefix[]');
                         }
                         if (prop === 'honorific_suffix') {
-                            var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
-                            return suf && suf.value.trim().length > 0;
+                            return repeatableHasValue('be_schema_person_honorific_suffix[]');
                         }
                         if (prop === 'person_url') {
                             var url = document.getElementById('be_schema_person_url');
                             return url && url.value.trim().length > 0;
                         }
                         if (prop === 'alumni_of') {
-                            var alumni = document.getElementById('be_schema_person_alumni_of');
-                            return alumni && alumni.value.trim().length > 0;
+                            return repeatableHasValue('be_schema_person_alumni_of[]');
                         }
                         if (prop === 'job_title') {
-                            var job = document.getElementById('be_schema_person_job_title');
-                            return job && job.value.trim().length > 0;
+                            return repeatableHasValue('be_schema_person_job_title[]');
                         }
                         if (prop === 'affiliation') {
-                            var aff = document.getElementById('be_schema_person_affiliation');
-                            return aff && aff.value.trim().length > 0;
+                            return repeatableHasValue('be_schema_person_affiliation[]');
                         }
                         if (prop === 'sameas') {
                             var sameas = document.getElementById('be_schema_person_sameas_raw');

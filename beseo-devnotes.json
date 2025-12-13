@@ -370,7 +370,16 @@
         "Schema > Website > Person optional dropdown now includes Person URL, Alumni Of, Job Title, and Affiliation fields (add/remove on demand); values feed the Person node.",
         "Optional-property dropdowns gray out single-instance fields after they are added (e.g., Person URL, Org Legal Name/URL, publisher policies, Facebook page/app ID, Twitter handle, WebSite featured images).",
         "WebSite Featured Images show inline status pills: Undefined (grey) initially/after clear, Verified (green) when selected dimensions match recommendations, Resolution (red) when dimensions differ (16:9 = 1920x1080, 4:3 = 1600x1200, 1:1 = 1200x1200, 3:4 = 1200x1600, 9:16 = 1080x1920).",
-        "WebSite Featured Images remove buttons now sit inline to the left of their labels (no overlap with the text)."
+        "WebSite Featured Images remove buttons now sit inline to the left of their labels (no overlap with the text).",
+        "Site Logo now shows a guidance note to use a 512x512 transparent PNG and a status pill (Undefined/512 PNG green/red) that validates size and type on selection.",
+        "Person optional fields that can be multi-valued (honorific prefixes/suffixes, alumni, job titles, affiliations) now support repeatable inputs via the dropdown + add behavior; Person URL remains singleton.",
+        "Optional dropdown add logic now resets repeatable fields when first shown so selecting a multi-value property surfaces one input instead of duplicating blanks.",
+        "Multi-value optional fields now normalize empty repeatables after adding from the dropdown to prevent duplicate blank rows, including when shown automatically.",
+        "When a repeatable optional field is added from the dropdown for the first time, it now force-resets to a single blank row to avoid double inputs."
+    ],
+    "text_tone_notes": [
+        "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
+        "Person profile image helper now notes 1200x1200 WebP guidance and shows an inline status pill (Undefined Image / 1200x1200 WebP green/red based on size+type)."
     ],
   "ux_notes_identity": [
     "Site Identity publisher option is only available when WebSite.publisher is enabled on the Publisher tab (dedicated publisher optional); identity radio/tab automatically disable when publisher is off. Publisher tab itself remains accessible so you can turn it on."
