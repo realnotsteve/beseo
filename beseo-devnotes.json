@@ -375,7 +375,12 @@
         "Person optional fields that can be multi-valued (honorific prefixes/suffixes, alumni, job titles, affiliations) now support repeatable inputs via the dropdown + add behavior; Person URL remains singleton.",
         "Optional dropdown add logic now resets repeatable fields when first shown so selecting a multi-value property surfaces one input instead of duplicating blanks.",
         "Multi-value optional fields now normalize empty repeatables after adding from the dropdown to prevent duplicate blank rows, including when shown automatically.",
-        "When a repeatable optional field is added from the dropdown for the first time, it now force-resets to a single blank row to avoid double inputs."
+        "When a repeatable optional field is added from the dropdown for the first time, it now force-resets to a single blank row to avoid double inputs.",
+        "Schema > Website > Person now uses a dedicated Image(s) section (outside Person Details) for the 1200x1200 WebP profile image with its enable toggle and status pill; Profile Image was removed from the optional dropdown.",
+        "Removed the left-side border on the Person Image(s) section so it aligns with other Person panels.",
+        "Schema > Website > Publisher > Dedicated now separates Custom Publisher Logo into its own Image(s) dropdown at the same level as other rows; the primary Optional Properties dropdown is limited to name and URL, and the image dropdown now offers all WebSite Featured Image aspect options.",
+        "Schema > Website > Person > Image(s) now uses a dropdown to add any of the WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and dimension guidance.",
+        "Schema > Website > Global > Site Logo now uses a dropdown to add WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and recommended dimensions; the selected logo feeds Organisation and WebSite."
     ],
     "text_tone_notes": [
         "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",

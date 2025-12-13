@@ -51,6 +51,20 @@ function be_schema_engine_get_settings() {
 		'publisher_enabled'     => '0',
 
 		// Person fields.
+		'person_images_optional' => '',
+		'person_image_16_9'      => '',
+		'person_image_4_3'       => '',
+		'person_image_1_1'       => '',
+		'person_image_3_4'       => '',
+		'person_image_9_16'      => '',
+		'person_image_16_9_enabled' => '0',
+		'person_image_4_3_enabled'  => '0',
+		'person_image_1_1_enabled'  => '0',
+		'person_image_3_4_enabled'  => '0',
+		'person_image_9_16_enabled' => '0',
+		'person_image'          => '',
+		'person_image_url'      => '',
+		'person_image_enabled'  => '0',
 		'person_url'            => '',
 		'person_alumni_of'      => array(),
 		'person_job_title'      => array(),
@@ -76,6 +90,12 @@ function be_schema_engine_get_settings() {
 		'publisher_custom_name' => '',
 		'publisher_custom_url'  => '',
 		'publisher_custom_logo' => '',
+		'publisher_dedicated_images_optional' => '',
+		'publisher_image_16_9'   => '',
+		'publisher_image_4_3'    => '',
+		'publisher_image_1_1'    => '',
+		'publisher_image_3_4'    => '',
+		'publisher_image_9_16'   => '',
 
 		// WebSite featured images.
 		'website_image_16_9'        => '',

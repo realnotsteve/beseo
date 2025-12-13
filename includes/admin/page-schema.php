@@ -204,9 +204,64 @@ function be_schema_engine_save_settings() {
         $settings['person_affiliation'] = be_schema_admin_sanitize_text_list( $_POST['be_schema_person_affiliation'] );
     }
 
-    $settings['person_image_url'] = isset( $_POST['be_schema_person_image_url'] )
-        ? esc_url_raw( wp_unslash( $_POST['be_schema_person_image_url'] ) )
+    $settings['person_images_optional'] = isset( $_POST['be_schema_person_images_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_images_optional'] ) )
         : '';
+
+    $person_images = array(
+        'image_16_9' => array(
+            'enabled_key' => 'person_image_16_9_enabled',
+            'value_key'   => 'person_image_16_9',
+            'field_name'  => 'be_schema_person_image_16_9',
+        ),
+        'image_4_3'  => array(
+            'enabled_key' => 'person_image_4_3_enabled',
+            'value_key'   => 'person_image_4_3',
+            'field_name'  => 'be_schema_person_image_4_3',
+        ),
+        'image_1_1'  => array(
+            'enabled_key' => 'person_image_1_1_enabled',
+            'value_key'   => 'person_image_1_1',
+            'field_name'  => 'be_schema_person_image_1_1',
+        ),
+        'image_3_4'  => array(
+            'enabled_key' => 'person_image_3_4_enabled',
+            'value_key'   => 'person_image_3_4',
+            'field_name'  => 'be_schema_person_image_3_4',
+        ),
+        'image_9_16' => array(
+            'enabled_key' => 'person_image_9_16_enabled',
+            'value_key'   => 'person_image_9_16',
+            'field_name'  => 'be_schema_person_image_9_16',
+        ),
+    );
+
+    foreach ( $person_images as $config ) {
+        $enabled_key          = $config['enabled_key'];
+        $value_key            = $config['value_key'];
+        $field_name           = $config['field_name'];
+        $settings[ $enabled_key ] = isset( $_POST[ $field_name . '_enabled' ] ) ? '1' : '0';
+
+        if ( '1' === $settings[ $enabled_key ] && isset( $_POST[ $field_name ] ) ) {
+            $settings[ $value_key ] = esc_url_raw( wp_unslash( $_POST[ $field_name ] ) );
+        } else {
+            $settings[ $value_key ] = '';
+        }
+    }
+
+    // Derive the primary person image from the first enabled image, preferring square then widescreen.
+    $person_image_priority = array( 'person_image_1_1', 'person_image_16_9', 'person_image_4_3', 'person_image_3_4', 'person_image_9_16' );
+    $person_image_pick     = '';
+    foreach ( $person_image_priority as $key ) {
+        if ( ! empty( $settings[ $key ] ) ) {
+            $person_image_pick = $settings[ $key ];
+            break;
+        }
+    }
+
+    $settings['person_image']        = $person_image_pick;
+    $settings['person_image_url']    = $person_image_pick;
+    $settings['person_image_enabled'] = $person_image_pick ? '1' : '0';
 
     $settings['person_honorific_prefix'] = array();
     if ( isset( $_POST['be_schema_person_honorific_prefix'] ) ) {
@@ -244,10 +299,62 @@ function be_schema_engine_save_settings() {
     );
 
     // Shared site logo.
-    $settings['org_logo_enabled'] = isset( $_POST['be_schema_org_logo_enabled'] ) ? '1' : '0';
-    if ( '1' === $settings['org_logo_enabled'] && isset( $_POST['be_schema_org_logo'] ) ) {
-        $settings['org_logo'] = esc_url_raw( wp_unslash( $_POST['be_schema_org_logo'] ) );
+    $settings['org_logo_optional'] = isset( $_POST['be_schema_org_logo_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_org_logo_optional'] ) )
+        : '';
+
+    $org_logo_variants = array(
+        'image_16_9' => array(
+            'enabled_key' => 'org_logo_image_16_9_enabled',
+            'value_key'   => 'org_logo_image_16_9',
+            'field_name'  => 'be_schema_org_logo_image_16_9',
+        ),
+        'image_4_3'  => array(
+            'enabled_key' => 'org_logo_image_4_3_enabled',
+            'value_key'   => 'org_logo_image_4_3',
+            'field_name'  => 'be_schema_org_logo_image_4_3',
+        ),
+        'image_1_1'  => array(
+            'enabled_key' => 'org_logo_image_1_1_enabled',
+            'value_key'   => 'org_logo_image_1_1',
+            'field_name'  => 'be_schema_org_logo_image_1_1',
+        ),
+        'image_3_4'  => array(
+            'enabled_key' => 'org_logo_image_3_4_enabled',
+            'value_key'   => 'org_logo_image_3_4',
+            'field_name'  => 'be_schema_org_logo_image_3_4',
+        ),
+        'image_9_16' => array(
+            'enabled_key' => 'org_logo_image_9_16_enabled',
+            'value_key'   => 'org_logo_image_9_16',
+            'field_name'  => 'be_schema_org_logo_image_9_16',
+        ),
+    );
+
+    foreach ( $org_logo_variants as $config ) {
+        $enabled_key            = $config['enabled_key'];
+        $value_key              = $config['value_key'];
+        $field_name             = $config['field_name'];
+        $settings[ $enabled_key ] = isset( $_POST[ $field_name . '_enabled' ] ) ? '1' : '0';
+
+        if ( '1' === $settings[ $enabled_key ] && isset( $_POST[ $field_name ] ) ) {
+            $settings[ $value_key ] = esc_url_raw( wp_unslash( $_POST[ $field_name ] ) );
+        } else {
+            $settings[ $value_key ] = '';
+        }
     }
+
+    $org_logo_priority = array( 'org_logo_image_1_1', 'org_logo_image_16_9', 'org_logo_image_4_3', 'org_logo_image_3_4', 'org_logo_image_9_16' );
+    $org_logo_pick     = '';
+    foreach ( $org_logo_priority as $key ) {
+        if ( ! empty( $settings[ $key ] ) ) {
+            $org_logo_pick = $settings[ $key ];
+            break;
+        }
+    }
+
+    $settings['org_logo']         = $org_logo_pick;
+    $settings['org_logo_enabled'] = $org_logo_pick ? '1' : '0';
 
     // WebSite featured images (16:9, 4:3, 1:1).
     $settings['website_image_16_9_enabled'] = isset( $_POST['be_schema_website_image_16_9_enabled'] ) ? '1' : '0';
@@ -336,6 +443,24 @@ function be_schema_engine_save_settings() {
     $settings['publisher_dedicated_optional'] = isset( $_POST['be_schema_publisher_dedicated_optional'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_publisher_dedicated_optional'] ) )
         : '';
+    $settings['publisher_dedicated_images_optional'] = isset( $_POST['be_schema_publisher_dedicated_images_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_publisher_dedicated_images_optional'] ) )
+        : '';
+    $settings['publisher_image_16_9'] = isset( $_POST['be_schema_publisher_image_16_9'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_16_9'] ) )
+        : '';
+    $settings['publisher_image_4_3'] = isset( $_POST['be_schema_publisher_image_4_3'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_4_3'] ) )
+        : '';
+    $settings['publisher_image_1_1'] = isset( $_POST['be_schema_publisher_image_1_1'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_1_1'] ) )
+        : '';
+    $settings['publisher_image_3_4'] = isset( $_POST['be_schema_publisher_image_3_4'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_3_4'] ) )
+        : '';
+    $settings['publisher_image_9_16'] = isset( $_POST['be_schema_publisher_image_9_16'] )
+        ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_9_16'] ) )
+        : '';
 
     update_option( 'be_schema_engine_settings', $settings );
 
@@ -408,6 +533,18 @@ function be_schema_engine_render_schema_page() {
     $person_job_title        = be_schema_admin_normalize_text_list( isset( $settings['person_job_title'] ) ? $settings['person_job_title'] : array() );
     $person_affiliation      = be_schema_admin_normalize_text_list( isset( $settings['person_affiliation'] ) ? $settings['person_affiliation'] : array() );
     $person_image_url        = isset( $settings['person_image_url'] ) ? $settings['person_image_url'] : '';
+    $person_images_optional_raw = isset( $settings['person_images_optional'] ) ? $settings['person_images_optional'] : '';
+    $person_image_16_9       = isset( $settings['person_image_16_9'] ) ? $settings['person_image_16_9'] : '';
+    $person_image_4_3        = isset( $settings['person_image_4_3'] ) ? $settings['person_image_4_3'] : '';
+    $person_image_1_1        = isset( $settings['person_image_1_1'] ) ? $settings['person_image_1_1'] : '';
+    $person_image_3_4        = isset( $settings['person_image_3_4'] ) ? $settings['person_image_3_4'] : '';
+    $person_image_9_16       = isset( $settings['person_image_9_16'] ) ? $settings['person_image_9_16'] : '';
+    $person_image_16_9_enabled = isset( $settings['person_image_16_9_enabled'] ) ? '1' === $settings['person_image_16_9_enabled'] : false;
+    $person_image_4_3_enabled  = isset( $settings['person_image_4_3_enabled'] ) ? '1' === $settings['person_image_4_3_enabled'] : false;
+    $person_image_1_1_enabled  = isset( $settings['person_image_1_1_enabled'] ) ? '1' === $settings['person_image_1_1_enabled'] : false;
+    $person_image_3_4_enabled  = isset( $settings['person_image_3_4_enabled'] ) ? '1' === $settings['person_image_3_4_enabled'] : false;
+    $person_image_9_16_enabled = isset( $settings['person_image_9_16_enabled'] ) ? '1' === $settings['person_image_9_16_enabled'] : false;
+    $person_image_enabled    = $person_image_url ? true : false;
     $person_honorific_prefix = be_schema_admin_normalize_text_list( isset( $settings['person_honorific_prefix'] ) ? $settings['person_honorific_prefix'] : array() );
     $person_honorific_suffix = be_schema_admin_normalize_text_list( isset( $settings['person_honorific_suffix'] ) ? $settings['person_honorific_suffix'] : array() );
     $person_sameas_raw       = isset( $settings['person_sameas_raw'] ) ? $settings['person_sameas_raw'] : '';
@@ -421,11 +558,9 @@ function be_schema_engine_render_schema_page() {
             )
         );
     }
+    $person_optional_props = array_values( array_diff( $person_optional_props, array( 'profile_image' ) ) );
     if ( ! empty( $person_description ) && ! in_array( 'description', $person_optional_props, true ) ) {
         $person_optional_props[] = 'description';
-    }
-    if ( ! empty( $person_image_url ) && ! in_array( 'profile_image', $person_optional_props, true ) ) {
-        $person_optional_props[] = 'profile_image';
     }
     if ( ! empty( $person_honorific_prefix ) && ! in_array( 'honorific_prefix', $person_optional_props, true ) ) {
         $person_optional_props[] = 'honorific_prefix';
@@ -451,13 +586,54 @@ function be_schema_engine_render_schema_page() {
 
     $person_optional_serialized = implode( ',', $person_optional_props );
 
+    // Person images optional.
+    $person_images_optional_props = array();
+    if ( ! empty( $person_images_optional_raw ) ) {
+        $person_images_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $person_images_optional_raw )
+            )
+        );
+    }
+
+    $person_image_flags = array(
+        'image_16_9' => array( $person_image_16_9_enabled, $person_image_16_9 ),
+        'image_4_3'  => array( $person_image_4_3_enabled, $person_image_4_3 ),
+        'image_1_1'  => array( $person_image_1_1_enabled, $person_image_1_1 ),
+        'image_3_4'  => array( $person_image_3_4_enabled, $person_image_3_4 ),
+        'image_9_16' => array( $person_image_9_16_enabled, $person_image_9_16 ),
+    );
+
+    foreach ( $person_image_flags as $key => $data ) {
+        list( $enabled_flag, $value ) = $data;
+        if ( $enabled_flag || ! empty( $value ) ) {
+            if ( ! in_array( $key, $person_images_optional_props, true ) ) {
+                $person_images_optional_props[] = $key;
+            }
+        }
+    }
+
+    $person_images_optional_serialized = implode( ',', $person_images_optional_props );
+
     // Organisation.
     $organization_enabled = ! empty( $settings['organization_enabled'] ) && '1' === $settings['organization_enabled'];
     $org_name             = isset( $settings['org_name'] ) ? $settings['org_name'] : '';
     $org_legal_name       = isset( $settings['org_legal_name'] ) ? $settings['org_legal_name'] : '';
     $org_url              = isset( $settings['org_url'] ) ? $settings['org_url'] : '';
-    $org_logo_enabled     = isset( $settings['org_logo_enabled'] ) ? '1' === $settings['org_logo_enabled'] : true;
+    $org_logo_enabled     = isset( $settings['org_logo_enabled'] ) ? '1' === $settings['org_logo_enabled'] : false;
     $org_logo             = isset( $settings['org_logo'] ) ? $settings['org_logo'] : '';
+    $org_logo_optional_raw = isset( $settings['org_logo_optional'] ) ? $settings['org_logo_optional'] : '';
+    $org_logo_image_16_9  = isset( $settings['org_logo_image_16_9'] ) ? $settings['org_logo_image_16_9'] : '';
+    $org_logo_image_4_3   = isset( $settings['org_logo_image_4_3'] ) ? $settings['org_logo_image_4_3'] : '';
+    $org_logo_image_1_1   = isset( $settings['org_logo_image_1_1'] ) ? $settings['org_logo_image_1_1'] : '';
+    $org_logo_image_3_4   = isset( $settings['org_logo_image_3_4'] ) ? $settings['org_logo_image_3_4'] : '';
+    $org_logo_image_9_16  = isset( $settings['org_logo_image_9_16'] ) ? $settings['org_logo_image_9_16'] : '';
+    $org_logo_image_16_9_enabled = isset( $settings['org_logo_image_16_9_enabled'] ) ? '1' === $settings['org_logo_image_16_9_enabled'] : false;
+    $org_logo_image_4_3_enabled  = isset( $settings['org_logo_image_4_3_enabled'] ) ? '1' === $settings['org_logo_image_4_3_enabled'] : false;
+    $org_logo_image_1_1_enabled  = isset( $settings['org_logo_image_1_1_enabled'] ) ? '1' === $settings['org_logo_image_1_1_enabled'] : false;
+    $org_logo_image_3_4_enabled  = isset( $settings['org_logo_image_3_4_enabled'] ) ? '1' === $settings['org_logo_image_3_4_enabled'] : false;
+    $org_logo_image_9_16_enabled = isset( $settings['org_logo_image_9_16_enabled'] ) ? '1' === $settings['org_logo_image_9_16_enabled'] : false;
     $organization_optional_raw = isset( $settings['organization_optional'] ) ? $settings['organization_optional'] : '';
 
     $organization_optional_props = array();
@@ -477,6 +653,35 @@ function be_schema_engine_render_schema_page() {
     }
 
     $organization_optional_serialized = implode( ',', $organization_optional_props );
+
+    $org_logo_optional_props = array();
+    if ( ! empty( $org_logo_optional_raw ) ) {
+        $org_logo_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $org_logo_optional_raw )
+            )
+        );
+    }
+
+    $org_logo_flags = array(
+        'image_16_9' => array( $org_logo_image_16_9_enabled, $org_logo_image_16_9 ),
+        'image_4_3'  => array( $org_logo_image_4_3_enabled, $org_logo_image_4_3 ),
+        'image_1_1'  => array( $org_logo_image_1_1_enabled, $org_logo_image_1_1 ),
+        'image_3_4'  => array( $org_logo_image_3_4_enabled, $org_logo_image_3_4 ),
+        'image_9_16' => array( $org_logo_image_9_16_enabled, $org_logo_image_9_16 ),
+    );
+
+    foreach ( $org_logo_flags as $key => $data ) {
+        list( $enabled_flag, $value ) = $data;
+        if ( $enabled_flag || ! empty( $value ) ) {
+            if ( ! in_array( $key, $org_logo_optional_props, true ) ) {
+                $org_logo_optional_props[] = $key;
+            }
+        }
+    }
+
+    $org_logo_optional_serialized = implode( ',', $org_logo_optional_props );
 
     // WebSite featured images.
     $website_image_16_9_enabled = isset( $settings['website_image_16_9_enabled'] ) ? '1' === $settings['website_image_16_9_enabled'] : false;
@@ -540,8 +745,14 @@ function be_schema_engine_render_schema_page() {
     $publisher_custom_name         = isset( $settings['publisher_custom_name'] ) ? $settings['publisher_custom_name'] : '';
     $publisher_custom_url          = isset( $settings['publisher_custom_url'] ) ? $settings['publisher_custom_url'] : '';
     $publisher_custom_logo         = isset( $settings['publisher_custom_logo'] ) ? $settings['publisher_custom_logo'] : '';
+    $publisher_image_16_9          = isset( $settings['publisher_image_16_9'] ) ? $settings['publisher_image_16_9'] : '';
+    $publisher_image_4_3           = isset( $settings['publisher_image_4_3'] ) ? $settings['publisher_image_4_3'] : '';
+    $publisher_image_1_1           = isset( $settings['publisher_image_1_1'] ) ? $settings['publisher_image_1_1'] : '';
+    $publisher_image_3_4           = isset( $settings['publisher_image_3_4'] ) ? $settings['publisher_image_3_4'] : '';
+    $publisher_image_9_16          = isset( $settings['publisher_image_9_16'] ) ? $settings['publisher_image_9_16'] : '';
     $publisher_entity_optional_raw = isset( $settings['publisher_entity_optional'] ) ? $settings['publisher_entity_optional'] : '';
     $publisher_dedicated_optional_raw = isset( $settings['publisher_dedicated_optional'] ) ? $settings['publisher_dedicated_optional'] : '';
+    $publisher_dedicated_images_optional_raw = isset( $settings['publisher_dedicated_images_optional'] ) ? $settings['publisher_dedicated_images_optional'] : '';
 
     $publisher_entity_optional_props = array();
     if ( ! empty( $publisher_entity_optional_raw ) ) {
@@ -580,17 +791,45 @@ function be_schema_engine_render_schema_page() {
             )
         );
     }
+    $publisher_dedicated_optional_props = array_values( array_diff( $publisher_dedicated_optional_props, array( 'custom_logo' ) ) );
     if ( ! empty( $publisher_custom_name ) && ! in_array( 'custom_name', $publisher_dedicated_optional_props, true ) ) {
         $publisher_dedicated_optional_props[] = 'custom_name';
     }
     if ( ! empty( $publisher_custom_url ) && ! in_array( 'custom_url', $publisher_dedicated_optional_props, true ) ) {
         $publisher_dedicated_optional_props[] = 'custom_url';
     }
-    if ( ! empty( $publisher_custom_logo ) && ! in_array( 'custom_logo', $publisher_dedicated_optional_props, true ) ) {
-        $publisher_dedicated_optional_props[] = 'custom_logo';
-    }
 
     $publisher_dedicated_optional_serialized = implode( ',', $publisher_dedicated_optional_props );
+
+    $publisher_dedicated_images_optional_props = array();
+    if ( ! empty( $publisher_dedicated_images_optional_raw ) ) {
+        $publisher_dedicated_images_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $publisher_dedicated_images_optional_raw )
+            )
+        );
+    }
+    if ( ! empty( $publisher_custom_logo ) && ! in_array( 'custom_logo', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'custom_logo';
+    }
+    if ( ! empty( $publisher_image_16_9 ) && ! in_array( 'image_16_9', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'image_16_9';
+    }
+    if ( ! empty( $publisher_image_4_3 ) && ! in_array( 'image_4_3', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'image_4_3';
+    }
+    if ( ! empty( $publisher_image_1_1 ) && ! in_array( 'image_1_1', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'image_1_1';
+    }
+    if ( ! empty( $publisher_image_3_4 ) && ! in_array( 'image_3_4', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'image_3_4';
+    }
+    if ( ! empty( $publisher_image_9_16 ) && ! in_array( 'image_9_16', $publisher_dedicated_images_optional_props, true ) ) {
+        $publisher_dedicated_images_optional_props[] = 'image_9_16';
+    }
+
+    $publisher_dedicated_images_optional_serialized = implode( ',', $publisher_dedicated_images_optional_props );
 
     if ( $publisher_enabled ) {
         $publisher_type_label = $publisher_dedicated_enabled
@@ -609,7 +848,7 @@ function be_schema_engine_render_schema_page() {
 
     // Health check: Person & Organisation.
     $person_name_effective = get_bloginfo( 'name', 'display' ); // Person name defaults to site title.
-    $person_image_ok       = ! empty( $person_image_url );
+    $person_image_ok       = $person_image_enabled && ! empty( $person_image_url );
 
     $org_name_trim = trim( (string) $org_name );
     $org_logo_ok   = ! empty( $org_logo );
@@ -986,6 +1225,11 @@ function be_schema_engine_render_schema_page() {
 
             /* Person block */
             #be-schema-person-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            #be-schema-person-images-block {
                 border-left: 0;
                 padding-left: 0;
             }
@@ -1903,58 +2147,270 @@ function be_schema_engine_render_schema_page() {
                                                     <?php esc_html_e( 'Site Logo (Shared)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-image-field">
-                                                        <label class="be-schema-image-enable-label">
-                                                            <input type="checkbox"
-                                                                   class="be-schema-image-enable"
-                                                                   data-target-input="be_schema_org_logo"
-                                                                   data-target-select="be_schema_org_logo_select"
-                                                                   data-target-clear="be_schema_org_logo_clear"
-                                                                   name="be_schema_org_logo_enabled"
-                                                                   <?php checked( $org_logo_enabled ); ?> />
-                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                        </label>
-                                                        <input type="text"
-                                                               id="be_schema_org_logo"
-                                                               name="be_schema_org_logo"
-                                                               value="<?php echo esc_url( $org_logo ); ?>"
-                                                               class="regular-text"
-                                                               <?php disabled( ! $org_logo_enabled ); ?> />
+                                                    <div class="be-schema-optional-controls" data-optional-scope="org-logo-images">
+                                                        <label class="screen-reader-text" for="be-schema-org-logo-optional"><?php esc_html_e( 'Add site logo image', 'beseo' ); ?></label>
+                                                        <select id="be-schema-org-logo-optional" aria-label="<?php esc_attr_e( 'Add site logo image', 'beseo' ); ?>">
+                                                            <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                            <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
+                                                            <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
+                                                            <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
+                                                            <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
+                                                            <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
+                                                        </select>
                                                         <button type="button"
-                                                                class="button be-schema-image-select"
-                                                                id="be_schema_org_logo_select"
-                                                                data-target-input="be_schema_org_logo"
-                                                                data-target-preview="be_schema_org_logo_preview"
-                                                                <?php disabled( ! $org_logo_enabled ); ?>>
-                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                class="button be-schema-optional-add"
+                                                                data-optional-add="org-logo-images"
+                                                                disabled>
+                                                            +
                                                         </button>
-                                                        <button type="button"
-                                                                class="button be-schema-image-clear"
-                                                                id="be_schema_org_logo_clear"
-                                                                data-target-input="be_schema_org_logo"
-                                                                data-target-preview="be_schema_org_logo_preview"
-                                                                <?php disabled( ! $org_logo_enabled ); ?>>
-                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                        </button>
-                                                        <span id="be_schema_org_logo_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                        <input type="hidden" name="be_schema_org_logo_optional" id="be_schema_org_logo_optional" value="<?php echo esc_attr( $org_logo_optional_serialized ); ?>" />
                                                     </div>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'This logo is used by the Organisation entity, the WebSite entity, and as a fallback for the Person image when a dedicated profile picture is not provided.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Set a square image at 512x512 PNG with transparency if you have it.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_org_logo_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $org_logo ) : ?>
-                                                            <img src="<?php echo esc_url( $org_logo ); ?>" alt="" />
-                                                        <?php endif; ?>
+
+                                                    <div class="be-schema-optional-fields" id="be-schema-org-logo-optional-fields">
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_16_9', $org_logo_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
+                                                            <label for="be_schema_org_logo_image_16_9" class="screen-reader-text"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <label class="be-schema-image-enable-label">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-image-enable"
+                                                                           data-target-input="be_schema_org_logo_image_16_9"
+                                                                           data-target-select="be_schema_org_logo_image_16_9_select"
+                                                                           data-target-clear="be_schema_org_logo_image_16_9_clear"
+                                                                           name="be_schema_org_logo_image_16_9_enabled"
+                                                                           <?php checked( $org_logo_image_16_9_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                </label>
+                                                                <input type="text"
+                                                                       id="be_schema_org_logo_image_16_9"
+                                                                       name="be_schema_org_logo_image_16_9"
+                                                                       value="<?php echo esc_url( $org_logo_image_16_9 ); ?>"
+                                                                       class="regular-text"
+                                                                       <?php disabled( ! $org_logo_image_16_9_enabled ); ?> />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        id="be_schema_org_logo_image_16_9_select"
+                                                                        data-target-input="be_schema_org_logo_image_16_9"
+                                                                        data-target-preview="be_schema_org_logo_image_16_9_preview"
+                                                                        <?php disabled( ! $org_logo_image_16_9_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        id="be_schema_org_logo_image_16_9_clear"
+                                                                        data-target-input="be_schema_org_logo_image_16_9"
+                                                                        data-target-preview="be_schema_org_logo_image_16_9_preview"
+                                                                        <?php disabled( ! $org_logo_image_16_9_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                                <span id="be_schema_org_logo_image_16_9_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                            </div>
+                                                            <p class="description be-schema-description">
+                                                                <?php esc_html_e( 'Recommended dimensions: 1920x1080.', 'beseo' ); ?>
+                                                            </p>
+                                                            <div id="be_schema_org_logo_image_16_9_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $org_logo_image_16_9 ) : ?>
+                                                                    <img src="<?php echo esc_url( $org_logo_image_16_9 ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_4_3', $org_logo_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_3">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_4_3">−</button>
+                                                            <label for="be_schema_org_logo_image_4_3" class="screen-reader-text"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <label class="be-schema-image-enable-label">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-image-enable"
+                                                                           data-target-input="be_schema_org_logo_image_4_3"
+                                                                           data-target-select="be_schema_org_logo_image_4_3_select"
+                                                                           data-target-clear="be_schema_org_logo_image_4_3_clear"
+                                                                           name="be_schema_org_logo_image_4_3_enabled"
+                                                                           <?php checked( $org_logo_image_4_3_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                </label>
+                                                                <input type="text"
+                                                                       id="be_schema_org_logo_image_4_3"
+                                                                       name="be_schema_org_logo_image_4_3"
+                                                                       value="<?php echo esc_url( $org_logo_image_4_3 ); ?>"
+                                                                       class="regular-text"
+                                                                       <?php disabled( ! $org_logo_image_4_3_enabled ); ?> />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        id="be_schema_org_logo_image_4_3_select"
+                                                                        data-target-input="be_schema_org_logo_image_4_3"
+                                                                        data-target-preview="be_schema_org_logo_image_4_3_preview"
+                                                                        <?php disabled( ! $org_logo_image_4_3_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        id="be_schema_org_logo_image_4_3_clear"
+                                                                        data-target-input="be_schema_org_logo_image_4_3"
+                                                                        data-target-preview="be_schema_org_logo_image_4_3_preview"
+                                                                        <?php disabled( ! $org_logo_image_4_3_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                                <span id="be_schema_org_logo_image_4_3_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                            </div>
+                                                            <p class="description be-schema-description">
+                                                                <?php esc_html_e( 'Recommended dimensions: 1600x1200.', 'beseo' ); ?>
+                                                            </p>
+                                                            <div id="be_schema_org_logo_image_4_3_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $org_logo_image_4_3 ) : ?>
+                                                                    <img src="<?php echo esc_url( $org_logo_image_4_3 ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_1_1', $org_logo_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1">−</button>
+                                                            <label for="be_schema_org_logo_image_1_1" class="screen-reader-text"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <label class="be-schema-image-enable-label">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-image-enable"
+                                                                           data-target-input="be_schema_org_logo_image_1_1"
+                                                                           data-target-select="be_schema_org_logo_image_1_1_select"
+                                                                           data-target-clear="be_schema_org_logo_image_1_1_clear"
+                                                                           name="be_schema_org_logo_image_1_1_enabled"
+                                                                           <?php checked( $org_logo_image_1_1_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                </label>
+                                                                <input type="text"
+                                                                       id="be_schema_org_logo_image_1_1"
+                                                                       name="be_schema_org_logo_image_1_1"
+                                                                       value="<?php echo esc_url( $org_logo_image_1_1 ); ?>"
+                                                                       class="regular-text"
+                                                                       <?php disabled( ! $org_logo_image_1_1_enabled ); ?> />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        id="be_schema_org_logo_image_1_1_select"
+                                                                        data-target-input="be_schema_org_logo_image_1_1"
+                                                                        data-target-preview="be_schema_org_logo_image_1_1_preview"
+                                                                        <?php disabled( ! $org_logo_image_1_1_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        id="be_schema_org_logo_image_1_1_clear"
+                                                                        data-target-input="be_schema_org_logo_image_1_1"
+                                                                        data-target-preview="be_schema_org_logo_image_1_1_preview"
+                                                                        <?php disabled( ! $org_logo_image_1_1_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                                <span id="be_schema_org_logo_image_1_1_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                            </div>
+                                                            <p class="description be-schema-description">
+                                                                <?php esc_html_e( 'Recommended dimensions: 1200x1200.', 'beseo' ); ?>
+                                                            </p>
+                                                            <div id="be_schema_org_logo_image_1_1_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $org_logo_image_1_1 ) : ?>
+                                                                    <img src="<?php echo esc_url( $org_logo_image_1_1 ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_3_4', $org_logo_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_3_4">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_3_4">−</button>
+                                                            <label for="be_schema_org_logo_image_3_4" class="screen-reader-text"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <label class="be-schema-image-enable-label">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-image-enable"
+                                                                           data-target-input="be_schema_org_logo_image_3_4"
+                                                                           data-target-select="be_schema_org_logo_image_3_4_select"
+                                                                           data-target-clear="be_schema_org_logo_image_3_4_clear"
+                                                                           name="be_schema_org_logo_image_3_4_enabled"
+                                                                           <?php checked( $org_logo_image_3_4_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                </label>
+                                                                <input type="text"
+                                                                       id="be_schema_org_logo_image_3_4"
+                                                                       name="be_schema_org_logo_image_3_4"
+                                                                       value="<?php echo esc_url( $org_logo_image_3_4 ); ?>"
+                                                                       class="regular-text"
+                                                                       <?php disabled( ! $org_logo_image_3_4_enabled ); ?> />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        id="be_schema_org_logo_image_3_4_select"
+                                                                        data-target-input="be_schema_org_logo_image_3_4"
+                                                                        data-target-preview="be_schema_org_logo_image_3_4_preview"
+                                                                        <?php disabled( ! $org_logo_image_3_4_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        id="be_schema_org_logo_image_3_4_clear"
+                                                                        data-target-input="be_schema_org_logo_image_3_4"
+                                                                        data-target-preview="be_schema_org_logo_image_3_4_preview"
+                                                                        <?php disabled( ! $org_logo_image_3_4_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                                <span id="be_schema_org_logo_image_3_4_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                            </div>
+                                                            <p class="description be-schema-description">
+                                                                <?php esc_html_e( 'Recommended dimensions: 1200x1600.', 'beseo' ); ?>
+                                                            </p>
+                                                            <div id="be_schema_org_logo_image_3_4_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $org_logo_image_3_4 ) : ?>
+                                                                    <img src="<?php echo esc_url( $org_logo_image_3_4 ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_9_16', $org_logo_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_9_16">−</button>
+                                                            <label for="be_schema_org_logo_image_9_16" class="screen-reader-text"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></label>
+                                                            <div class="be-schema-image-field">
+                                                                <label class="be-schema-image-enable-label">
+                                                                    <input type="checkbox"
+                                                                           class="be-schema-image-enable"
+                                                                           data-target-input="be_schema_org_logo_image_9_16"
+                                                                           data-target-select="be_schema_org_logo_image_9_16_select"
+                                                                           data-target-clear="be_schema_org_logo_image_9_16_clear"
+                                                                           name="be_schema_org_logo_image_9_16_enabled"
+                                                                           <?php checked( $org_logo_image_9_16_enabled ); ?> />
+                                                                    <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                </label>
+                                                                <input type="text"
+                                                                       id="be_schema_org_logo_image_9_16"
+                                                                       name="be_schema_org_logo_image_9_16"
+                                                                       value="<?php echo esc_url( $org_logo_image_9_16 ); ?>"
+                                                                       class="regular-text"
+                                                                       <?php disabled( ! $org_logo_image_9_16_enabled ); ?> />
+                                                                <button type="button"
+                                                                        class="button be-schema-image-select"
+                                                                        id="be_schema_org_logo_image_9_16_select"
+                                                                        data-target-input="be_schema_org_logo_image_9_16"
+                                                                        data-target-preview="be_schema_org_logo_image_9_16_preview"
+                                                                        <?php disabled( ! $org_logo_image_9_16_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="button be-schema-image-clear"
+                                                                        id="be_schema_org_logo_image_9_16_clear"
+                                                                        data-target-input="be_schema_org_logo_image_9_16"
+                                                                        data-target-preview="be_schema_org_logo_image_9_16_preview"
+                                                                        <?php disabled( ! $org_logo_image_9_16_enabled ); ?>>
+                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                </button>
+                                                                <span id="be_schema_org_logo_image_9_16_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                            </div>
+                                                            <p class="description be-schema-description">
+                                                                <?php esc_html_e( 'Recommended dimensions: 1080x1920.', 'beseo' ); ?>
+                                                            </p>
+                                                            <div id="be_schema_org_logo_image_9_16_preview"
+                                                                 class="be-schema-image-preview">
+                                                                <?php if ( $org_logo_image_9_16 ) : ?>
+                                                                    <img src="<?php echo esc_url( $org_logo_image_9_16 ); ?>" alt="" />
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -2276,11 +2732,11 @@ function be_schema_engine_render_schema_page() {
                                             </th>
                                             <td>
                                                 <label>
-                                                    <input type="checkbox"
+                                                   <input type="checkbox"
                                                            name="be_schema_person_enabled"
                                                            value="1"
                                                            class="be-schema-toggle-block"
-                                                           data-target-block="be-schema-person-block"
+                                                           data-target-block="be-schema-person-block be-schema-person-images-block"
                                                            <?php checked( $person_enabled ); ?> />
                                                     <?php esc_html_e(
                                                         'Include a Person node in the site-level schema.',
@@ -2339,7 +2795,6 @@ function be_schema_engine_render_schema_page() {
                                                             <select id="be-schema-person-optional" aria-label="<?php esc_attr_e( 'Add optional Person property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
                                                                 <option value="description"><?php esc_html_e( 'Description', 'beseo' ); ?></option>
-                                                                <option value="profile_image"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></option>
                                                                 <option value="honorific_prefix"><?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?></option>
                                                                 <option value="honorific_suffix"><?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?></option>
                                                                 <option value="person_url"><?php esc_html_e( 'Person URL', 'beseo' ); ?></option>
@@ -2372,43 +2827,6 @@ function be_schema_engine_render_schema_page() {
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
-                                                            </div>
-
-                                                            <div class="be-schema-optional-field<?php echo in_array( 'profile_image', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="profile_image">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="profile_image">−</button>
-                                                                <label for="be_schema_person_image_url" class="screen-reader-text"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></label>
-                                                                <div class="be-schema-image-field">
-                                                                    <input type="text"
-                                                                           id="be_schema_person_image_url"
-                                                                           name="be_schema_person_image_url"
-                                                                           value="<?php echo esc_url( $person_image_url ); ?>"
-                                                                           class="regular-text" />
-                                                                    <button type="button"
-                                                                            class="button be-schema-image-select"
-                                                                            data-target-input="be_schema_person_image_url"
-                                                                            data-target-preview="be_schema_person_image_url_preview">
-                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                    </button>
-                                                                    <button type="button"
-                                                                            class="button be-schema-image-clear"
-                                                                            data-target-input="be_schema_person_image_url"
-                                                                            data-target-preview="be_schema_person_image_url_preview">
-                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                    </button>
-                                                                    <span id="be_schema_person_image_url_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined Image', 'beseo' ); ?></span>
-                                                                </div>
-                                                                <p class="description be-schema-description">
-                                                                    <?php esc_html_e(
-                                                                        'If left empty, the Person entity can fall back to the shared site logo. Use a 1200x1200 WebP image.',
-                                                                        'beseo'
-                                                                    ); ?>
-                                                                </p>
-                                                                <div id="be_schema_person_image_url_preview"
-                                                                     class="be-schema-image-preview">
-                                                                    <?php if ( $person_image_url ) : ?>
-                                                                        <img src="<?php echo esc_url( $person_image_url ); ?>" alt="" />
-                                                                    <?php endif; ?>
-                                                                </div>
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'honorific_prefix', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorific_prefix">
@@ -2586,6 +3004,289 @@ function be_schema_engine_render_schema_page() {
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Image(s)', 'beseo' ); ?></h4>
+                                    <div id="be-schema-person-images-block"
+                                         class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
+                                        <table class="form-table">
+                                            <tbody>
+                                                <tr class="be-schema-optional-row">
+                                                    <th scope="row">
+                                                        <?php esc_html_e( 'Profile (Optional)', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="person-images">
+                                                            <label class="screen-reader-text" for="be-schema-person-images-optional"><?php esc_html_e( 'Add optional Person image', 'beseo' ); ?></label>
+                                                            <select id="be-schema-person-images-optional" aria-label="<?php esc_attr_e( 'Add optional Person image', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
+                                                                <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
+                                                                <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
+                                                                <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
+                                                                <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="person-images"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_person_images_optional" id="be_schema_person_images_optional" value="<?php echo esc_attr( $person_images_optional_serialized ); ?>" />
+                                                        </div>
+
+                                                        <div class="be-schema-optional-fields" id="be-schema-person-images-optional-fields">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_16_9', $person_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
+                                                                <label for="be_schema_person_image_16_9" class="screen-reader-text"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <label class="be-schema-image-enable-label">
+                                                                        <input type="checkbox"
+                                                                               class="be-schema-image-enable"
+                                                                               data-target-input="be_schema_person_image_16_9"
+                                                                               data-target-select="be_schema_person_image_16_9_select"
+                                                                               data-target-clear="be_schema_person_image_16_9_clear"
+                                                                               name="be_schema_person_image_16_9_enabled"
+                                                                               <?php checked( $person_image_16_9_enabled ); ?> />
+                                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_16_9"
+                                                                           name="be_schema_person_image_16_9"
+                                                                           value="<?php echo esc_url( $person_image_16_9 ); ?>"
+                                                                           class="regular-text"
+                                                                           <?php disabled( ! $person_image_16_9_enabled ); ?> />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            id="be_schema_person_image_16_9_select"
+                                                                            data-target-input="be_schema_person_image_16_9"
+                                                                            data-target-preview="be_schema_person_image_16_9_preview"
+                                                                            <?php disabled( ! $person_image_16_9_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            id="be_schema_person_image_16_9_clear"
+                                                                            data-target-input="be_schema_person_image_16_9"
+                                                                            data-target-preview="be_schema_person_image_16_9_preview"
+                                                                            <?php disabled( ! $person_image_16_9_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <span id="be_schema_person_image_16_9_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1920x1080.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_16_9_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_16_9 ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_16_9 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_4_3', $person_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_3">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_4_3">−</button>
+                                                                <label for="be_schema_person_image_4_3" class="screen-reader-text"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <label class="be-schema-image-enable-label">
+                                                                        <input type="checkbox"
+                                                                               class="be-schema-image-enable"
+                                                                               data-target-input="be_schema_person_image_4_3"
+                                                                               data-target-select="be_schema_person_image_4_3_select"
+                                                                               data-target-clear="be_schema_person_image_4_3_clear"
+                                                                               name="be_schema_person_image_4_3_enabled"
+                                                                               <?php checked( $person_image_4_3_enabled ); ?> />
+                                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_4_3"
+                                                                           name="be_schema_person_image_4_3"
+                                                                           value="<?php echo esc_url( $person_image_4_3 ); ?>"
+                                                                           class="regular-text"
+                                                                           <?php disabled( ! $person_image_4_3_enabled ); ?> />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            id="be_schema_person_image_4_3_select"
+                                                                            data-target-input="be_schema_person_image_4_3"
+                                                                            data-target-preview="be_schema_person_image_4_3_preview"
+                                                                            <?php disabled( ! $person_image_4_3_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            id="be_schema_person_image_4_3_clear"
+                                                                            data-target-input="be_schema_person_image_4_3"
+                                                                            data-target-preview="be_schema_person_image_4_3_preview"
+                                                                            <?php disabled( ! $person_image_4_3_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <span id="be_schema_person_image_4_3_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1600x1200.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_4_3_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_4_3 ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_4_3 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_1_1', $person_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1">−</button>
+                                                                <label for="be_schema_person_image_1_1" class="screen-reader-text"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <label class="be-schema-image-enable-label">
+                                                                        <input type="checkbox"
+                                                                               class="be-schema-image-enable"
+                                                                               data-target-input="be_schema_person_image_1_1"
+                                                                               data-target-select="be_schema_person_image_1_1_select"
+                                                                               data-target-clear="be_schema_person_image_1_1_clear"
+                                                                               name="be_schema_person_image_1_1_enabled"
+                                                                               <?php checked( $person_image_1_1_enabled ); ?> />
+                                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_1_1"
+                                                                           name="be_schema_person_image_1_1"
+                                                                           value="<?php echo esc_url( $person_image_1_1 ); ?>"
+                                                                           class="regular-text"
+                                                                           <?php disabled( ! $person_image_1_1_enabled ); ?> />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            id="be_schema_person_image_1_1_select"
+                                                                            data-target-input="be_schema_person_image_1_1"
+                                                                            data-target-preview="be_schema_person_image_1_1_preview"
+                                                                            <?php disabled( ! $person_image_1_1_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            id="be_schema_person_image_1_1_clear"
+                                                                            data-target-input="be_schema_person_image_1_1"
+                                                                            data-target-preview="be_schema_person_image_1_1_preview"
+                                                                            <?php disabled( ! $person_image_1_1_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <span id="be_schema_person_image_1_1_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1200x1200.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_1_1_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_1_1 ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_1_1 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_3_4', $person_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_3_4">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_3_4">−</button>
+                                                                <label for="be_schema_person_image_3_4" class="screen-reader-text"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <label class="be-schema-image-enable-label">
+                                                                        <input type="checkbox"
+                                                                               class="be-schema-image-enable"
+                                                                               data-target-input="be_schema_person_image_3_4"
+                                                                               data-target-select="be_schema_person_image_3_4_select"
+                                                                               data-target-clear="be_schema_person_image_3_4_clear"
+                                                                               name="be_schema_person_image_3_4_enabled"
+                                                                               <?php checked( $person_image_3_4_enabled ); ?> />
+                                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_3_4"
+                                                                           name="be_schema_person_image_3_4"
+                                                                           value="<?php echo esc_url( $person_image_3_4 ); ?>"
+                                                                           class="regular-text"
+                                                                           <?php disabled( ! $person_image_3_4_enabled ); ?> />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            id="be_schema_person_image_3_4_select"
+                                                                            data-target-input="be_schema_person_image_3_4"
+                                                                            data-target-preview="be_schema_person_image_3_4_preview"
+                                                                            <?php disabled( ! $person_image_3_4_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            id="be_schema_person_image_3_4_clear"
+                                                                            data-target-input="be_schema_person_image_3_4"
+                                                                            data-target-preview="be_schema_person_image_3_4_preview"
+                                                                            <?php disabled( ! $person_image_3_4_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <span id="be_schema_person_image_3_4_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1200x1600.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_3_4_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_3_4 ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_3_4 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_9_16', $person_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_9_16">−</button>
+                                                                <label for="be_schema_person_image_9_16" class="screen-reader-text"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <label class="be-schema-image-enable-label">
+                                                                        <input type="checkbox"
+                                                                               class="be-schema-image-enable"
+                                                                               data-target-input="be_schema_person_image_9_16"
+                                                                               data-target-select="be_schema_person_image_9_16_select"
+                                                                               data-target-clear="be_schema_person_image_9_16_clear"
+                                                                               name="be_schema_person_image_9_16_enabled"
+                                                                               <?php checked( $person_image_9_16_enabled ); ?> />
+                                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                    </label>
+                                                                    <input type="text"
+                                                                           id="be_schema_person_image_9_16"
+                                                                           name="be_schema_person_image_9_16"
+                                                                           value="<?php echo esc_url( $person_image_9_16 ); ?>"
+                                                                           class="regular-text"
+                                                                           <?php disabled( ! $person_image_9_16_enabled ); ?> />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            id="be_schema_person_image_9_16_select"
+                                                                            data-target-input="be_schema_person_image_9_16"
+                                                                            data-target-preview="be_schema_person_image_9_16_preview"
+                                                                            <?php disabled( ! $person_image_9_16_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            id="be_schema_person_image_9_16_clear"
+                                                                            data-target-input="be_schema_person_image_9_16"
+                                                                            data-target-preview="be_schema_person_image_9_16_preview"
+                                                                            <?php disabled( ! $person_image_9_16_enabled ); ?>>
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <span id="be_schema_person_image_9_16_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1080x1920.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_person_image_9_16_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $person_image_9_16 ) : ?>
+                                                                        <img src="<?php echo esc_url( $person_image_9_16 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -2937,7 +3638,6 @@ function be_schema_engine_render_schema_page() {
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
                                                                 <option value="custom_name"><?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?></option>
                                                                 <option value="custom_url"><?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?></option>
-                                                                <option value="custom_logo"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></option>
                                                             </select>
                                                             <button type="button"
                                                                     class="button be-schema-optional-add"
@@ -2980,8 +3680,37 @@ function be_schema_engine_render_schema_page() {
                                                                     ); ?>
                                                                 </p>
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
 
-                                                            <div class="be-schema-optional-field<?php echo in_array( 'custom_logo', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_logo">
+                                                <tr class="be-schema-optional-row">
+                                                    <th scope="row">
+                                                    <?php esc_html_e( 'Publisher Logo', 'beseo' ); ?>
+                                                    </th>
+                                                    <td>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-dedicated-images">
+                                                            <label class="screen-reader-text" for="be-schema-publisher-dedicated-images-optional"><?php esc_html_e( 'Add optional dedicated publisher image', 'beseo' ); ?></label>
+                                                            <select id="be-schema-publisher-dedicated-images-optional" aria-label="<?php esc_attr_e( 'Add optional dedicated publisher image', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
+                                                                <option value="custom_logo"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></option>
+                                                                <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
+                                                                <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
+                                                                <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
+                                                                <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
+                                                                <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="publisher-dedicated-images"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_publisher_dedicated_images_optional" id="be_schema_publisher_dedicated_images_optional" value="<?php echo esc_attr( $publisher_dedicated_images_optional_serialized ); ?>" />
+                                                        </div>
+
+                                                        <div class="be-schema-optional-fields" id="be-schema-publisher-dedicated-images-optional-fields">
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'custom_logo', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_logo">
                                                                 <button type="button" class="button be-schema-optional-remove" data-optional-remove="custom_logo">−</button>
                                                                 <label for="be_schema_publisher_custom_logo" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></label>
                                                                 <div class="be-schema-image-field">
@@ -3013,6 +3742,166 @@ function be_schema_engine_render_schema_page() {
                                                                      class="be-schema-image-preview">
                                                                     <?php if ( $publisher_custom_logo ) : ?>
                                                                         <img src="<?php echo esc_url( $publisher_custom_logo ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_16_9', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
+                                                                <label for="be_schema_publisher_image_16_9" class="screen-reader-text"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_image_16_9"
+                                                                           name="be_schema_publisher_image_16_9"
+                                                                           value="<?php echo esc_url( $publisher_image_16_9 ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_image_16_9"
+                                                                            data-target-preview="be_schema_publisher_image_16_9_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_image_16_9"
+                                                                            data-target-preview="be_schema_publisher_image_16_9_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1920x1080.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_image_16_9_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_image_16_9 ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_image_16_9 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_4_3', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_3">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_4_3">−</button>
+                                                                <label for="be_schema_publisher_image_4_3" class="screen-reader-text"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_image_4_3"
+                                                                           name="be_schema_publisher_image_4_3"
+                                                                           value="<?php echo esc_url( $publisher_image_4_3 ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_image_4_3"
+                                                                            data-target-preview="be_schema_publisher_image_4_3_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_image_4_3"
+                                                                            data-target-preview="be_schema_publisher_image_4_3_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1600x1200.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_image_4_3_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_image_4_3 ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_image_4_3 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_1_1', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1">−</button>
+                                                                <label for="be_schema_publisher_image_1_1" class="screen-reader-text"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_image_1_1"
+                                                                           name="be_schema_publisher_image_1_1"
+                                                                           value="<?php echo esc_url( $publisher_image_1_1 ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_image_1_1"
+                                                                            data-target-preview="be_schema_publisher_image_1_1_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_image_1_1"
+                                                                            data-target-preview="be_schema_publisher_image_1_1_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1200x1200.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_image_1_1_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_image_1_1 ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_image_1_1 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_3_4', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_3_4">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_3_4">−</button>
+                                                                <label for="be_schema_publisher_image_3_4" class="screen-reader-text"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_image_3_4"
+                                                                           name="be_schema_publisher_image_3_4"
+                                                                           value="<?php echo esc_url( $publisher_image_3_4 ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_image_3_4"
+                                                                            data-target-preview="be_schema_publisher_image_3_4_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_image_3_4"
+                                                                            data-target-preview="be_schema_publisher_image_3_4_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1200x1600.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_image_3_4_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_image_3_4 ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_image_3_4 ); ?>" alt="" />
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'image_9_16', $publisher_dedicated_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_9_16">−</button>
+                                                                <label for="be_schema_publisher_image_9_16" class="screen-reader-text"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></label>
+                                                                <div class="be-schema-image-field">
+                                                                    <input type="text"
+                                                                           id="be_schema_publisher_image_9_16"
+                                                                           name="be_schema_publisher_image_9_16"
+                                                                           value="<?php echo esc_url( $publisher_image_9_16 ); ?>"
+                                                                           class="regular-text" />
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-select"
+                                                                            data-target-input="be_schema_publisher_image_9_16"
+                                                                            data-target-preview="be_schema_publisher_image_9_16_preview">
+                                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                    </button>
+                                                                    <button type="button"
+                                                                            class="button be-schema-image-clear"
+                                                                            data-target-input="be_schema_publisher_image_9_16"
+                                                                            data-target-preview="be_schema_publisher_image_9_16_preview">
+                                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                    </button>
+                                                                </div>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'Recommended dimensions: 1080x1920.', 'beseo' ); ?>
+                                                                </p>
+                                                                <div id="be_schema_publisher_image_9_16_preview"
+                                                                     class="be-schema-image-preview">
+                                                                    <?php if ( $publisher_image_9_16 ) : ?>
+                                                                        <img src="<?php echo esc_url( $publisher_image_9_16 ); ?>" alt="" />
                                                                     <?php endif; ?>
                                                                 </div>
                                                             </div>
@@ -3301,23 +4190,49 @@ function be_schema_engine_render_schema_page() {
                 var clearButtons = document.querySelectorAll('.be-schema-image-clear');
 
                 var expectedImageDims = {
-                    'be_schema_person_image_url': { width: 1200, height: 1200, label: '1200x1200 WebP', mime: 'image/webp' },
-                    'be_schema_org_logo': { width: 512, height: 512, label: '512x512 PNG', mime: 'image/png' },
                     'be_schema_website_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
                     'be_schema_website_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
                     'be_schema_website_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
                     'be_schema_website_image_3_4': { width: 1200, height: 1600, label: '3:4 (1200x1600)' },
-                    'be_schema_website_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' }
+                    'be_schema_website_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' },
+                    'be_schema_org_logo_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
+                    'be_schema_org_logo_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
+                    'be_schema_org_logo_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
+                    'be_schema_org_logo_image_3_4': { width: 1200, height: 1600, label: '3:4 (1200x1600)' },
+                    'be_schema_org_logo_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' },
+                    'be_schema_person_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
+                    'be_schema_person_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
+                    'be_schema_person_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
+                    'be_schema_person_image_3_4': { width: 1200, height: 1600, label: '3:4 (1200x1600)' },
+                    'be_schema_person_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' },
+                    'be_schema_publisher_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
+                    'be_schema_publisher_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
+                    'be_schema_publisher_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
+                    'be_schema_publisher_image_3_4': { width: 1200, height: 1600, label: '3:4 (1200x1600)' },
+                    'be_schema_publisher_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' }
                 };
 
                 var imageStatusMap = {
-                    'be_schema_person_image_url': 'be_schema_person_image_url_status',
-                    'be_schema_org_logo': 'be_schema_org_logo_status',
                     'be_schema_website_image_16_9': 'be_schema_website_image_16_9_status',
                     'be_schema_website_image_4_3': 'be_schema_website_image_4_3_status',
                     'be_schema_website_image_1_1': 'be_schema_website_image_1_1_status',
                     'be_schema_website_image_3_4': 'be_schema_website_image_3_4_status',
-                    'be_schema_website_image_9_16': 'be_schema_website_image_9_16_status'
+                    'be_schema_website_image_9_16': 'be_schema_website_image_9_16_status',
+                    'be_schema_org_logo_image_16_9': 'be_schema_org_logo_image_16_9_status',
+                    'be_schema_org_logo_image_4_3': 'be_schema_org_logo_image_4_3_status',
+                    'be_schema_org_logo_image_1_1': 'be_schema_org_logo_image_1_1_status',
+                    'be_schema_org_logo_image_3_4': 'be_schema_org_logo_image_3_4_status',
+                    'be_schema_org_logo_image_9_16': 'be_schema_org_logo_image_9_16_status',
+                    'be_schema_person_image_16_9': 'be_schema_person_image_16_9_status',
+                    'be_schema_person_image_4_3': 'be_schema_person_image_4_3_status',
+                    'be_schema_person_image_1_1': 'be_schema_person_image_1_1_status',
+                    'be_schema_person_image_3_4': 'be_schema_person_image_3_4_status',
+                    'be_schema_person_image_9_16': 'be_schema_person_image_9_16_status',
+                    'be_schema_publisher_image_16_9': 'be_schema_publisher_image_16_9_status',
+                    'be_schema_publisher_image_4_3': 'be_schema_publisher_image_4_3_status',
+                    'be_schema_publisher_image_1_1': 'be_schema_publisher_image_1_1_status',
+                    'be_schema_publisher_image_3_4': 'be_schema_publisher_image_3_4_status',
+                    'be_schema_publisher_image_9_16': 'be_schema_publisher_image_9_16_status'
                 };
 
                 var statusDisplayMap = {
@@ -3325,16 +4240,6 @@ function be_schema_engine_render_schema_page() {
                         undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
                         verified: '<?php echo esc_js( __( 'Verified', 'beseo' ) ); ?>',
                         resolution: '<?php echo esc_js( __( 'Resolution', 'beseo' ) ); ?>'
-                    },
-                    be_schema_person_image_url: {
-                        undefined: '<?php echo esc_js( __( 'Undefined Image', 'beseo' ) ); ?>',
-                        verified: '<?php echo esc_js( __( '1200x1200 WebP', 'beseo' ) ); ?>',
-                        resolution: '<?php echo esc_js( __( '1200x1200 WebP', 'beseo' ) ); ?>'
-                    },
-                    be_schema_org_logo: {
-                        undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
-                        verified: '<?php echo esc_js( __( '512 PNG', 'beseo' ) ); ?>',
-                        resolution: '<?php echo esc_js( __( '512 PNG', 'beseo' ) ); ?>'
                     }
                 };
 
@@ -3740,11 +4645,8 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-person-optional-fields',
                     selectId: 'be-schema-person-optional',
                     hiddenInputId: 'be_schema_person_optional',
-                    props: ['description', 'profile_image', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
-                    singletons: ['description', 'profile_image', 'person_url'],
-                    previewIds: {
-                        profile_image: 'be_schema_person_image_url_preview'
-                    },
+                    props: ['description', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
+                    singletons: ['description', 'person_url'],
                     repeatableHandlers: {
                         honorific_prefix: function () {
                             if (repeatableAdders.honorific_prefix) {
@@ -3777,10 +4679,6 @@ function be_schema_engine_render_schema_page() {
                             var desc = document.getElementById('be_schema_person_description');
                             return desc && desc.value.trim().length > 0;
                         }
-                        if (prop === 'profile_image') {
-                            var img = document.getElementById('be_schema_person_image_url');
-                            return img && img.value.trim().length > 0;
-                        }
                         if (prop === 'honorific_prefix') {
                             return repeatableHasValue('be_schema_person_honorific_prefix[]');
                         }
@@ -3805,6 +4703,32 @@ function be_schema_engine_render_schema_page() {
                             return sameas && sameas.value.trim().length > 0;
                         }
                         return false;
+                    }
+                });
+                initOptionalProperties({
+                    scope: 'person-images',
+                    containerId: 'be-schema-person-images-optional-fields',
+                    selectId: 'be-schema-person-images-optional',
+                    hiddenInputId: 'be_schema_person_images_optional',
+                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    previewIds: {
+                        image_16_9: 'be_schema_person_image_16_9_preview',
+                        image_4_3: 'be_schema_person_image_4_3_preview',
+                        image_1_1: 'be_schema_person_image_1_1_preview',
+                        image_3_4: 'be_schema_person_image_3_4_preview',
+                        image_9_16: 'be_schema_person_image_9_16_preview'
+                    },
+                    propHasValue: function (prop) {
+                        var map = {
+                            image_16_9: document.getElementById('be_schema_person_image_16_9'),
+                            image_4_3: document.getElementById('be_schema_person_image_4_3'),
+                            image_1_1: document.getElementById('be_schema_person_image_1_1'),
+                            image_3_4: document.getElementById('be_schema_person_image_3_4'),
+                            image_9_16: document.getElementById('be_schema_person_image_9_16')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
                     }
                 });
 
@@ -3833,22 +4757,58 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-publisher-dedicated-optional-fields',
                     selectId: 'be-schema-publisher-dedicated-optional',
                     hiddenInputId: 'be_schema_publisher_dedicated_optional',
-                    props: ['custom_name', 'custom_url', 'custom_logo'],
-                    singletons: ['custom_name', 'custom_url', 'custom_logo'],
-                    previewIds: {
-                        custom_logo: 'be_schema_publisher_custom_logo_preview'
-                    },
+                    props: ['custom_name', 'custom_url'],
+                    singletons: ['custom_name', 'custom_url'],
                     propHasValue: function (prop) {
-                        if (prop === 'custom_logo') {
-                            var logo = document.getElementById('be_schema_publisher_custom_logo');
-                            return logo && logo.value.trim().length > 0;
-                        }
                         var map = {
                             custom_name: document.getElementById('be_schema_publisher_custom_name'),
                             custom_url: document.getElementById('be_schema_publisher_custom_url')
                         };
                         var input = map[prop];
                         return !! (input && input.value.trim().length > 0);
+                    }
+                });
+                initOptionalProperties({
+                    scope: 'publisher-dedicated-images',
+                    containerId: 'be-schema-publisher-dedicated-images-optional-fields',
+                    selectId: 'be-schema-publisher-dedicated-images-optional',
+                    hiddenInputId: 'be_schema_publisher_dedicated_images_optional',
+                    props: ['custom_logo', 'image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    singletons: ['custom_logo', 'image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    previewIds: {
+                        custom_logo: 'be_schema_publisher_custom_logo_preview',
+                        image_16_9: 'be_schema_publisher_image_16_9_preview',
+                        image_4_3: 'be_schema_publisher_image_4_3_preview',
+                        image_1_1: 'be_schema_publisher_image_1_1_preview',
+                        image_3_4: 'be_schema_publisher_image_3_4_preview',
+                        image_9_16: 'be_schema_publisher_image_9_16_preview'
+                    },
+                    propHasValue: function (prop) {
+                        if (prop === 'custom_logo') {
+                            var logo = document.getElementById('be_schema_publisher_custom_logo');
+                            return logo && logo.value.trim().length > 0;
+                        }
+                        if (prop === 'image_16_9') {
+                            var img169 = document.getElementById('be_schema_publisher_image_16_9');
+                            return img169 && img169.value.trim().length > 0;
+                        }
+                        if (prop === 'image_4_3') {
+                            var img43 = document.getElementById('be_schema_publisher_image_4_3');
+                            return img43 && img43.value.trim().length > 0;
+                        }
+                        if (prop === 'image_1_1') {
+                            var img11 = document.getElementById('be_schema_publisher_image_1_1');
+                            return img11 && img11.value.trim().length > 0;
+                        }
+                        if (prop === 'image_3_4') {
+                            var img34 = document.getElementById('be_schema_publisher_image_3_4');
+                            return img34 && img34.value.trim().length > 0;
+                        }
+                        if (prop === 'image_9_16') {
+                            var img916 = document.getElementById('be_schema_publisher_image_9_16');
+                            return img916 && img916.value.trim().length > 0;
+                        }
+                        return false;
                     }
                 });
 
@@ -3894,6 +4854,32 @@ function be_schema_engine_render_schema_page() {
                         return !! (input && input.value.trim().length > 0);
                     }
                 });
+                initOptionalProperties({
+                    scope: 'org-logo-images',
+                    containerId: 'be-schema-org-logo-optional-fields',
+                    selectId: 'be-schema-org-logo-optional',
+                    hiddenInputId: 'be_schema_org_logo_optional',
+                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    previewIds: {
+                        image_16_9: 'be_schema_org_logo_image_16_9_preview',
+                        image_4_3: 'be_schema_org_logo_image_4_3_preview',
+                        image_1_1: 'be_schema_org_logo_image_1_1_preview',
+                        image_3_4: 'be_schema_org_logo_image_3_4_preview',
+                        image_9_16: 'be_schema_org_logo_image_9_16_preview'
+                    },
+                    propHasValue: function (prop) {
+                        var map = {
+                            image_16_9: document.getElementById('be_schema_org_logo_image_16_9'),
+                            image_4_3: document.getElementById('be_schema_org_logo_image_4_3'),
+                            image_1_1: document.getElementById('be_schema_org_logo_image_1_1'),
+                            image_3_4: document.getElementById('be_schema_org_logo_image_3_4'),
+                            image_9_16: document.getElementById('be_schema_org_logo_image_9_16')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
 
                 // Publisher dedicated optional: enable only when publisher + dedicated are on.
                 (function () {
@@ -3903,6 +4889,10 @@ function be_schema_engine_render_schema_page() {
                     var select = document.getElementById('be-schema-publisher-dedicated-optional');
                     var add = document.querySelector('[data-optional-add="publisher-dedicated"]');
                     var fields = document.getElementById('be-schema-publisher-dedicated-optional-fields');
+                    var imageControls = document.querySelector('.be-schema-optional-controls[data-optional-scope="publisher-dedicated-images"]');
+                    var imageSelect = document.getElementById('be-schema-publisher-dedicated-images-optional');
+                    var imageAdd = document.querySelector('[data-optional-add="publisher-dedicated-images"]');
+                    var imageFields = document.getElementById('be-schema-publisher-dedicated-images-optional-fields');
                     var typePill = document.getElementById('be-schema-publisher-type-pill');
 
                     function updateTypePill() {
@@ -3950,6 +4940,8 @@ function be_schema_engine_render_schema_page() {
                             add.disabled = ! enabled;
                             if (! enabled) {
                                 add.classList.add('disabled');
+                            } else {
+                                add.classList.remove('disabled');
                             }
                         }
 
@@ -3958,6 +4950,35 @@ function be_schema_engine_render_schema_page() {
                                 btn.disabled = ! enabled;
                             });
                             fields.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
+                                input.readOnly = ! enabled;
+                            });
+                        }
+
+                        if (imageControls) {
+                            imageControls.classList.toggle('is-disabled', ! enabled);
+                        }
+
+                        if (imageSelect) {
+                            imageSelect.disabled = ! enabled;
+                            if (enabled) {
+                                imageSelect.dispatchEvent(new Event('change'));
+                            }
+                        }
+
+                        if (imageAdd) {
+                            imageAdd.disabled = ! enabled;
+                            if (! enabled) {
+                                imageAdd.classList.add('disabled');
+                            } else {
+                                imageAdd.classList.remove('disabled');
+                            }
+                        }
+
+                        if (imageFields) {
+                            imageFields.querySelectorAll('.be-schema-optional-remove, .be-schema-image-select, .be-schema-image-clear').forEach(function (btn) {
+                                btn.disabled = ! enabled;
+                            });
+                            imageFields.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
                                 input.readOnly = ! enabled;
                             });
                         }
