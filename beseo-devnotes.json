@@ -379,7 +379,8 @@
     ],
     "text_tone_notes": [
         "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
-        "Person profile image helper now notes 1200x1200 WebP guidance and shows an inline status pill (Undefined Image / 1200x1200 WebP green/red based on size+type)."
+        "Person profile image helper now notes 1200x1200 WebP guidance and shows an inline status pill (Undefined Image / 1200x1200 WebP green/red based on size+type).",
+        "Social Media > Facebook Content now splits Optional Properties (page URL, app ID, notes) and Optional Images (default OG image) into separate dropdowns/sections."
     ],
   "ux_notes_identity": [
     "Site Identity publisher option is only available when WebSite.publisher is enabled on the Publisher tab (dedicated publisher optional); identity radio/tab automatically disable when publisher is off. Publisher tab itself remains accessible so you can turn it on."
