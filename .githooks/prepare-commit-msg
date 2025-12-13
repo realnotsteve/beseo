@@ -23,6 +23,29 @@ if [[ -z "$staged_files" ]]; then
   exit 0
 fi
 
+# Build a short file summary for the commit title.
+build_file_summary() {
+  local max=3
+  local files=()
+  while IFS= read -r f; do
+    files+=("$f")
+  done <<<"$staged_files"
+
+  local total=${#files[@]}
+  if (( total == 0 )); then
+    return
+  fi
+
+  if (( total <= max )); then
+    printf '%s' "$(IFS=', '; echo "${files[*]}")"
+  else
+    local head=("${files[@]:0:max}")
+    printf '%s (+%d more)' "$(IFS=', '; echo "${head[*]}")" "$((total - max))"
+  fi
+}
+
+file_summary="$(build_file_summary)"
+
 # Build a quick summary from touched areas unless BESEO_COMMIT_MSG is set.
 if [[ -n "${BESEO_COMMIT_MSG:-}" ]]; then
   summary="${BESEO_COMMIT_MSG}"
@@ -50,6 +73,10 @@ else
   else
     summary="BESEO: $(IFS=' + '; echo "${summary_parts[*]}")"
   fi
+fi
+
+if [[ -n "$file_summary" ]]; then
+  summary="${summary} - ${file_summary}"
 fi
 
 {

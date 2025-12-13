@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.64] - 2025-12-13
+Summary: Tooling + devnotes.
+
+### Changed
+- Touched areas: tooling, devnotes.
+
+### Files
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+
+
+## [1.3.63] - 2025-12-13
+Summary: Tooling + devnotes.
+
+### Changed
+- Touched areas: tooling, devnotes.
+
+### Files
+- .githooks/prepare-commit-msg
+- beseo-devnotes.json
+
+
 ## [1.3.62] - 2025-12-13
 Summary: Devnotes + schema admin.
 
