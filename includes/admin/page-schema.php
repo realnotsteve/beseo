@@ -112,6 +112,26 @@ function be_schema_engine_save_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_optional'] ) )
         : '';
 
+    $settings['person_url'] = isset( $_POST['be_schema_person_url'] )
+        ? be_schema_engine_validate_url_field(
+            wp_unslash( $_POST['be_schema_person_url'] ),
+            __( 'Person URL', 'beseo' ),
+            $validation_errors
+        )
+        : '';
+
+    $settings['person_alumni_of'] = isset( $_POST['be_schema_person_alumni_of'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_alumni_of'] ) )
+        : '';
+
+    $settings['person_job_title'] = isset( $_POST['be_schema_person_job_title'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_job_title'] ) )
+        : '';
+
+    $settings['person_affiliation'] = isset( $_POST['be_schema_person_affiliation'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_person_affiliation'] ) )
+        : '';
+
     $settings['person_image_url'] = isset( $_POST['be_schema_person_image_url'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_person_image_url'] ) )
         : '';
@@ -295,6 +315,10 @@ function be_schema_engine_render_schema_page() {
     $person_name             = isset( $settings['person_name'] ) ? $settings['person_name'] : '';
     $person_description      = isset( $settings['person_description'] ) ? $settings['person_description'] : '';
     $person_optional_raw     = isset( $settings['person_optional'] ) ? $settings['person_optional'] : '';
+    $person_url              = isset( $settings['person_url'] ) ? $settings['person_url'] : '';
+    $person_alumni_of        = isset( $settings['person_alumni_of'] ) ? $settings['person_alumni_of'] : '';
+    $person_job_title        = isset( $settings['person_job_title'] ) ? $settings['person_job_title'] : '';
+    $person_affiliation      = isset( $settings['person_affiliation'] ) ? $settings['person_affiliation'] : '';
     $person_image_url        = isset( $settings['person_image_url'] ) ? $settings['person_image_url'] : '';
     $person_honorific_prefix = isset( $settings['person_honorific_prefix'] ) ? $settings['person_honorific_prefix'] : '';
     $person_honorific_suffix = isset( $settings['person_honorific_suffix'] ) ? $settings['person_honorific_suffix'] : '';
@@ -320,6 +344,18 @@ function be_schema_engine_render_schema_page() {
         && ! in_array( 'honorifics', $person_optional_props, true )
     ) {
         $person_optional_props[] = 'honorifics';
+    }
+    if ( ! empty( $person_url ) && ! in_array( 'person_url', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'person_url';
+    }
+    if ( ! empty( $person_alumni_of ) && ! in_array( 'alumni_of', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'alumni_of';
+    }
+    if ( ! empty( $person_job_title ) && ! in_array( 'job_title', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'job_title';
+    }
+    if ( ! empty( $person_affiliation ) && ! in_array( 'affiliation', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'affiliation';
     }
 
     $person_optional_serialized = implode( ',', $person_optional_props );
@@ -1955,6 +1991,10 @@ function be_schema_engine_render_schema_page() {
                                                                 <option value="description"><?php esc_html_e( 'Description', 'beseo' ); ?></option>
                                                                 <option value="profile_image"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></option>
                                                                 <option value="honorifics"><?php esc_html_e( 'Honorifics', 'beseo' ); ?></option>
+                                                                <option value="person_url"><?php esc_html_e( 'Person URL', 'beseo' ); ?></option>
+                                                                <option value="alumni_of"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></option>
+                                                                <option value="job_title"><?php esc_html_e( 'Job Title', 'beseo' ); ?></option>
+                                                                <option value="affiliation"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></option>
                                                             </select>
                                                             <button type="button"
                                                                     class="button be-schema-optional-add"
@@ -2039,6 +2079,70 @@ function be_schema_engine_render_schema_page() {
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
                                                                         'Optional. Prefix examples: Dr, Prof, Mr, Ms. Suffix examples: PhD, MD, CPA.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'person_url', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="person_url">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="person_url">−</button>
+                                                                <label for="be_schema_person_url" class="screen-reader-text"><?php esc_html_e( 'Person URL', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_url"
+                                                                       id="be_schema_person_url"
+                                                                       value="<?php echo esc_url( $person_url ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. A canonical URL for this person (for example, personal site or primary profile).',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'alumni_of', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="alumni_of">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="alumni_of">−</button>
+                                                                <label for="be_schema_person_alumni_of" class="screen-reader-text"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_alumni_of"
+                                                                       id="be_schema_person_alumni_of"
+                                                                       value="<?php echo esc_attr( $person_alumni_of ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. School or institution the person graduated from (text).',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'job_title', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="job_title">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="job_title">−</button>
+                                                                <label for="be_schema_person_job_title" class="screen-reader-text"><?php esc_html_e( 'Job Title', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_job_title"
+                                                                       id="be_schema_person_job_title"
+                                                                       value="<?php echo esc_attr( $person_job_title ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. Primary role or position for this person.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'affiliation', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="affiliation">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="affiliation">−</button>
+                                                                <label for="be_schema_person_affiliation" class="screen-reader-text"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_affiliation"
+                                                                       id="be_schema_person_affiliation"
+                                                                       value="<?php echo esc_attr( $person_affiliation ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. Organisation this person is affiliated with (text).',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
@@ -2402,7 +2506,8 @@ function be_schema_engine_render_schema_page() {
                                                             <input type="checkbox"
                                                                    name="be_schema_publisher_dedicated_enabled"
                                                                    value="1"
-                                                                   <?php checked( $publisher_dedicated_enabled ); ?> />
+                                                                   <?php checked( $publisher_dedicated_enabled ); ?>
+                                                                   <?php disabled( ! $publisher_enabled ); ?> />
                                                             <?php esc_html_e( 'Use a dedicated publisher entity.', 'beseo' ); ?>
                                                         </label>
                                                     </td>
@@ -2792,6 +2897,13 @@ function be_schema_engine_render_schema_page() {
                     var optionalSelect = document.getElementById(config.selectId);
                     var optionalAdd = document.querySelector('[data-optional-add="' + config.scope + '"]');
                     var optionalHidden = document.getElementById(config.hiddenInputId);
+                    var optionMap = {};
+                    if (optionalSelect) {
+                        optionalSelect.querySelectorAll('option[value]').forEach(function (opt) {
+                            optionMap[opt.value] = opt;
+                        });
+                    }
+                    var singletonProps = config.singletons || [];
 
                     if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
                         return;
@@ -2845,12 +2957,22 @@ function be_schema_engine_render_schema_page() {
                         }
                     }
 
+                    function setOptionDisabled(prop, disabled) {
+                        if (singletonProps.indexOf(prop) === -1) {
+                            return;
+                        }
+                        if (optionMap[prop]) {
+                            optionMap[prop].disabled = !! disabled;
+                        }
+                    }
+
                     function showProp(prop) {
                         var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
                         if (! field) {
                             return;
                         }
                         field.classList.remove('is-hidden');
+                        setOptionDisabled(prop, true);
                         syncHidden();
                         syncAddButton();
                     }
@@ -2862,6 +2984,7 @@ function be_schema_engine_render_schema_page() {
                         }
                         clearFields(prop);
                         field.classList.add('is-hidden');
+                        setOptionDisabled(prop, false);
                         syncHidden();
                         syncAddButton();
                     }
@@ -2925,7 +3048,8 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-person-optional-fields',
                     selectId: 'be-schema-person-optional',
                     hiddenInputId: 'be_schema_person_optional',
-                    props: ['description', 'profile_image', 'honorifics'],
+                    props: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
+                    singletons: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
                     previewIds: {
                         profile_image: 'be_schema_person_image_url_preview'
                     },
@@ -2943,6 +3067,22 @@ function be_schema_engine_render_schema_page() {
                             var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
                             return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
                         }
+                        if (prop === 'person_url') {
+                            var url = document.getElementById('be_schema_person_url');
+                            return url && url.value.trim().length > 0;
+                        }
+                        if (prop === 'alumni_of') {
+                            var alumni = document.getElementById('be_schema_person_alumni_of');
+                            return alumni && alumni.value.trim().length > 0;
+                        }
+                        if (prop === 'job_title') {
+                            var job = document.getElementById('be_schema_person_job_title');
+                            return job && job.value.trim().length > 0;
+                        }
+                        if (prop === 'affiliation') {
+                            var aff = document.getElementById('be_schema_person_affiliation');
+                            return aff && aff.value.trim().length > 0;
+                        }
                         return false;
                     }
                 });
@@ -2953,6 +3093,7 @@ function be_schema_engine_render_schema_page() {
                     selectId: 'be-schema-publisher-entity-optional',
                     hiddenInputId: 'be_schema_publisher_entity_optional',
                     props: ['copyright_year', 'license_url', 'publishing_principles', 'corrections_policy', 'ownership_funding'],
+                    singletons: ['copyright_year', 'license_url', 'publishing_principles', 'corrections_policy', 'ownership_funding'],
                     propHasValue: function (prop) {
                         var map = {
                             copyright_year: document.getElementById('be_schema_copyright_year'),
@@ -2972,6 +3113,7 @@ function be_schema_engine_render_schema_page() {
                     selectId: 'be-schema-publisher-dedicated-optional',
                     hiddenInputId: 'be_schema_publisher_dedicated_optional',
                     props: ['custom_name', 'custom_url', 'custom_logo'],
+                    singletons: ['custom_name', 'custom_url', 'custom_logo'],
                     previewIds: {
                         custom_logo: 'be_schema_publisher_custom_logo_preview'
                     },
@@ -2995,6 +3137,7 @@ function be_schema_engine_render_schema_page() {
                     selectId: 'be-schema-org-optional',
                     hiddenInputId: 'be_schema_org_optional',
                     props: ['legal_name', 'org_url'],
+                    singletons: ['legal_name', 'org_url'],
                     propHasValue: function (prop) {
                         var map = {
                             legal_name: document.getElementById('be_schema_org_legal_name'),
@@ -3041,6 +3184,8 @@ function be_schema_engine_render_schema_page() {
                     }
 
                     function setDedicatedOptionalEnabled() {
+                        syncDedicatedToggle();
+
                         var enabled = !! (publisherToggle && publisherToggle.checked && dedicatedToggle && dedicatedToggle.checked);
 
                         if (controls) {
@@ -3071,6 +3216,17 @@ function be_schema_engine_render_schema_page() {
                         }
 
                         updateTypePill();
+                    }
+
+                    function syncDedicatedToggle() {
+                        if (! dedicatedToggle) {
+                            return;
+                        }
+                        var publisherOn = !! (publisherToggle && publisherToggle.checked);
+                        dedicatedToggle.disabled = ! publisherOn;
+                        if (! publisherOn) {
+                            dedicatedToggle.checked = false;
+                        }
                     }
 
                     if (publisherToggle) {

@@ -216,6 +216,22 @@ function be_schema_get_site_entities() {
             );
         }
 
+        if ( ! empty( $settings['person_url'] ) ) {
+            $person_node['url'] = $settings['person_url'];
+        }
+
+        if ( ! empty( $settings['person_alumni_of'] ) ) {
+            $person_node['alumniOf'] = $settings['person_alumni_of'];
+        }
+
+        if ( ! empty( $settings['person_job_title'] ) ) {
+            $person_node['jobTitle'] = $settings['person_job_title'];
+        }
+
+        if ( ! empty( $settings['person_affiliation'] ) ) {
+            $person_node['affiliation'] = $settings['person_affiliation'];
+        }
+
         // Person sameAs: from textarea, one URL per line.
         if ( ! empty( $settings['person_sameas'] ) ) {
             $lines = preg_split( '/\r\n|\r|\n/', (string) $settings['person_sameas'] );

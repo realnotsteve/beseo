@@ -1325,6 +1325,7 @@ function be_schema_engine_render_social_media_page() {
                     selectId: 'be-schema-facebook-optional',
                     hiddenInputId: 'be_schema_facebook_optional',
                     props: ['facebook_page_url', 'facebook_default_image', 'facebook_app_id', 'facebook_notes'],
+                    singletons: ['facebook_page_url', 'facebook_default_image', 'facebook_app_id', 'facebook_notes'],
                     previewIds: {
                         facebook_default_image: 'be_schema_facebook_default_image_preview'
                     },
@@ -1349,6 +1350,7 @@ function be_schema_engine_render_social_media_page() {
                     selectId: 'be-schema-twitter-optional',
                     hiddenInputId: 'be_schema_twitter_optional',
                     props: ['twitter_handle', 'twitter_default_image', 'twitter_notes'],
+                    singletons: ['twitter_handle', 'twitter_default_image', 'twitter_notes'],
                     previewIds: {
                         twitter_default_image: 'be_schema_twitter_default_image_preview'
                     },

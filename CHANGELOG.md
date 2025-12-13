@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.58] - 2025-12-12
+Summary: Devnotes + schema admin + social admin + engine.
+
+### Changed
+- Touched areas: devnotes, schema admin, social admin, engine.
+
+### Files
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/engine/core-helpers.php
+- includes/engine/core-site-entities.php
+
+
 ## [1.3.57] - 2025-12-12
 Summary: Devnotes + schema admin + social admin.
 

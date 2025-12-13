@@ -50,6 +50,12 @@ function be_schema_engine_get_settings() {
 		'organization_enabled'  => '0',
 		'publisher_enabled'     => '0',
 
+		// Person fields.
+		'person_url'            => '',
+		'person_alumni_of'      => '',
+		'person_job_title'      => '',
+		'person_affiliation'    => '',
+
 		// Site identity mode (how WebSite & publisher prioritise Person vs Organisation vs Publisher).
 		// Allowed values: 'person', 'organisation', 'publisher'.
 		'site_identity_mode'    => 'publisher',

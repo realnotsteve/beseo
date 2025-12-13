@@ -366,7 +366,9 @@
     "Schema Snapshots > Health: added Issues column with badges for missing org/publisher name/logo and quick links to the relevant Website subtabs.",
     "Schema > Website > Publisher now mirrors the Person optional-properties picker: Entity and Dedicated sections use a dropdown + add/remove buttons to reveal only the publisher fields you want to output.",
     "Publisher Dedicated optional controls (dropdown, add/remove, inputs) are only enabled when both WebSite.publisher and Dedicated Publisher toggles are on.",
-    "Publisher panel now shows a secondary pill indicating publisher type: Reference (green) when enabled without dedicated, Dedicated (green) when dedicated is on, and None (red) when WebSite.publisher is disabled."
+    "Publisher panel now shows a secondary pill indicating publisher type: Reference (green) when enabled without dedicated, Dedicated (green) when dedicated is on, and None (red) when WebSite.publisher is disabled.",
+    "Schema > Website > Person optional dropdown now includes Person URL, Alumni Of, Job Title, and Affiliation fields (add/remove on demand); values feed the Person node.",
+    "Optional-property dropdowns gray out single-instance fields after they are added (e.g., Person URL, Org Legal Name/URL, publisher policies, Facebook page/app ID, Twitter handle)."
   ],
   "ux_notes_identity": [
     "Site Identity publisher option is only available when WebSite.publisher is enabled on the Publisher tab (dedicated publisher optional); identity radio/tab automatically disable when publisher is off. Publisher tab itself remains accessible so you can turn it on."
