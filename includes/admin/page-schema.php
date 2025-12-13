@@ -371,6 +371,9 @@ function be_schema_engine_render_schema_page() {
     if ( ! empty( $person_affiliation ) && ! in_array( 'affiliation', $person_optional_props, true ) ) {
         $person_optional_props[] = 'affiliation';
     }
+    if ( ! empty( $person_sameas_raw ) && ! in_array( 'sameas', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'sameas';
+    }
 
     $person_optional_serialized = implode( ',', $person_optional_props );
 
@@ -879,6 +882,26 @@ function be_schema_engine_render_schema_page() {
                 border: 1px solid #ccd0d4;
                 padding: 2px;
                 background: #fff;
+            }
+
+            .be-schema-image-status {
+                display: inline-block;
+                margin-left: 8px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                background: #f1f2f3;
+                color: #444;
+            }
+
+            .be-schema-image-status.verified {
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-image-status.resolution {
+                background: #fbeaea;
+                color: #8a1f11;
             }
 
             .be-schema-conditional-block {
@@ -1868,6 +1891,7 @@ function be_schema_engine_render_schema_page() {
                                                                                 <?php disabled( ! $website_image_16_9_enabled ); ?>>
                                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                         </button>
+                                                                        <span id="be_schema_website_image_16_9_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                                     </div>
                                                                     <p class="description be-schema-description">
                                                                         <?php esc_html_e( 'Dimensions: 1920x1080.', 'beseo' ); ?>
@@ -1919,6 +1943,7 @@ function be_schema_engine_render_schema_page() {
                                                                                 <?php disabled( ! $website_image_4_3_enabled ); ?>>
                                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                         </button>
+                                                                        <span id="be_schema_website_image_4_3_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                                     </div>
                                                                     <p class="description be-schema-description">
                                                                         <?php esc_html_e( 'Dimensions: 1600x1200.', 'beseo' ); ?>
@@ -1970,6 +1995,7 @@ function be_schema_engine_render_schema_page() {
                                                                                 <?php disabled( ! $website_image_1_1_enabled ); ?>>
                                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                         </button>
+                                                                        <span id="be_schema_website_image_1_1_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                                     </div>
                                                                     <p class="description be-schema-description">
                                                                         <?php esc_html_e( 'Dimensions: 1200x1200.', 'beseo' ); ?>
@@ -2021,6 +2047,7 @@ function be_schema_engine_render_schema_page() {
                                                                                 <?php disabled( ! $website_image_3_4_enabled ); ?>>
                                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                         </button>
+                                                                        <span id="be_schema_website_image_3_4_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                                     </div>
                                                                     <p class="description be-schema-description">
                                                                         <?php esc_html_e( 'Dimensions: 1200x1600.', 'beseo' ); ?>
@@ -2072,6 +2099,7 @@ function be_schema_engine_render_schema_page() {
                                                                                 <?php disabled( ! $website_image_9_16_enabled ); ?>>
                                                                             <?php esc_html_e( 'Clear', 'beseo' ); ?>
                                                                         </button>
+                                                                        <span id="be_schema_website_image_9_16_status" class="be-schema-image-status"><?php esc_html_e( 'Undefined', 'beseo' ); ?></span>
                                                                     </div>
                                                                     <p class="description be-schema-description">
                                                                         <?php esc_html_e( 'Dimensions: 1080x1920.', 'beseo' ); ?>
@@ -2107,7 +2135,7 @@ function be_schema_engine_render_schema_page() {
                                                            name="be_schema_person_enabled"
                                                            value="1"
                                                            class="be-schema-toggle-block"
-                                                           data-target-block="be-schema-person-block be-schema-person-links-block"
+                                                           data-target-block="be-schema-person-block"
                                                            <?php checked( $person_enabled ); ?> />
                                                     <?php esc_html_e(
                                                         'Include a Person node in the site-level schema.',
@@ -2172,6 +2200,7 @@ function be_schema_engine_render_schema_page() {
                                                                 <option value="alumni_of"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></option>
                                                                 <option value="job_title"><?php esc_html_e( 'Job Title', 'beseo' ); ?></option>
                                                                 <option value="affiliation"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></option>
+                                                                <option value="sameas"><?php esc_html_e( 'SameAs URLs', 'beseo' ); ?></option>
                                                             </select>
                                                             <button type="button"
                                                                     class="button be-schema-optional-add"
@@ -2324,6 +2353,22 @@ function be_schema_engine_render_schema_page() {
                                                                     ); ?>
                                                                 </p>
                                                             </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'sameas', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="sameas">
+                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="sameas">−</button>
+                                                                <label for="be_schema_person_sameas_raw" class="screen-reader-text"><?php esc_html_e( 'SameAs URLs', 'beseo' ); ?></label>
+                                                                <textarea
+                                                                    name="be_schema_person_sameas_raw"
+                                                                    id="be_schema_person_sameas_raw"
+                                                                    rows="5"
+                                                                    class="large-text code"><?php echo esc_textarea( $person_sameas_raw ); ?></textarea>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'One URL per line, pointing to authoritative profiles for this person (for example, knowledge panels or professional profiles). These are used as Person.sameAs and are separate from social sharing settings.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -2332,33 +2377,6 @@ function be_schema_engine_render_schema_page() {
                                     </div>
                                 </div>
 
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Person Links', 'beseo' ); ?></h4>
-                                    <div id="be-schema-person-links-block"
-                                         class="be-schema-conditional-block <?php echo $person_enabled ? '' : 'is-disabled'; ?>">
-                                        <table class="form-table">
-                                            <tbody>
-                                                <tr>
-                                                    <th scope="row">
-                                                        <?php esc_html_e( 'SameAs URLs', 'beseo' ); ?>
-                                                    </th>
-                                                    <td>
-                                                        <textarea
-                                                            name="be_schema_person_sameas_raw"
-                                                            rows="5"
-                                                            class="large-text code"><?php echo esc_textarea( $person_sameas_raw ); ?></textarea>
-                                                        <p class="description be-schema-description">
-                                                            <?php esc_html_e(
-                                                                'One URL per line, pointing to authoritative profiles for this person (for example, knowledge panels or professional profiles). These are used as Person.sameAs and are separate from social sharing settings.',
-                                                                'beseo'
-                                                            ); ?>
-                                                        </p>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
                             </div>
 
                             <!-- ORGANISATION PANEL -->
@@ -2975,6 +2993,45 @@ function be_schema_engine_render_schema_page() {
                 var selectButtons = document.querySelectorAll('.be-schema-image-select');
                 var clearButtons = document.querySelectorAll('.be-schema-image-clear');
 
+                var expectedImageDims = {
+                    'be_schema_website_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
+                    'be_schema_website_image_4_3': { width: 1600, height: 1200, label: '4:3 (1600x1200)' },
+                    'be_schema_website_image_1_1': { width: 1200, height: 1200, label: '1:1 (1200x1200)' },
+                    'be_schema_website_image_3_4': { width: 1200, height: 1600, label: '3:4 (1200x1600)' },
+                    'be_schema_website_image_9_16': { width: 1080, height: 1920, label: '9:16 (1080x1920)' }
+                };
+
+                var imageStatusMap = {
+                    'be_schema_website_image_16_9': 'be_schema_website_image_16_9_status',
+                    'be_schema_website_image_4_3': 'be_schema_website_image_4_3_status',
+                    'be_schema_website_image_1_1': 'be_schema_website_image_1_1_status',
+                    'be_schema_website_image_3_4': 'be_schema_website_image_3_4_status',
+                    'be_schema_website_image_9_16': 'be_schema_website_image_9_16_status'
+                };
+
+                function setImageStatus(inputId, statusKey) {
+                    var statusId = imageStatusMap[inputId];
+                    if (! statusId) {
+                        return;
+                    }
+                    var pill = document.getElementById(statusId);
+                    if (! pill) {
+                        return;
+                    }
+                    var textMap = {
+                        undefined: '<?php echo esc_js( __( 'Undefined', 'beseo' ) ); ?>',
+                        verified: '<?php echo esc_js( __( 'Verified', 'beseo' ) ); ?>',
+                        resolution: '<?php echo esc_js( __( 'Resolution', 'beseo' ) ); ?>'
+                    };
+                    pill.classList.remove('verified', 'resolution');
+                    if (statusKey === 'verified') {
+                        pill.classList.add('verified');
+                    } else if (statusKey === 'resolution') {
+                        pill.classList.add('resolution');
+                    }
+                    pill.textContent = textMap[statusKey] || textMap.undefined;
+                }
+
                 function openMediaFrame(targetInputId, targetPreviewId) {
                     if (typeof wp === 'undefined' || ! wp.media) {
                         return;
@@ -2991,6 +3048,7 @@ function be_schema_engine_render_schema_page() {
 
                         var input = document.getElementById(targetInputId);
                         var preview = document.getElementById(targetPreviewId);
+                        var expected = expectedImageDims[targetInputId];
 
                         if (input) {
                             input.value = url;
@@ -3002,6 +3060,16 @@ function be_schema_engine_render_schema_page() {
                             } else {
                                 preview.innerHTML = '';
                             }
+                        }
+
+                        if (expected && attachment.width && attachment.height) {
+                            if (attachment.width !== expected.width || attachment.height !== expected.height) {
+                                setImageStatus(targetInputId, 'resolution');
+                            } else {
+                                setImageStatus(targetInputId, 'verified');
+                            }
+                        } else {
+                            setImageStatus(targetInputId, 'verified');
                         }
                     });
 
@@ -3034,6 +3102,8 @@ function be_schema_engine_render_schema_page() {
                         if (preview) {
                             preview.innerHTML = '';
                         }
+
+                        setImageStatus(targetInputId, 'undefined');
                     });
                 });
 
@@ -3067,6 +3137,11 @@ function be_schema_engine_render_schema_page() {
                         toggleImageField(toggle);
                     });
                     toggleImageField(toggle);
+                });
+
+                // Initialize image status pills to Undefined.
+                Object.keys(imageStatusMap).forEach(function (inputId) {
+                    setImageStatus(inputId, 'undefined');
                 });
 
                 function initOptionalProperties(config) {
@@ -3225,7 +3300,7 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-person-optional-fields',
                     selectId: 'be-schema-person-optional',
                     hiddenInputId: 'be_schema_person_optional',
-                    props: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
+                    props: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
                     singletons: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
                     previewIds: {
                         profile_image: 'be_schema_person_image_url_preview'
@@ -3259,6 +3334,10 @@ function be_schema_engine_render_schema_page() {
                         if (prop === 'affiliation') {
                             var aff = document.getElementById('be_schema_person_affiliation');
                             return aff && aff.value.trim().length > 0;
+                        }
+                        if (prop === 'sameas') {
+                            var sameas = document.getElementById('be_schema_person_sameas_raw');
+                            return sameas && sameas.value.trim().length > 0;
                         }
                         return false;
                     }
