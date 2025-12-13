@@ -997,7 +997,12 @@ function be_schema_engine_render_schema_page() {
                 padding-left: 0;
                 margin: 0 0 16px;
                 position: relative;
-                padding-left: 36px;
+                padding-left: 0;
+            }
+
+            .be-schema-optional-field td {
+                position: relative;
+                padding-left: 0 !important;
             }
 
             .be-schema-optional-field.is-hidden {
@@ -1006,11 +1011,22 @@ function be_schema_engine_render_schema_page() {
 
             .be-schema-optional-field .be-schema-optional-remove {
                 position: absolute;
-                left: 0;
+                left: -64px;
                 top: 0;
                 margin: 0;
                 display: inline-flex;
                 align-items: center;
+            }
+
+            #be-schema-website-images-optional-fields .be-schema-optional-field th {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            #be-schema-website-images-optional-fields .be-schema-optional-remove {
+                position: static;
+                margin: 0;
             }
 
             .be-schema-honorifics {
@@ -1848,28 +1864,29 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e( 'Used by the WebSite or WebPage schema when a featured image is needed.', 'beseo' ); ?>
                                                     </p>
-                                                    <div class="be-schema-optional-controls" data-optional-scope="website-images">
-                                                        <label class="screen-reader-text" for="be-schema-website-images-optional"><?php esc_html_e( 'Add optional WebSite image', 'beseo' ); ?></label>
-                                                        <select id="be-schema-website-images-optional" aria-label="<?php esc_attr_e( 'Add optional WebSite image', 'beseo' ); ?>">
-                                                            <option value=""><?php esc_html_e( 'Select an optional image…', 'beseo' ); ?></option>
-                                                            <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
-                                                            <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
-                                                            <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
-                                                            <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
-                                                            <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
-                                                        </select>
-                                                        <button type="button"
-                                                                class="button be-schema-optional-add"
-                                                                data-optional-add="website-images"
-                                                                disabled>
-                                                            +
-                                                        </button>
-                                                        <input type="hidden" name="be_schema_website_images_optional" id="be_schema_website_images_optional" value="<?php echo esc_attr( $website_images_optional_serialized ); ?>" />
-                                                    </div>
+                                                        <div class="be-schema-optional-controls" data-optional-scope="website-images">
+                                                            <label class="screen-reader-text" for="be-schema-website-images-optional"><?php esc_html_e( 'Add optional WebSite image', 'beseo' ); ?></label>
+                                                            <select id="be-schema-website-images-optional" aria-label="<?php esc_attr_e( 'Add optional WebSite image', 'beseo' ); ?>">
+                                                                <option value=""><?php esc_html_e( 'Select an optional image…', 'beseo' ); ?></option>
+                                                                <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
+                                                                <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
+                                                                <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
+                                                                <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
+                                                                <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
+                                                            </select>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="website-images"
+                                                                    disabled>
+                                                                +
+                                                            </button>
+                                                            <input type="hidden" name="be_schema_website_images_optional" id="be_schema_website_images_optional" value="<?php echo esc_attr( $website_images_optional_serialized ); ?>" />
+                                                        </div>
                                                     <table class="form-table be-schema-optional-fields" id="be-schema-website-images-optional-fields">
                                                         <tbody>
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_16_9', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
                                                                 <th scope="row">
+                                                                    <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
                                                                     <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
@@ -1922,6 +1939,7 @@ function be_schema_engine_render_schema_page() {
 
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_4_3', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_3">
                                                                 <th scope="row">
+                                                                    <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_4_3">−</button>
                                                                     <?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
@@ -1974,6 +1992,7 @@ function be_schema_engine_render_schema_page() {
 
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_1_1', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
                                                                 <th scope="row">
+                                                                    <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1">−</button>
                                                                     <?php esc_html_e( '1:1 (Square)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
@@ -2026,6 +2045,7 @@ function be_schema_engine_render_schema_page() {
 
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_3_4', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_3_4">
                                                                 <th scope="row">
+                                                                    <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_3_4">−</button>
                                                                     <?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
@@ -2078,6 +2098,7 @@ function be_schema_engine_render_schema_page() {
 
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_9_16', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
                                                                 <th scope="row">
+                                                                    <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_9_16">−</button>
                                                                     <?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
@@ -3433,8 +3454,8 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-website-images-optional-fields',
                     selectId: 'be-schema-website-images-optional',
                     hiddenInputId: 'be_schema_website_images_optional',
-                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_9_16'],
-                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_9_16'],
+                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
+                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
                     previewIds: {
                         image_16_9: 'be_schema_website_image_16_9_preview',
                         image_4_3: 'be_schema_website_image_4_3_preview',
