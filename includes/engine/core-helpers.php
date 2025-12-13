@@ -79,9 +79,13 @@ function be_schema_engine_get_settings() {
 		'website_image_16_9'        => '',
 		'website_image_4_3'         => '',
 		'website_image_1_1'         => '',
-		'website_image_16_9_enabled' => '1',
-		'website_image_4_3_enabled'  => '1',
-		'website_image_1_1_enabled'  => '1',
+		'website_image_3_4'         => '',
+		'website_image_9_16'        => '',
+		'website_image_16_9_enabled' => '0',
+		'website_image_4_3_enabled'  => '0',
+		'website_image_1_1_enabled'  => '0',
+		'website_image_3_4_enabled'  => '0',
+		'website_image_9_16_enabled' => '0',
 
 		// Additional policy / legal metadata.
 		'copyright_year'        => '',

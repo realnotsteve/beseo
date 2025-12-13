@@ -191,6 +191,20 @@ function be_schema_engine_save_settings() {
         $settings['website_image_1_1'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_1_1'] ) );
     }
 
+    $settings['website_image_3_4_enabled'] = isset( $_POST['be_schema_website_image_3_4_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['website_image_3_4_enabled'] && isset( $_POST['be_schema_website_image_3_4'] ) ) {
+        $settings['website_image_3_4'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_3_4'] ) );
+    }
+
+    $settings['website_image_9_16_enabled'] = isset( $_POST['be_schema_website_image_9_16_enabled'] ) ? '1' : '0';
+    if ( '1' === $settings['website_image_9_16_enabled'] && isset( $_POST['be_schema_website_image_9_16'] ) ) {
+        $settings['website_image_9_16'] = esc_url_raw( wp_unslash( $_POST['be_schema_website_image_9_16'] ) );
+    }
+
+    $settings['website_images_optional'] = isset( $_POST['be_schema_website_images_optional'] )
+        ? sanitize_text_field( wp_unslash( $_POST['be_schema_website_images_optional'] ) )
+        : '';
+
     // Publisher.
     $settings['publisher_enabled'] = isset( $_POST['be_schema_publisher_enabled'] ) ? '1' : '0';
     $settings['publisher_dedicated_enabled'] = isset( $_POST['be_schema_publisher_dedicated_enabled'] ) ? '1' : '0';
@@ -388,13 +402,55 @@ function be_schema_engine_render_schema_page() {
     $organization_optional_serialized = implode( ',', $organization_optional_props );
 
     // WebSite featured images.
-    $website_image_16_9_enabled = isset( $settings['website_image_16_9_enabled'] ) ? '1' === $settings['website_image_16_9_enabled'] : true;
-    $website_image_4_3_enabled  = isset( $settings['website_image_4_3_enabled'] ) ? '1' === $settings['website_image_4_3_enabled'] : true;
-    $website_image_1_1_enabled  = isset( $settings['website_image_1_1_enabled'] ) ? '1' === $settings['website_image_1_1_enabled'] : true;
+    $website_image_16_9_enabled = isset( $settings['website_image_16_9_enabled'] ) ? '1' === $settings['website_image_16_9_enabled'] : false;
+    $website_image_4_3_enabled  = isset( $settings['website_image_4_3_enabled'] ) ? '1' === $settings['website_image_4_3_enabled'] : false;
+    $website_image_1_1_enabled  = isset( $settings['website_image_1_1_enabled'] ) ? '1' === $settings['website_image_1_1_enabled'] : false;
+    $website_image_3_4_enabled  = isset( $settings['website_image_3_4_enabled'] ) ? '1' === $settings['website_image_3_4_enabled'] : false;
+    $website_image_9_16_enabled = isset( $settings['website_image_9_16_enabled'] ) ? '1' === $settings['website_image_9_16_enabled'] : false;
 
     $website_image_16_9 = isset( $settings['website_image_16_9'] ) ? $settings['website_image_16_9'] : '';
     $website_image_4_3  = isset( $settings['website_image_4_3'] ) ? $settings['website_image_4_3'] : '';
     $website_image_1_1  = isset( $settings['website_image_1_1'] ) ? $settings['website_image_1_1'] : '';
+    $website_image_3_4  = isset( $settings['website_image_3_4'] ) ? $settings['website_image_3_4'] : '';
+    $website_image_9_16 = isset( $settings['website_image_9_16'] ) ? $settings['website_image_9_16'] : '';
+    $website_images_optional_raw = isset( $settings['website_images_optional'] ) ? $settings['website_images_optional'] : '';
+
+    $website_images_optional_props = array();
+    if ( ! empty( $website_images_optional_raw ) ) {
+        $website_images_optional_props = array_filter(
+            array_map(
+                'trim',
+                explode( ',', $website_images_optional_raw )
+            )
+        );
+    }
+    if ( $website_image_16_9_enabled || ! empty( $website_image_16_9 ) ) {
+        if ( ! in_array( 'image_16_9', $website_images_optional_props, true ) ) {
+            $website_images_optional_props[] = 'image_16_9';
+        }
+    }
+    if ( $website_image_4_3_enabled || ! empty( $website_image_4_3 ) ) {
+        if ( ! in_array( 'image_4_3', $website_images_optional_props, true ) ) {
+            $website_images_optional_props[] = 'image_4_3';
+        }
+    }
+    if ( $website_image_1_1_enabled || ! empty( $website_image_1_1 ) ) {
+        if ( ! in_array( 'image_1_1', $website_images_optional_props, true ) ) {
+            $website_images_optional_props[] = 'image_1_1';
+        }
+    }
+    if ( $website_image_3_4_enabled || ! empty( $website_image_3_4 ) ) {
+        if ( ! in_array( 'image_3_4', $website_images_optional_props, true ) ) {
+            $website_images_optional_props[] = 'image_3_4';
+        }
+    }
+    if ( $website_image_9_16_enabled || ! empty( $website_image_9_16 ) ) {
+        if ( ! in_array( 'image_9_16', $website_images_optional_props, true ) ) {
+            $website_images_optional_props[] = 'image_9_16';
+        }
+    }
+
+    $website_images_optional_serialized = implode( ',', $website_images_optional_props );
 
     // Publisher.
     $publisher_enabled             = ! empty( $settings['publisher_enabled'] ) && '1' === $settings['publisher_enabled'];
@@ -872,11 +928,7 @@ function be_schema_engine_render_schema_page() {
 
             .be-schema-optional-row th,
             .be-schema-optional-row td {
-                vertical-align: middle;
-            }
-
-            .be-schema-optional-row th {
-                line-height: 32px;
+                vertical-align: top;
             }
 
             .be-schema-person-enable-row th,
@@ -1750,165 +1802,290 @@ function be_schema_engine_render_schema_page() {
                                                 </td>
                                             </tr>
 
-                                            <tr>
+                                            <tr class="be-schema-optional-row">
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'WebSite Featured Image(s)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-image-field">
-                                                        <label class="be-schema-image-enable-label">
-                                                            <input type="checkbox"
-                                                                   class="be-schema-image-enable"
-                                                                   data-target-input="be_schema_website_image_16_9"
-                                                                   data-target-select="be_schema_website_image_16_9_select"
-                                                                   data-target-clear="be_schema_website_image_16_9_clear"
-                                                                   name="be_schema_website_image_16_9_enabled"
-                                                                   <?php checked( $website_image_16_9_enabled ); ?> />
-                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                        </label>
-                                                        <input type="text"
-                                                               id="be_schema_website_image_16_9"
-                                                               name="be_schema_website_image_16_9"
-                                                               value="<?php echo esc_url( $website_image_16_9 ); ?>"
-                                                               class="regular-text"
-                                                               <?php disabled( ! $website_image_16_9_enabled ); ?> />
+                                                    <p class="description be-schema-description">
+                                                        <?php esc_html_e( 'Used by the WebSite or WebPage schema when a featured image is needed.', 'beseo' ); ?>
+                                                    </p>
+                                                    <div class="be-schema-optional-controls" data-optional-scope="website-images">
+                                                        <label class="screen-reader-text" for="be-schema-website-images-optional"><?php esc_html_e( 'Add optional WebSite image', 'beseo' ); ?></label>
+                                                        <select id="be-schema-website-images-optional" aria-label="<?php esc_attr_e( 'Add optional WebSite image', 'beseo' ); ?>">
+                                                            <option value=""><?php esc_html_e( 'Select an optional image…', 'beseo' ); ?></option>
+                                                            <option value="image_16_9"><?php esc_html_e( '16:9 (Widescreen/Panoramic)', 'beseo' ); ?></option>
+                                                            <option value="image_4_3"><?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?></option>
+                                                            <option value="image_1_1"><?php esc_html_e( '1:1 (Square)', 'beseo' ); ?></option>
+                                                            <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
+                                                            <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
+                                                        </select>
                                                         <button type="button"
-                                                                class="button be-schema-image-select"
-                                                                id="be_schema_website_image_16_9_select"
-                                                                data-target-input="be_schema_website_image_16_9"
-                                                                data-target-preview="be_schema_website_image_16_9_preview"
-                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
-                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                class="button be-schema-optional-add"
+                                                                data-optional-add="website-images"
+                                                                disabled>
+                                                            +
                                                         </button>
-                                                        <button type="button"
-                                                                class="button be-schema-image-clear"
-                                                                id="be_schema_website_image_16_9_clear"
-                                                                data-target-input="be_schema_website_image_16_9"
-                                                                data-target-preview="be_schema_website_image_16_9_preview"
-                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
-                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                        </button>
+                                                        <input type="hidden" name="be_schema_website_images_optional" id="be_schema_website_images_optional" value="<?php echo esc_attr( $website_images_optional_serialized ); ?>" />
                                                     </div>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A 16:9 aspect ratio image that can be used by the WebSite or WebPage schema when a featured image is needed.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_website_image_16_9_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $website_image_16_9 ) : ?>
-                                                            <img src="<?php echo esc_url( $website_image_16_9 ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                                    <table class="form-table be-schema-optional-fields" id="be-schema-website-images-optional-fields">
+                                                        <tbody>
+                                                            <tr class="be-schema-optional-field<?php echo in_array( 'image_16_9', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
+                                                                <th scope="row">
+                                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
+                                                                </th>
+                                                                <td>
+                                                                    <div class="be-schema-image-field">
+                                                                        <label class="be-schema-image-enable-label">
+                                                                            <input type="checkbox"
+                                                                                   class="be-schema-image-enable"
+                                                                                   data-target-input="be_schema_website_image_16_9"
+                                                                                   data-target-select="be_schema_website_image_16_9_select"
+                                                                                   data-target-clear="be_schema_website_image_16_9_clear"
+                                                                                   name="be_schema_website_image_16_9_enabled"
+                                                                                   <?php checked( $website_image_16_9_enabled ); ?> />
+                                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                        </label>
+                                                                        <input type="text"
+                                                                               id="be_schema_website_image_16_9"
+                                                                               name="be_schema_website_image_16_9"
+                                                                               value="<?php echo esc_url( $website_image_16_9 ); ?>"
+                                                                               class="regular-text"
+                                                                               <?php disabled( ! $website_image_16_9_enabled ); ?> />
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-select"
+                                                                                id="be_schema_website_image_16_9_select"
+                                                                                data-target-input="be_schema_website_image_16_9"
+                                                                                data-target-preview="be_schema_website_image_16_9_preview"
+                                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-clear"
+                                                                                id="be_schema_website_image_16_9_clear"
+                                                                                data-target-input="be_schema_website_image_16_9"
+                                                                                data-target-preview="be_schema_website_image_16_9_preview"
+                                                                                <?php disabled( ! $website_image_16_9_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="description be-schema-description">
+                                                                        <?php esc_html_e( 'Dimensions: 1920x1080.', 'beseo' ); ?>
+                                                                    </p>
+                                                                    <div id="be_schema_website_image_16_9_preview"
+                                                                         class="be-schema-image-preview">
+                                                                        <?php if ( $website_image_16_9 ) : ?>
+                                                                            <img src="<?php echo esc_url( $website_image_16_9 ); ?>" alt="" />
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
 
-                                            <tr>
-                                                <th scope="row">
-                                                <?php esc_html_e( 'WebSite Featured Image (4:3)', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
-                                                    <label class="be-schema-image-enable-label">
-                                                        <input type="checkbox"
-                                                               class="be-schema-image-enable"
-                                                               data-target-input="be_schema_website_image_4_3"
-                                                               data-target-select="be_schema_website_image_4_3_select"
-                                                               data-target-clear="be_schema_website_image_4_3_clear"
-                                                               name="be_schema_website_image_4_3_enabled"
-                                                               <?php checked( $website_image_4_3_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                    </label>
-                                                    <input type="text"
-                                                           id="be_schema_website_image_4_3"
-                                                           name="be_schema_website_image_4_3"
-                                                           value="<?php echo esc_url( $website_image_4_3 ); ?>"
-                                                           class="regular-text"
-                                                           <?php disabled( ! $website_image_4_3_enabled ); ?> />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            id="be_schema_website_image_4_3_select"
-                                                            data-target-input="be_schema_website_image_4_3"
-                                                            data-target-preview="be_schema_website_image_4_3_preview"
-                                                            <?php disabled( ! $website_image_4_3_enabled ); ?>>
-                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            id="be_schema_website_image_4_3_clear"
-                                                            data-target-input="be_schema_website_image_4_3"
-                                                            data-target-preview="be_schema_website_image_4_3_preview"
-                                                            <?php disabled( ! $website_image_4_3_enabled ); ?>>
-                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                    </button>
-                                                </div>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A 4:3 aspect ratio image for WebSite/WebPage schema where that shape is appropriate.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_website_image_4_3_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $website_image_4_3 ) : ?>
-                                                            <img src="<?php echo esc_url( $website_image_4_3 ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                                            <tr class="be-schema-optional-field<?php echo in_array( 'image_4_3', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_3">
+                                                                <th scope="row">
+                                                                    <?php esc_html_e( '4:3 (Standard)', 'beseo' ); ?>
+                                                                </th>
+                                                                <td>
+                                                                    <div class="be-schema-image-field">
+                                                                        <label class="be-schema-image-enable-label">
+                                                                            <input type="checkbox"
+                                                                                   class="be-schema-image-enable"
+                                                                                   data-target-input="be_schema_website_image_4_3"
+                                                                                   data-target-select="be_schema_website_image_4_3_select"
+                                                                                   data-target-clear="be_schema_website_image_4_3_clear"
+                                                                                   name="be_schema_website_image_4_3_enabled"
+                                                                                   <?php checked( $website_image_4_3_enabled ); ?> />
+                                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                        </label>
+                                                                        <input type="text"
+                                                                               id="be_schema_website_image_4_3"
+                                                                               name="be_schema_website_image_4_3"
+                                                                               value="<?php echo esc_url( $website_image_4_3 ); ?>"
+                                                                               class="regular-text"
+                                                                               <?php disabled( ! $website_image_4_3_enabled ); ?> />
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-select"
+                                                                                id="be_schema_website_image_4_3_select"
+                                                                                data-target-input="be_schema_website_image_4_3"
+                                                                                data-target-preview="be_schema_website_image_4_3_preview"
+                                                                                <?php disabled( ! $website_image_4_3_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-clear"
+                                                                                id="be_schema_website_image_4_3_clear"
+                                                                                data-target-input="be_schema_website_image_4_3"
+                                                                                data-target-preview="be_schema_website_image_4_3_preview"
+                                                                                <?php disabled( ! $website_image_4_3_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="description be-schema-description">
+                                                                        <?php esc_html_e( 'Dimensions: 1600x1200.', 'beseo' ); ?>
+                                                                    </p>
+                                                                    <div id="be_schema_website_image_4_3_preview"
+                                                                         class="be-schema-image-preview">
+                                                                        <?php if ( $website_image_4_3 ) : ?>
+                                                                            <img src="<?php echo esc_url( $website_image_4_3 ); ?>" alt="" />
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
 
-                                            <tr>
-                                                <th scope="row">
-                                                <?php esc_html_e( 'WebSite Featured Image (1:1)', 'beseo' ); ?>
-                                            </th>
-                                            <td>
-                                                <div class="be-schema-image-field">
-                                                    <label class="be-schema-image-enable-label">
-                                                        <input type="checkbox"
-                                                               class="be-schema-image-enable"
-                                                               data-target-input="be_schema_website_image_1_1"
-                                                               data-target-select="be_schema_website_image_1_1_select"
-                                                               data-target-clear="be_schema_website_image_1_1_clear"
-                                                               name="be_schema_website_image_1_1_enabled"
-                                                               <?php checked( $website_image_1_1_enabled ); ?> />
-                                                        <?php esc_html_e( 'Enable', 'beseo' ); ?>
-                                                    </label>
-                                                    <input type="text"
-                                                           id="be_schema_website_image_1_1"
-                                                           name="be_schema_website_image_1_1"
-                                                           value="<?php echo esc_url( $website_image_1_1 ); ?>"
-                                                           class="regular-text"
-                                                           <?php disabled( ! $website_image_1_1_enabled ); ?> />
-                                                    <button type="button"
-                                                            class="button be-schema-image-select"
-                                                            id="be_schema_website_image_1_1_select"
-                                                            data-target-input="be_schema_website_image_1_1"
-                                                            data-target-preview="be_schema_website_image_1_1_preview"
-                                                            <?php disabled( ! $website_image_1_1_enabled ); ?>>
-                                                        <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="button be-schema-image-clear"
-                                                            id="be_schema_website_image_1_1_clear"
-                                                            data-target-input="be_schema_website_image_1_1"
-                                                            data-target-preview="be_schema_website_image_1_1_preview"
-                                                            <?php disabled( ! $website_image_1_1_enabled ); ?>>
-                                                        <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                    </button>
-                                                </div>
-                                                    <p class="description be-schema-description">
-                                                        <?php esc_html_e(
-                                                            'Optional. A square (1:1) featured image for schema use.',
-                                                            'beseo'
-                                                        ); ?>
-                                                    </p>
-                                                    <div id="be_schema_website_image_1_1_preview"
-                                                         class="be-schema-image-preview">
-                                                        <?php if ( $website_image_1_1 ) : ?>
-                                                            <img src="<?php echo esc_url( $website_image_1_1 ); ?>" alt="" />
-                                                        <?php endif; ?>
-                                                    </div>
+                                                            <tr class="be-schema-optional-field<?php echo in_array( 'image_1_1', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
+                                                                <th scope="row">
+                                                                    <?php esc_html_e( '1:1 (Square)', 'beseo' ); ?>
+                                                                </th>
+                                                                <td>
+                                                                    <div class="be-schema-image-field">
+                                                                        <label class="be-schema-image-enable-label">
+                                                                            <input type="checkbox"
+                                                                                   class="be-schema-image-enable"
+                                                                                   data-target-input="be_schema_website_image_1_1"
+                                                                                   data-target-select="be_schema_website_image_1_1_select"
+                                                                                   data-target-clear="be_schema_website_image_1_1_clear"
+                                                                                   name="be_schema_website_image_1_1_enabled"
+                                                                                   <?php checked( $website_image_1_1_enabled ); ?> />
+                                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                        </label>
+                                                                        <input type="text"
+                                                                               id="be_schema_website_image_1_1"
+                                                                               name="be_schema_website_image_1_1"
+                                                                               value="<?php echo esc_url( $website_image_1_1 ); ?>"
+                                                                               class="regular-text"
+                                                                               <?php disabled( ! $website_image_1_1_enabled ); ?> />
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-select"
+                                                                                id="be_schema_website_image_1_1_select"
+                                                                                data-target-input="be_schema_website_image_1_1"
+                                                                                data-target-preview="be_schema_website_image_1_1_preview"
+                                                                                <?php disabled( ! $website_image_1_1_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-clear"
+                                                                                id="be_schema_website_image_1_1_clear"
+                                                                                data-target-input="be_schema_website_image_1_1"
+                                                                                data-target-preview="be_schema_website_image_1_1_preview"
+                                                                                <?php disabled( ! $website_image_1_1_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="description be-schema-description">
+                                                                        <?php esc_html_e( 'Dimensions: 1200x1200.', 'beseo' ); ?>
+                                                                    </p>
+                                                                    <div id="be_schema_website_image_1_1_preview"
+                                                                         class="be-schema-image-preview">
+                                                                        <?php if ( $website_image_1_1 ) : ?>
+                                                                            <img src="<?php echo esc_url( $website_image_1_1 ); ?>" alt="" />
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+
+                                                            <tr class="be-schema-optional-field<?php echo in_array( 'image_3_4', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_3_4">
+                                                                <th scope="row">
+                                                                    <?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?>
+                                                                </th>
+                                                                <td>
+                                                                    <div class="be-schema-image-field">
+                                                                        <label class="be-schema-image-enable-label">
+                                                                            <input type="checkbox"
+                                                                                   class="be-schema-image-enable"
+                                                                                   data-target-input="be_schema_website_image_3_4"
+                                                                                   data-target-select="be_schema_website_image_3_4_select"
+                                                                                   data-target-clear="be_schema_website_image_3_4_clear"
+                                                                                   name="be_schema_website_image_3_4_enabled"
+                                                                                   <?php checked( $website_image_3_4_enabled ); ?> />
+                                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                        </label>
+                                                                        <input type="text"
+                                                                               id="be_schema_website_image_3_4"
+                                                                               name="be_schema_website_image_3_4"
+                                                                               value="<?php echo esc_url( $website_image_3_4 ); ?>"
+                                                                               class="regular-text"
+                                                                               <?php disabled( ! $website_image_3_4_enabled ); ?> />
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-select"
+                                                                                id="be_schema_website_image_3_4_select"
+                                                                                data-target-input="be_schema_website_image_3_4"
+                                                                                data-target-preview="be_schema_website_image_3_4_preview"
+                                                                                <?php disabled( ! $website_image_3_4_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-clear"
+                                                                                id="be_schema_website_image_3_4_clear"
+                                                                                data-target-input="be_schema_website_image_3_4"
+                                                                                data-target-preview="be_schema_website_image_3_4_preview"
+                                                                                <?php disabled( ! $website_image_3_4_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="description be-schema-description">
+                                                                        <?php esc_html_e( 'Dimensions: 1200x1600.', 'beseo' ); ?>
+                                                                    </p>
+                                                                    <div id="be_schema_website_image_3_4_preview"
+                                                                         class="be-schema-image-preview">
+                                                                        <?php if ( $website_image_3_4 ) : ?>
+                                                                            <img src="<?php echo esc_url( $website_image_3_4 ); ?>" alt="" />
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+
+                                                            <tr class="be-schema-optional-field<?php echo in_array( 'image_9_16', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
+                                                                <th scope="row">
+                                                                    <?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?>
+                                                                </th>
+                                                                <td>
+                                                                    <div class="be-schema-image-field">
+                                                                        <label class="be-schema-image-enable-label">
+                                                                            <input type="checkbox"
+                                                                                   class="be-schema-image-enable"
+                                                                                   data-target-input="be_schema_website_image_9_16"
+                                                                                   data-target-select="be_schema_website_image_9_16_select"
+                                                                                   data-target-clear="be_schema_website_image_9_16_clear"
+                                                                                   name="be_schema_website_image_9_16_enabled"
+                                                                                   <?php checked( $website_image_9_16_enabled ); ?> />
+                                                                            <?php esc_html_e( 'Enable', 'beseo' ); ?>
+                                                                        </label>
+                                                                        <input type="text"
+                                                                               id="be_schema_website_image_9_16"
+                                                                               name="be_schema_website_image_9_16"
+                                                                               value="<?php echo esc_url( $website_image_9_16 ); ?>"
+                                                                               class="regular-text"
+                                                                               <?php disabled( ! $website_image_9_16_enabled ); ?> />
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-select"
+                                                                                id="be_schema_website_image_9_16_select"
+                                                                                data-target-input="be_schema_website_image_9_16"
+                                                                                data-target-preview="be_schema_website_image_9_16_preview"
+                                                                                <?php disabled( ! $website_image_9_16_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Select Image', 'beseo' ); ?>
+                                                                        </button>
+                                                                        <button type="button"
+                                                                                class="button be-schema-image-clear"
+                                                                                id="be_schema_website_image_9_16_clear"
+                                                                                data-target-input="be_schema_website_image_9_16"
+                                                                                data-target-preview="be_schema_website_image_9_16_preview"
+                                                                                <?php disabled( ! $website_image_9_16_enabled ); ?>>
+                                                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p class="description be-schema-description">
+                                                                        <?php esc_html_e( 'Dimensions: 1080x1920.', 'beseo' ); ?>
+                                                                    </p>
+                                                                    <div id="be_schema_website_image_9_16_preview"
+                                                                         class="be-schema-image-preview">
+                                                                        <?php if ( $website_image_9_16 ) : ?>
+                                                                            <img src="<?php echo esc_url( $website_image_9_16 ); ?>" alt="" />
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -3142,6 +3319,32 @@ function be_schema_engine_render_schema_page() {
                         var map = {
                             legal_name: document.getElementById('be_schema_org_legal_name'),
                             org_url: document.getElementById('be_schema_org_url')
+                        };
+                        var input = map[prop];
+                        return !! (input && input.value.trim().length > 0);
+                    }
+                });
+                initOptionalProperties({
+                    scope: 'website-images',
+                    containerId: 'be-schema-website-images-optional-fields',
+                    selectId: 'be-schema-website-images-optional',
+                    hiddenInputId: 'be_schema_website_images_optional',
+                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_9_16'],
+                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_9_16'],
+                    previewIds: {
+                        image_16_9: 'be_schema_website_image_16_9_preview',
+                        image_4_3: 'be_schema_website_image_4_3_preview',
+                        image_1_1: 'be_schema_website_image_1_1_preview',
+                        image_3_4: 'be_schema_website_image_3_4_preview',
+                        image_9_16: 'be_schema_website_image_9_16_preview'
+                    },
+                    propHasValue: function (prop) {
+                        var map = {
+                            image_16_9: document.getElementById('be_schema_website_image_16_9'),
+                            image_4_3: document.getElementById('be_schema_website_image_4_3'),
+                            image_1_1: document.getElementById('be_schema_website_image_1_1'),
+                            image_3_4: document.getElementById('be_schema_website_image_3_4'),
+                            image_9_16: document.getElementById('be_schema_website_image_9_16')
                         };
                         var input = map[prop];
                         return !! (input && input.value.trim().length > 0);
