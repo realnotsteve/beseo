@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.67] - 2025-12-13
+Summary: Schema admin.
+
+### Changed
+- Touched areas: schema admin.
+
+### Files
+- includes/admin/page-schema.php
+
+
 ## [1.3.66] - 2025-12-13
 Summary: Devnotes + social admin.
 

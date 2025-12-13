@@ -1996,7 +1996,7 @@ function be_schema_engine_render_schema_page() {
                                                             <tr class="be-schema-optional-field<?php echo in_array( 'image_16_9', $website_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
                                                                 <th scope="row">
                                                                     <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
-                                                                    <?php esc_html_e( 'WebSite Featured Image (16:9)', 'beseo' ); ?>
+                                                                    <?php esc_html_e( '16x9 (Widescreen/Panoramic)', 'beseo' ); ?>
                                                                 </th>
                                                                 <td>
                                                                     <div class="be-schema-image-field">
