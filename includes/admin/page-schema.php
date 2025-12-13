@@ -353,11 +353,11 @@ function be_schema_engine_render_schema_page() {
     if ( ! empty( $person_image_url ) && ! in_array( 'profile_image', $person_optional_props, true ) ) {
         $person_optional_props[] = 'profile_image';
     }
-    if (
-        ( ! empty( $person_honorific_prefix ) || ! empty( $person_honorific_suffix ) )
-        && ! in_array( 'honorifics', $person_optional_props, true )
-    ) {
-        $person_optional_props[] = 'honorifics';
+    if ( ! empty( $person_honorific_prefix ) && ! in_array( 'honorific_prefix', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'honorific_prefix';
+    }
+    if ( ! empty( $person_honorific_suffix ) && ! in_array( 'honorific_suffix', $person_optional_props, true ) ) {
+        $person_optional_props[] = 'honorific_suffix';
     }
     if ( ! empty( $person_url ) && ! in_array( 'person_url', $person_optional_props, true ) ) {
         $person_optional_props[] = 'person_url';
@@ -976,6 +976,10 @@ function be_schema_engine_render_schema_page() {
                 padding-left: 0;
             }
 
+            table.form-table tr.be-schema-optional-row td {
+                padding-left: 0 !important;
+            }
+
             .be-schema-optional-controls.is-disabled {
                 opacity: 0.55;
             }
@@ -984,18 +988,29 @@ function be_schema_engine_render_schema_page() {
                 min-width: 200px;
             }
 
+            .be-schema-optional-fields {
+                padding-left: 0;
+            }
+
             .be-schema-optional-fields .be-schema-optional-field {
                 border-left: 0;
                 padding-left: 0;
                 margin: 0 0 16px;
+                position: relative;
+                padding-left: 36px;
             }
 
             .be-schema-optional-field.is-hidden {
                 display: none;
             }
 
-            .be-schema-optional-remove {
-                margin-bottom: 6px;
+            .be-schema-optional-field .be-schema-optional-remove {
+                position: absolute;
+                left: 0;
+                top: 0;
+                margin: 0;
+                display: inline-flex;
+                align-items: center;
             }
 
             .be-schema-honorifics {
@@ -2195,7 +2210,8 @@ function be_schema_engine_render_schema_page() {
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
                                                                 <option value="description"><?php esc_html_e( 'Description', 'beseo' ); ?></option>
                                                                 <option value="profile_image"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></option>
-                                                                <option value="honorifics"><?php esc_html_e( 'Honorifics', 'beseo' ); ?></option>
+                                                                <option value="honorific_prefix"><?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?></option>
+                                                                <option value="honorific_suffix"><?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?></option>
                                                                 <option value="person_url"><?php esc_html_e( 'Person URL', 'beseo' ); ?></option>
                                                                 <option value="alumni_of"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></option>
                                                                 <option value="job_title"><?php esc_html_e( 'Job Title', 'beseo' ); ?></option>
@@ -2213,7 +2229,7 @@ function be_schema_engine_render_schema_page() {
 
                                                         <div class="be-schema-optional-fields" id="be-schema-person-optional-fields">
                                                             <div class="be-schema-optional-field<?php echo in_array( 'description', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="description">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="description">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="description">−</button>
                                                                 <label for="be_schema_person_description" class="screen-reader-text"><?php esc_html_e( 'Description', 'beseo' ); ?></label>
                                                                 <textarea
                                                                     name="be_schema_person_description"
@@ -2229,7 +2245,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'profile_image', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="profile_image">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="profile_image">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="profile_image">−</button>
                                                                 <label for="be_schema_person_image_url" class="screen-reader-text"><?php esc_html_e( 'Profile Image', 'beseo' ); ?></label>
                                                                 <div class="be-schema-image-field">
                                                                     <input type="text"
@@ -2264,34 +2280,40 @@ function be_schema_engine_render_schema_page() {
                                                                 </div>
                                                             </div>
 
-                                                            <div class="be-schema-optional-field<?php echo in_array( 'honorifics', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorifics">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="honorifics">−</button>
-                                                                <div class="be-schema-honorifics">
-                                                                    <label class="be-schema-honorific-field">
-                                                                        <span><?php esc_html_e( 'Prefix', 'beseo' ); ?></span>
-                                                                        <input type="text"
-                                                                               name="be_schema_person_honorific_prefix"
-                                                                               value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
-                                                                               class="regular-text" />
-                                                                    </label>
-                                                                    <label class="be-schema-honorific-field">
-                                                                        <span><?php esc_html_e( 'Suffix', 'beseo' ); ?></span>
-                                                                        <input type="text"
-                                                                               name="be_schema_person_honorific_suffix"
-                                                                               value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
-                                                                               class="regular-text" />
-                                                                    </label>
-                                                                </div>
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'honorific_prefix', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorific_prefix">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="honorific_prefix">−</button>
+                                                                <label for="be_schema_person_honorific_prefix" class="screen-reader-text"><?php esc_html_e( 'Honorific Prefix', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_honorific_prefix"
+                                                                       id="be_schema_person_honorific_prefix"
+                                                                       value="<?php echo esc_attr( $person_honorific_prefix ); ?>"
+                                                                       class="regular-text" />
                                                                 <p class="description be-schema-description">
                                                                     <?php esc_html_e(
-                                                                        'Optional. Prefix examples: Dr, Prof, Mr, Ms. Suffix examples: PhD, MD, CPA.',
+                                                                        'Optional. Examples: Dr, Prof, Mr, Ms.',
+                                                                        'beseo'
+                                                                    ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'honorific_suffix', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="honorific_suffix">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="honorific_suffix">−</button>
+                                                                <label for="be_schema_person_honorific_suffix" class="screen-reader-text"><?php esc_html_e( 'Honorific Suffix', 'beseo' ); ?></label>
+                                                                <input type="text"
+                                                                       name="be_schema_person_honorific_suffix"
+                                                                       id="be_schema_person_honorific_suffix"
+                                                                       value="<?php echo esc_attr( $person_honorific_suffix ); ?>"
+                                                                       class="regular-text" />
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e(
+                                                                        'Optional. Examples: PhD, MD, CPA.',
                                                                         'beseo'
                                                                     ); ?>
                                                                 </p>
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'person_url', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="person_url">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="person_url">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="person_url">−</button>
                                                                 <label for="be_schema_person_url" class="screen-reader-text"><?php esc_html_e( 'Person URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_person_url"
@@ -2307,7 +2329,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'alumni_of', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="alumni_of">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="alumni_of">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="alumni_of">−</button>
                                                                 <label for="be_schema_person_alumni_of" class="screen-reader-text"><?php esc_html_e( 'Alumni Of', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_person_alumni_of"
@@ -2323,7 +2345,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'job_title', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="job_title">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="job_title">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="job_title">−</button>
                                                                 <label for="be_schema_person_job_title" class="screen-reader-text"><?php esc_html_e( 'Job Title', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_person_job_title"
@@ -2339,7 +2361,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'affiliation', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="affiliation">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="affiliation">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="affiliation">−</button>
                                                                 <label for="be_schema_person_affiliation" class="screen-reader-text"><?php esc_html_e( 'Affiliation', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_person_affiliation"
@@ -2355,7 +2377,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'sameas', $person_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="sameas">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="sameas">−</button>
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="sameas">−</button>
                                                                 <label for="be_schema_person_sameas_raw" class="screen-reader-text"><?php esc_html_e( 'SameAs URLs', 'beseo' ); ?></label>
                                                                 <textarea
                                                                     name="be_schema_person_sameas_raw"
@@ -2463,7 +2485,7 @@ function be_schema_engine_render_schema_page() {
 
                                                         <div class="be-schema-optional-fields" id="be-schema-org-optional-fields">
                                                             <div class="be-schema-optional-field<?php echo in_array( 'legal_name', $organization_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="legal_name">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="legal_name">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="legal_name">−</button>
                                                                 <label for="be_schema_org_legal_name" class="screen-reader-text"><?php esc_html_e( 'Legal Name', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_org_legal_name"
@@ -2479,7 +2501,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'org_url', $organization_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="org_url">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="org_url">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="org_url">−</button>
                                                                 <label for="be_schema_org_url" class="screen-reader-text"><?php esc_html_e( 'Organisation URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_org_url"
@@ -2602,7 +2624,7 @@ function be_schema_engine_render_schema_page() {
 
                                                         <div class="be-schema-optional-fields" id="be-schema-publisher-entity-optional-fields">
                                                             <div class="be-schema-optional-field<?php echo in_array( 'copyright_year', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="copyright_year">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="copyright_year">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="copyright_year">−</button>
                                                                 <label for="be_schema_copyright_year" class="screen-reader-text"><?php esc_html_e( 'Copyright Year', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_copyright_year"
@@ -2619,7 +2641,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'license_url', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="license_url">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="license_url">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="license_url">−</button>
                                                                 <label for="be_schema_license_url" class="screen-reader-text"><?php esc_html_e( 'License URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_license_url"
@@ -2635,7 +2657,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'publishing_principles', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="publishing_principles">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="publishing_principles">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="publishing_principles">−</button>
                                                                 <label for="be_schema_publishing_principles" class="screen-reader-text"><?php esc_html_e( 'Publishing Principles URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_publishing_principles"
@@ -2651,7 +2673,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'corrections_policy', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="corrections_policy">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="corrections_policy">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="corrections_policy">−</button>
                                                                 <label for="be_schema_corrections_policy" class="screen-reader-text"><?php esc_html_e( 'Corrections Policy URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_corrections_policy"
@@ -2667,7 +2689,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'ownership_funding', $publisher_entity_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="ownership_funding">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="ownership_funding">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="ownership_funding">−</button>
                                                                 <label for="be_schema_ownership_funding" class="screen-reader-text"><?php esc_html_e( 'Ownership / Funding Info URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_ownership_funding"
@@ -2732,7 +2754,7 @@ function be_schema_engine_render_schema_page() {
 
                                                         <div class="be-schema-optional-fields" id="be-schema-publisher-dedicated-optional-fields">
                                                             <div class="be-schema-optional-field<?php echo in_array( 'custom_name', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_name">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_name">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="custom_name">−</button>
                                                                 <label for="be_schema_publisher_custom_name" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher Organisation Name', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_publisher_custom_name"
@@ -2748,7 +2770,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'custom_url', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_url">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_url">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="custom_url">−</button>
                                                                 <label for="be_schema_publisher_custom_url" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher URL', 'beseo' ); ?></label>
                                                                 <input type="text"
                                                                        name="be_schema_publisher_custom_url"
@@ -2764,7 +2786,7 @@ function be_schema_engine_render_schema_page() {
                                                             </div>
 
                                                             <div class="be-schema-optional-field<?php echo in_array( 'custom_logo', $publisher_dedicated_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="custom_logo">
-                                                                <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="custom_logo">−</button>
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="custom_logo">−</button>
                                                                 <label for="be_schema_publisher_custom_logo" class="screen-reader-text"><?php esc_html_e( 'Custom Publisher Logo', 'beseo' ); ?></label>
                                                                 <div class="be-schema-image-field">
                                                                     <input type="text"
@@ -3300,8 +3322,8 @@ function be_schema_engine_render_schema_page() {
                     containerId: 'be-schema-person-optional-fields',
                     selectId: 'be-schema-person-optional',
                     hiddenInputId: 'be_schema_person_optional',
-                    props: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
-                    singletons: ['description', 'profile_image', 'honorifics', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
+                    props: ['description', 'profile_image', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
+                    singletons: ['description', 'profile_image', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation'],
                     previewIds: {
                         profile_image: 'be_schema_person_image_url_preview'
                     },
@@ -3314,10 +3336,13 @@ function be_schema_engine_render_schema_page() {
                             var img = document.getElementById('be_schema_person_image_url');
                             return img && img.value.trim().length > 0;
                         }
-                        if (prop === 'honorifics') {
+                        if (prop === 'honorific_prefix') {
                             var pre = document.querySelector('[name="be_schema_person_honorific_prefix"]');
+                            return pre && pre.value.trim().length > 0;
+                        }
+                        if (prop === 'honorific_suffix') {
                             var suf = document.querySelector('[name="be_schema_person_honorific_suffix"]');
-                            return (pre && pre.value.trim().length > 0) || (suf && suf.value.trim().length > 0);
+                            return suf && suf.value.trim().length > 0;
                         }
                         if (prop === 'person_url') {
                             var url = document.getElementById('be_schema_person_url');
