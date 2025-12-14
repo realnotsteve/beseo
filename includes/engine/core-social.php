@@ -50,6 +50,7 @@ function be_schema_social_get_settings() {
 		'default_facebook_image_id' => '',
 		'default_twitter_image_id'  => '',
 		'default_global_image_id'   => '',
+		'global_default_image_alt'  => '',
 
 		// Twitter handles (with or without @, we will normalize).
 		'twitter_site'    => '',

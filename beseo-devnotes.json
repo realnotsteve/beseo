@@ -354,7 +354,10 @@
     "Schema > Website > Person: removed the panel title heading; honorific prefix and suffix are on one row with inline labels; panel now matches Global styling with bordered sections (Person Details, Person Links) using grey section headers and enclosed backgrounds.",
     "Schema > Website > Organisation/Publisher: removed panel titles; each now uses Global-style bordered sections with grey section headers enclosing enable toggles and their fields. Organisation optional fields (Legal Name, Organisation URL) now use a dropdown + add/remove pattern like Person.",
     "Schema > Snapshots tab (Health/Individual/WordPress panels) now uses Global-style bordered sections with grey section headers wrapping the read-only tables.",
-    "Social Media dashboard and Facebook/Twitter subtabs now use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks. Facebook/Twitter Content panels now expose optional fields via dropdown + add/remove (Page URL/default image/App ID/notes; handle/default image/notes)."
+    "Social Media dashboard and Facebook/Twitter subtabs now use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks. Facebook/Twitter Content panels now expose optional fields via dropdown + add/remove (Page URL/default image/App ID/notes; handle/default image/notes).",
+    "Platforms submenu now includes placeholder tabs for Instagram, TikTok, and LinkedIn.",
+    "Added a placeholder Platforms submenu between Open Graph and Tools for future network-specific controls.",
+    "Facebook/Twitter/Instagram/TikTok/LinkedIn tabs now live under Platforms; Open Graph keeps the dashboard only."
   ],
   "validation_notes": [
     "Schema settings: added URL validation (http/https) for Organisation URL, publisher URLs/policies, and numeric copyright year (4 digits), surfacing errors via settings_errors.",
@@ -380,7 +383,14 @@
         "Removed the left-side border on the Person Image(s) section so it aligns with other Person panels.",
         "Schema > Website > Publisher > Dedicated now separates Custom Publisher Logo into its own Image(s) dropdown at the same level as other rows; the primary Optional Properties dropdown is limited to name and URL, and the image dropdown now offers all WebSite Featured Image aspect options.",
         "Schema > Website > Person > Image(s) now uses a dropdown to add any of the WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and dimension guidance.",
-        "Schema > Website > Global > Site Logo now uses a dropdown to add WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and recommended dimensions; the selected logo feeds Organisation and WebSite."
+        "Schema > Website > Global > Site Logo now uses a dropdown to add WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and recommended dimensions; the selected logo feeds Organisation and WebSite.",
+        "Renamed the admin submenu from Social Media to Open Graph and adjusted copy to say Open Graph.",
+        "Open Graph global fallback image helper text now includes recommended specs: 1.91:1 aspect ratio, 1200x630 resolution, JPEG or PNG formats, plus an Alternate Aspect Ratios dropdown with common sizes and add/remove controls with left-aligned minus buttons.",
+        "Open Graph > Facebook > Content now uses a dedicated Default Facebook OG Image field (the dropdown was emptied).",
+        "Open Graph > Twitter > Content now uses a dedicated Default Twitter Card Image field (removed from the optional dropdown).",
+        "Open Graph > Facebook > Content now offers an Additional Aspect Ratios dropdown that mirrors the Global Default Image pattern (plus to add, left-aligned minus to remove, inline labels, Select/Clear controls, and previews for each aspect).",
+        "Open Graph > Twitter > Content now offers an Additional Aspect Ratios dropdown that mirrors the Global/Facebook patterns (plus to add, left-aligned minus to remove, inline labels, Select/Clear controls, and previews for each aspect).",
+        "Default Facebook OG Image help now includes specs: 1.91:1 aspect ratio, 1200x630 resolution, JPEG or PNG formats."
     ],
     "text_tone_notes": [
         "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
