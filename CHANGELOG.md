@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.71] - 2025-12-13
+Summary: Social admin.
+
+### Changed
+- Touched areas: social admin.
+
+### Files
+- includes/admin/page-social-media.php
+
+
 ## [1.3.70] - 2025-12-13
 Summary: Devnotes + social admin + engine.
 
