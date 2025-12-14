@@ -681,6 +681,15 @@ function be_schema_engine_render_social_media_page() {
                             <?php esc_html_e( 'Dashboard', 'beseo' ); ?>
                         </a>
                     </li>
+                    <?php if ( ! $is_platforms ) : ?>
+                        <li>
+                            <a href="#be-schema-social-tab-content"
+                               class="be-schema-social-tab-link"
+                               data-social-tab="content">
+                                <?php esc_html_e( 'Content', 'beseo' ); ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
                     <?php if ( $is_platforms ) : ?>
                         <li>
                             <a href="#be-schema-social-tab-facebook"
@@ -725,6 +734,129 @@ function be_schema_engine_render_social_media_page() {
                      class="be-schema-social-tab-panel be-schema-social-tab-panel-active">
                     <h2><?php esc_html_e( 'Social Dashboard', 'beseo' ); ?></h2>
 
+                    <?php if ( $is_platforms ) : ?>
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Overview', 'beseo' ); ?></h4>
+                        <p class="description be-schema-social-description">
+                            <?php esc_html_e(
+                                'Global default images now live in Open Graph → Content.',
+                                'beseo'
+                            ); ?>
+                        </p>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Last Social Debug Snapshot', 'beseo' ); ?></h4>
+                        <?php
+                        $last_social = get_transient( 'be_social_last_debug' );
+                        if ( $last_social && isset( $last_social['snapshot'] ) ) :
+                            $last_social_time = isset( $last_social['time'] ) ? (int) $last_social['time'] : 0;
+                            ?>
+                            <p class="description be-schema-social-description" style="margin-top:0;">
+                                <?php
+                                if ( $last_social_time ) {
+                                    /* translators: %s: human time diff */
+                                    printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_social_time, time() ) ) );
+                                } else {
+                                    esc_html_e( 'Captured recently.', 'beseo' );
+                                }
+                                ?>
+                            </p>
+                            <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_social['snapshot'], JSON_PRETTY_PRINT ) ); ?></pre>
+                        <?php else : ?>
+                            <p><em><?php esc_html_e( 'No social debug snapshot found. Enable debug to capture the next one.', 'beseo' ); ?></em></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Safety', 'beseo' ); ?></h4>
+                        <p class="description be-schema-social-description" style="margin-top:0;">
+                            <?php esc_html_e( 'Use dry run to compute values but skip outputting OpenGraph and Twitter meta tags on the front end.', 'beseo' ); ?>
+                        </p>
+                        <label>
+                            <input type="checkbox"
+                                   name="be_schema_social_dry_run"
+                                   value="1"
+                                   <?php checked( $social_dry_run ); ?> />
+                            <?php esc_html_e( 'Enable social dry run (do not output meta tags)', 'beseo' ); ?>
+                        </label>
+                    </div>
+
+                    <div class="be-schema-social-section">
+                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h4>
+                        <div class="be-schema-social-mini-summary" style="margin-top:0;">
+                            <p class="be-schema-social-description">
+                                <?php esc_html_e(
+                                    'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
+                                    'beseo'
+                                ); ?>
+                            </p>
+                            <ul>
+                                <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'beseo' ); ?></li>
+                                <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
+                                <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
+                            </ul>
+
+                            <p class="be-schema-social-description">
+                                <?php esc_html_e(
+                                    'Below is a quick preview of the images that will be used when there is no featured image on a page:',
+                                    'beseo'
+                                ); ?>
+                            </p>
+
+                            <div class="be-schema-social-mini-summary-images">
+                                <div>
+                                    <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
+                                    <?php if ( $global_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
+                                            <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
+                                        </div>
+                                        <code><?php echo esc_html( $global_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <strong><?php esc_html_e( 'Facebook Default OG Image', 'beseo' ); ?></strong>
+                                    <?php if ( $facebook_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
+                                            <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
+                                        </div>
+                                        <code><?php echo esc_html( $facebook_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
+                                    <?php if ( $twitter_default_image ) : ?>
+                                        <div class="be-schema-image-preview">
+                                            <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
+                                        </div>
+                                        <code><?php echo esc_html( $twitter_default_image ); ?></code>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <p class="be-schema-social-description" style="margin-top: 8px;">
+                                <?php esc_html_e(
+                                    'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
+                                    'beseo'
+                                ); ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if ( ! $is_platforms ) : ?>
+                <div id="be-schema-social-tab-content" class="be-schema-social-tab-panel">
+                    <h2><?php esc_html_e( 'Open Graph Content', 'beseo' ); ?></h2>
+
                     <div class="be-schema-social-section">
                         <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Global Defaults', 'beseo' ); ?></h4>
                         <table class="form-table">
@@ -746,12 +878,12 @@ function be_schema_engine_render_social_media_page() {
                                                     data-target-preview="be_schema_global_default_image_preview">
                                                 <?php esc_html_e( 'Select Image', 'beseo' ); ?>
                                             </button>
-                                        <button type="button"
-                                                class="button be-schema-image-clear"
-                                                data-target-input="be_schema_global_default_image"
-                                                data-target-preview="be_schema_global_default_image_preview">
-                                            <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                        </button>
+                                            <button type="button"
+                                                    class="button be-schema-image-clear"
+                                                    data-target-input="be_schema_global_default_image"
+                                                    data-target-preview="be_schema_global_default_image_preview">
+                                                <?php esc_html_e( 'Clear', 'beseo' ); ?>
+                                            </button>
                                         </div>
                                         <p class="description be-schema-social-description">
                                             <?php esc_html_e(
@@ -903,7 +1035,7 @@ function be_schema_engine_render_social_media_page() {
                                                 </div>
                                             </div>
 
-       									    <div class="be-schema-optional-field<?php echo in_array( 'image_1_1_91', $global_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1_91">
+                                            <div class="be-schema-optional-field<?php echo in_array( 'image_1_1_91', $global_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1_91">
                                                 <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1_91">−</button>
                                                 <div class="be-schema-image-field">
                                                     <span class="be-schema-optional-label"><?php esc_html_e( '1:1.91 @ 630x1200', 'beseo' ); ?></span>
@@ -965,126 +1097,15 @@ function be_schema_engine_render_social_media_page() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div id="be_schema_global_default_image_preview"
-                                             class="be-schema-image-preview">
-                                            <?php if ( $global_default_image ) : ?>
-                                                <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                            <?php endif; ?>
-                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-
-                    <div class="be-schema-social-section">
-                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Last Social Debug Snapshot', 'beseo' ); ?></h4>
-                        <?php
-                        $last_social = get_transient( 'be_social_last_debug' );
-                        if ( $last_social && isset( $last_social['snapshot'] ) ) :
-                            $last_social_time = isset( $last_social['time'] ) ? (int) $last_social['time'] : 0;
-                            ?>
-                            <p class="description be-schema-social-description" style="margin-top:0;">
-                                <?php
-                                if ( $last_social_time ) {
-                                    /* translators: %s: human time diff */
-                                    printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_social_time, time() ) ) );
-                                } else {
-                                    esc_html_e( 'Captured recently.', 'beseo' );
-                                }
-                                ?>
-                            </p>
-                            <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_social['snapshot'], JSON_PRETTY_PRINT ) ); ?></pre>
-                        <?php else : ?>
-                            <p><em><?php esc_html_e( 'No social debug snapshot found. Enable debug to capture the next one.', 'beseo' ); ?></em></p>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="be-schema-social-section">
-                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Safety', 'beseo' ); ?></h4>
-                        <p class="description be-schema-social-description" style="margin-top:0;">
-                            <?php esc_html_e( 'Use dry run to compute values but skip outputting OpenGraph and Twitter meta tags on the front end.', 'beseo' ); ?>
-                        </p>
-                        <label>
-                            <input type="checkbox"
-                                   name="be_schema_social_dry_run"
-                                   value="1"
-                                   <?php checked( $social_dry_run ); ?> />
-                            <?php esc_html_e( 'Enable social dry run (do not output meta tags)', 'beseo' ); ?>
-                        </label>
-                    </div>
-
-                    <div class="be-schema-social-section">
-                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h4>
-                        <div class="be-schema-social-mini-summary" style="margin-top:0;">
-                            <p class="be-schema-social-description">
-                                <?php esc_html_e(
-                                    'On any given page, the plugin chooses social images in this order. This applies independently to OpenGraph and Twitter:',
-                                    'beseo'
-                                ); ?>
-                            </p>
-                            <ul>
-                                <li><?php esc_html_e( 'If the page has a featured image, that is always used first.', 'beseo' ); ?></li>
-                                <li><?php esc_html_e( 'For OpenGraph (Facebook, etc.): if there is no featured image, use the Facebook default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
-                                <li><?php esc_html_e( 'For Twitter: if there is no featured image, use the Twitter default image; if that is empty, use the Global default image.', 'beseo' ); ?></li>
-                            </ul>
-
-                            <p class="be-schema-social-description">
-                                <?php esc_html_e(
-                                    'Below is a quick preview of the images that will be used when there is no featured image on a page:',
-                                    'beseo'
-                                ); ?>
-                            </p>
-
-                            <div class="be-schema-social-mini-summary-images">
-                                <div>
-                                    <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
-                                    <?php if ( $global_default_image ) : ?>
-                                        <div class="be-schema-image-preview">
-                                            <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                        </div>
-                                        <code><?php echo esc_html( $global_default_image ); ?></code>
-                                    <?php else : ?>
-                                        <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div>
-                                    <strong><?php esc_html_e( 'Facebook Default OG Image', 'beseo' ); ?></strong>
-                                    <?php if ( $facebook_default_image ) : ?>
-                                        <div class="be-schema-image-preview">
-                                            <img src="<?php echo esc_url( $facebook_default_image ); ?>" alt="" />
-                                        </div>
-                                        <code><?php echo esc_html( $facebook_default_image ); ?></code>
-                                    <?php else : ?>
-                                        <em><?php esc_html_e( 'Not set – OpenGraph will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div>
-                                    <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
-                                    <?php if ( $twitter_default_image ) : ?>
-                                        <div class="be-schema-image-preview">
-                                            <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                        </div>
-                                        <code><?php echo esc_html( $twitter_default_image ); ?></code>
-                                    <?php else : ?>
-                                        <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-
-                            <p class="be-schema-social-description" style="margin-top: 8px;">
-                                <?php esc_html_e(
-                                    'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
-                                    'beseo'
-                                ); ?>
-                            </p>
-                        </div>
-                    </div>
                 </div>
+                <?php endif; ?>
 
-                <?php if ( $is_platforms ) : ?>
+                <?php if ( $is_platforms ) { ?>
                 <!-- FACEBOOK TAB -->
                 <div id="be-schema-social-tab-facebook" class="be-schema-social-tab-panel">
                     <h2><?php esc_html_e( 'Facebook Settings', 'beseo' ); ?></h2>
@@ -1492,13 +1513,13 @@ function be_schema_engine_render_social_media_page() {
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
                                 <div id="be-schema-facebook-tools" class="be-schema-social-panel">
                                     <div class="be-schema-social-section">
@@ -1981,7 +2002,7 @@ function be_schema_engine_render_social_media_page() {
                     </p>
                 </div>
             </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <?php submit_button( __( 'Save Social Settings', 'beseo' ) ); ?>
         </form>

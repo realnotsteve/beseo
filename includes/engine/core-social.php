@@ -51,6 +51,31 @@ function be_schema_social_get_settings() {
 		'default_twitter_image_id'  => '',
 		'default_global_image_id'   => '',
 		'global_default_image_alt'  => '',
+		'global_images_optional'    => '',
+		'global_image_16_9'         => '',
+		'global_image_5_4'          => '',
+		'global_image_1_1'          => '',
+		'global_image_4_5'          => '',
+		'global_image_1_1_91'       => '',
+		'global_image_9_16'         => '',
+
+		// Facebook additional aspect images.
+		'facebook_images_optional' => '',
+		'facebook_image_16_9'      => '',
+		'facebook_image_5_4'       => '',
+		'facebook_image_1_1'       => '',
+		'facebook_image_4_5'       => '',
+		'facebook_image_1_1_91'    => '',
+		'facebook_image_9_16'      => '',
+
+		// Twitter additional aspect images.
+		'twitter_images_optional' => '',
+		'twitter_image_16_9'      => '',
+		'twitter_image_5_4'       => '',
+		'twitter_image_1_1'       => '',
+		'twitter_image_4_5'       => '',
+		'twitter_image_1_1_91'    => '',
+		'twitter_image_9_16'      => '',
 
 		// Twitter handles (with or without @, we will normalize).
 		'twitter_site'    => '',

@@ -6,7 +6,8 @@
  * Submenus:
  *  - Home         (default landing)
  *  - Schema       (main configuration page)
- *  - Social Media (OpenGraph & Twitter Cards)
+ *  - Open Graph (Open Graph & Twitter Cards)
+ *  - Platforms    (placeholder for additional networks)
  *  - Tools        (placeholder for future utilities / validators)
  */
 
@@ -69,13 +70,23 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_schema_page'
     );
 
-    // "Social Media" submenu.
+    // "Open Graph" submenu.
     add_submenu_page(
         $top_level_slug,
-        __( 'Social Media', 'beseo' ),
-        __( 'Social Media', 'beseo' ),
+        __( 'Open Graph', 'beseo' ),
+        __( 'Open Graph', 'beseo' ),
         $capability,
         'beseo-social-media',
+        'be_schema_engine_render_social_media_page'
+    );
+
+    // "Platforms" submenu (placeholder between Open Graph and Tools).
+    add_submenu_page(
+        $top_level_slug,
+        __( 'Platforms', 'beseo' ),
+        __( 'Platforms', 'beseo' ),
+        $capability,
+        'beseo-platforms',
         'be_schema_engine_render_social_media_page'
     );
 
@@ -115,7 +126,35 @@ function be_schema_engine_render_tools_page() {
 
         <p>
             <?php esc_html_e(
-                'For now, use the Schema and Social Media pages to configure JSON-LD and OpenGraph/Twitter output. Debug logs are written to the PHP error log when debug is enabled.',
+                'For now, use the Schema and Open Graph pages to configure JSON-LD and Open Graph/Twitter output. Debug logs are written to the PHP error log when debug is enabled.',
+                'beseo'
+            ); ?>
+        </p>
+    </div>
+    <?php
+}
+
+/**
+ * Render the "Platforms" admin page (placeholder).
+ */
+function be_schema_engine_render_platforms_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    ?>
+    <div class="wrap beseo-wrap beseo-platforms-wrap">
+        <h1><?php esc_html_e( 'BE SEO – Platforms', 'beseo' ); ?></h1>
+
+        <p class="description">
+            <?php esc_html_e(
+                'This page is reserved for future platform-specific controls beyond Open Graph and Twitter.',
+                'beseo'
+            ); ?>
+        </p>
+
+        <p>
+            <?php esc_html_e(
+                'For now, configure Open Graph and Twitter under the Open Graph menu. Additional networks will appear here when available.',
                 'beseo'
             ); ?>
         </p>
