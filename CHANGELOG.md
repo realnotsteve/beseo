@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [1.3.76] - 2025-12-14
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- BE_SEO-Dev_Notes.json
+
+
 ## [1.3.75] - 2025-12-14
 Summary: Devnotes.
 
