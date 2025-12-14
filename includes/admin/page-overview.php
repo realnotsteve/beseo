@@ -384,6 +384,9 @@ function be_schema_engine_render_overview_page() {
                         <span class="be-schema-status-pill <?php echo $twitter_enabled ? '' : 'off'; ?>">
                             <?php echo $twitter_enabled ? esc_html__( 'Twitter Cards: ON', 'beseo' ) : esc_html__( 'Twitter Cards: OFF', 'beseo' ); ?>
                         </span>
+                        <span class="be-schema-status-pill <?php echo ( $engine_settings['image_validation_enabled'] ?? '1' ) === '1' ? '' : 'off'; ?>">
+                            <?php echo ( $engine_settings['image_validation_enabled'] ?? '1' ) === '1' ? esc_html__( 'Image Validation: ON', 'beseo' ) : esc_html__( 'Image Validation: OFF', 'beseo' ); ?>
+                        </span>
                     </p>
                     <p class="description" style="margin-top: 12pt;">
                         <a href="https://github.com/realnotsteve/beseo" style="margin-right: 1px;" target="_blank" rel="noopener noreferrer">GitHub</a><span style="vertical-align: -4px; margin-right: 6px;" class="dashicons dashicons-external"></span>

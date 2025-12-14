@@ -132,6 +132,7 @@ function be_schema_engine_save_settings() {
     $settings['elementor_enabled'] = isset( $_POST['be_schema_elementor_enabled'] ) ? '1' : '0';
     $settings['debug']             = isset( $_POST['be_schema_debug'] ) ? '1' : '0';
     $settings['dry_run']           = isset( $_POST['be_schema_dry_run'] ) ? '1' : '0';
+    $settings['image_validation_enabled'] = isset( $_POST['be_schema_image_validation_enabled'] ) ? '1' : '0';
 
     // Mirror debug into a dedicated debug_enabled key for engine helpers.
     $settings['debug_enabled'] = $settings['debug'];
@@ -477,10 +478,24 @@ function be_schema_engine_render_schema_page() {
         return;
     }
 
-    // Enqueue media for image pickers.
+    // Enqueue media for image pickers + shared helpers.
     if ( function_exists( 'wp_enqueue_media' ) ) {
         wp_enqueue_media();
     }
+    wp_enqueue_script(
+        'be-schema-optional-fields',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-optional-fields.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+    wp_enqueue_script(
+        'be-schema-image-pills',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-image-pills.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
 
     // Save on POST.
     if ( isset( $_POST['be_schema_engine_settings_submitted'] ) ) {
@@ -498,6 +513,7 @@ function be_schema_engine_render_schema_page() {
     $elementor_enabled = ! empty( $settings['elementor_enabled'] ) && '1' === $settings['elementor_enabled'];
     $debug_enabled     = ! empty( $settings['debug'] ) && '1' === $settings['debug'];
     $dry_run           = ! empty( $settings['dry_run'] ) && '1' === $settings['dry_run'];
+    $image_validation_enabled = isset( $settings['image_validation_enabled'] ) ? '1' === (string) $settings['image_validation_enabled'] : true;
     $wp_debug          = defined( 'WP_DEBUG' ) && WP_DEBUG;
 
     // Ensure debug_enabled mirrors debug for consistency in code.
@@ -1657,6 +1673,30 @@ function be_schema_engine_render_schema_page() {
                                         </p>
                                     </td>
                                 </tr>
+
+                                <tr>
+                                    <th scope="row">
+                                        <?php esc_html_e( 'Image Validation Pills', 'beseo' ); ?>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox"
+                                                   name="be_schema_image_validation_enabled"
+                                                   value="1"
+                                                   <?php checked( $image_validation_enabled ); ?> />
+                                            <?php esc_html_e(
+                                                'Verify selected images against recommended dimensions/format and show status pills (Verified/Resolution/Undefined).',
+                                                'beseo'
+                                            ); ?>
+                                        </label>
+                                        <p class="description be-schema-description">
+                                            <?php esc_html_e(
+                                                'Turn this off if you want to skip resolution/type checks when selecting images in the schema UI.',
+                                                'beseo'
+                                            ); ?>
+                                        </p>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -2147,7 +2187,10 @@ function be_schema_engine_render_schema_page() {
                                                     <?php esc_html_e( 'Site Logo (Shared)', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-optional-controls" data-optional-scope="org-logo-images">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="org-logo"
+                                                         data-optional-hidden="be_schema_org_logo_optional"
+                                                         data-optional-singleton="image_16_9,image_4_3,image_1_1,image_3_4,image_9_16">
                                                         <label class="screen-reader-text" for="be-schema-org-logo-optional"><?php esc_html_e( 'Add site logo image', 'beseo' ); ?></label>
                                                         <select id="be-schema-org-logo-optional" aria-label="<?php esc_attr_e( 'Add site logo image', 'beseo' ); ?>">
                                                             <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -2157,10 +2200,10 @@ function be_schema_engine_render_schema_page() {
                                                             <option value="image_3_4"><?php esc_html_e( '3:4 (Portrait)', 'beseo' ); ?></option>
                                                             <option value="image_9_16"><?php esc_html_e( '9:16 (Portrait/Mobile)', 'beseo' ); ?></option>
                                                         </select>
-                                                        <button type="button"
-                                                                class="button be-schema-optional-add"
-                                                                data-optional-add="org-logo-images"
-                                                                disabled>
+                                                            <button type="button"
+                                                                    class="button be-schema-optional-add"
+                                                                    data-optional-add="org-logo"
+                                                                    disabled>
                                                             +
                                                         </button>
                                                         <input type="hidden" name="be_schema_org_logo_optional" id="be_schema_org_logo_optional" value="<?php echo esc_attr( $org_logo_optional_serialized ); ?>" />
@@ -2429,7 +2472,10 @@ function be_schema_engine_render_schema_page() {
                                                     <p class="description be-schema-description">
                                                         <?php esc_html_e( 'Used by the WebSite or WebPage schema when a featured image is needed.', 'beseo' ); ?>
                                                     </p>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="website-images">
+                                                        <div class="be-schema-optional-controls"
+                                                             data-optional-scope="website"
+                                                             data-optional-hidden="be_schema_website_images_optional"
+                                                             data-optional-singleton="image_16_9,image_4_3,image_1_1,image_3_4,image_9_16">
                                                             <label class="screen-reader-text" for="be-schema-website-images-optional"><?php esc_html_e( 'Add optional WebSite image', 'beseo' ); ?></label>
                                                             <select id="be-schema-website-images-optional" aria-label="<?php esc_attr_e( 'Add optional WebSite image', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional image…', 'beseo' ); ?></option>
@@ -2790,7 +2836,10 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="person">
+                                                        <div class="be-schema-optional-controls"
+                                                             data-optional-scope="person"
+                                                             data-optional-hidden="be_schema_person_optional"
+                                                             data-optional-singleton="description,person_url">
                                                             <label class="screen-reader-text" for="be-schema-person-optional"><?php esc_html_e( 'Add optional Person property', 'beseo' ); ?></label>
                                                             <select id="be-schema-person-optional" aria-label="<?php esc_attr_e( 'Add optional Person property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -3024,7 +3073,10 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Profile (Optional)', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="person-images">
+                                                        <div class="be-schema-optional-controls"
+                                                             data-optional-scope="person-images"
+                                                             data-optional-hidden="be_schema_person_images_optional"
+                                                             data-optional-singleton="image_16_9,image_4_3,image_1_1,image_3_4,image_9_16">
                                                             <label class="screen-reader-text" for="be-schema-person-images-optional"><?php esc_html_e( 'Add optional Person image', 'beseo' ); ?></label>
                                                             <select id="be-schema-person-images-optional" aria-label="<?php esc_attr_e( 'Add optional Person image', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -3364,7 +3416,10 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="organisation">
+                                                        <div class="be-schema-optional-controls"
+                                                             data-optional-scope="org"
+                                                             data-optional-hidden="be_schema_org_optional"
+                                                             data-optional-singleton="legal_name,org_url">
                                                             <label class="screen-reader-text" for="be-schema-org-optional"><?php esc_html_e( 'Add optional Organisation property', 'beseo' ); ?></label>
                                                             <select id="be-schema-org-optional" aria-label="<?php esc_attr_e( 'Add optional Organisation property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -3373,7 +3428,7 @@ function be_schema_engine_render_schema_page() {
                                                             </select>
                                                             <button type="button"
                                                                     class="button be-schema-optional-add"
-                                                                    data-optional-add="organisation"
+                                                                    data-optional-add="org"
                                                                     disabled>
                                                                 +
                                                             </button>
@@ -3500,7 +3555,10 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-entity">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="publisher-entity"
+                                                         data-optional-hidden="be_schema_publisher_entity_optional"
+                                                         data-optional-singleton="copyright_year,license_url,publishing_principles,corrections_policy,ownership_funding">
                                                             <label class="screen-reader-text" for="be-schema-publisher-entity-optional"><?php esc_html_e( 'Add optional Publisher property', 'beseo' ); ?></label>
                                                             <select id="be-schema-publisher-entity-optional" aria-label="<?php esc_attr_e( 'Add optional Publisher property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -3632,7 +3690,10 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-dedicated">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="publisher-dedicated"
+                                                         data-optional-hidden="be_schema_publisher_dedicated_optional"
+                                                         data-optional-singleton="custom_name,custom_url">
                                                             <label class="screen-reader-text" for="be-schema-publisher-dedicated-optional"><?php esc_html_e( 'Add optional dedicated publisher property', 'beseo' ); ?></label>
                                                             <select id="be-schema-publisher-dedicated-optional" aria-label="<?php esc_attr_e( 'Add optional dedicated publisher property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -3689,7 +3750,10 @@ function be_schema_engine_render_schema_page() {
                                                     <?php esc_html_e( 'Publisher Logo', 'beseo' ); ?>
                                                     </th>
                                                     <td>
-                                                        <div class="be-schema-optional-controls" data-optional-scope="publisher-dedicated-images">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="publisher-images"
+                                                         data-optional-hidden="be_schema_publisher_dedicated_images_optional"
+                                                         data-optional-singleton="custom_logo,image_16_9,image_4_3,image_1_1,image_3_4,image_9_16">
                                                             <label class="screen-reader-text" for="be-schema-publisher-dedicated-images-optional"><?php esc_html_e( 'Add optional dedicated publisher image', 'beseo' ); ?></label>
                                                             <select id="be-schema-publisher-dedicated-images-optional" aria-label="<?php esc_attr_e( 'Add optional dedicated publisher image', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -4188,6 +4252,7 @@ function be_schema_engine_render_schema_page() {
                 // Media pickers.
                 var selectButtons = document.querySelectorAll('.be-schema-image-select');
                 var clearButtons = document.querySelectorAll('.be-schema-image-clear');
+                var imageValidationEnabled = <?php echo $image_validation_enabled ? 'true' : 'false'; ?>;
 
                 var expectedImageDims = {
                     'be_schema_website_image_16_9': { width: 1920, height: 1080, label: '16:9 (1920x1080)' },
@@ -4292,6 +4357,11 @@ function be_schema_engine_render_schema_page() {
                             }
                         }
 
+                        if (! imageValidationEnabled) {
+                            setImageStatus(targetInputId, 'undefined');
+                            return;
+                        }
+
                         if (expected && attachment.width && attachment.height) {
                             var isCorrectSize = attachment.width === expected.width && attachment.height === expected.height;
                             var mime = (attachment.mime || '').toLowerCase();
@@ -4388,429 +4458,10 @@ function be_schema_engine_render_schema_page() {
                     setImageStatus(inputId, 'undefined');
                 });
 
-                function initOptionalProperties(config) {
-                    var optionalContainer = document.getElementById(config.containerId);
-                    var optionalSelect = document.getElementById(config.selectId);
-                    var optionalAdd = document.querySelector('[data-optional-add="' + config.scope + '"]');
-                    var optionalHidden = document.getElementById(config.hiddenInputId);
-                    var optionMap = {};
-                    if (optionalSelect) {
-                        optionalSelect.querySelectorAll('option[value]').forEach(function (opt) {
-                            optionMap[opt.value] = opt;
-                        });
-                    }
-                    var singletonProps = config.singletons || [];
-                    var repeatableHandlers = config.repeatableHandlers || {};
-
-                    if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
-                        return;
-                    }
-
-                    function getVisibleProps() {
-                        var props = [];
-                        optionalContainer.querySelectorAll('.be-schema-optional-field').forEach(function (field) {
-                            if (! field.classList.contains('is-hidden')) {
-                                var prop = field.getAttribute('data-optional-prop');
-                                if (prop) {
-                                    props.push(prop);
-                                }
-                            }
-                        });
-                        return props;
-                    }
-
-                    function syncHidden() {
-                        optionalHidden.value = getVisibleProps().join(',');
-                    }
-
-                    function syncAddButton() {
-                        var val = optionalSelect.value;
-                        var exists = val && getVisibleProps().indexOf(val) !== -1;
-                        var isSingleton = val && singletonProps.indexOf(val) !== -1;
-                        var repeatable = val && repeatableHandlers[val];
-                        var disabled = ! val || (exists && (isSingleton || ! repeatable));
-                        optionalAdd.disabled = disabled;
-                        if (disabled) {
-                            optionalAdd.classList.add('disabled');
-                        } else {
-                            optionalAdd.classList.remove('disabled');
-                        }
-                    }
-
-                    function clearFields(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
-                            input.value = '';
-                        });
-                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
-                            var items = wrap.querySelectorAll('.be-schema-repeatable-item');
-                            items.forEach(function (item, idx) {
-                                if (idx === 0) {
-                                    var input = item.querySelector('input[type="text"]');
-                                    if (input) {
-                                        input.value = '';
-                                    }
-                                } else {
-                                    item.remove();
-                                }
-                            });
-                            if (! wrap.children.length) {
-                                var addButton = field.querySelector('.be-schema-repeatable-add');
-                                if (addButton) {
-                                    addButton.click();
-                                }
-                            }
-                        });
-                        if (config.previewIds && config.previewIds[prop]) {
-                            var preview = document.getElementById(config.previewIds[prop]);
-                            if (preview) {
-                                preview.innerHTML = '';
-                            }
-                        }
-                        if (typeof config.onClear === 'function') {
-                            config.onClear(prop, field);
-                        }
-                    }
-
-                    function setOptionDisabled(prop, disabled) {
-                        if (singletonProps.indexOf(prop) === -1) {
-                            return;
-                        }
-                        if (optionMap[prop]) {
-                            optionMap[prop].disabled = !! disabled;
-                        }
-                    }
-
-                    function resetRepeatables(field) {
-                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
-                            var items = wrap.querySelectorAll('.be-schema-repeatable-item');
-                            items.forEach(function (item, idx) {
-                                var input = item.querySelector('input[type="text"]');
-                                if (idx === 0) {
-                                    if (input) {
-                                        input.value = '';
-                                    }
-                                } else {
-                                    item.remove();
-                                }
-                            });
-                            if (! wrap.children.length) {
-                                var addBtn = wrap.closest('.be-schema-repeatable') ? wrap.closest('.be-schema-repeatable').querySelector('.be-schema-repeatable-add') : null;
-                                if (addBtn) {
-                                    addBtn.click();
-                                }
-                            }
-                        });
-                    }
-
-                    function normalizeEmptyRepeatables(field) {
-                        field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
-                            var items = Array.prototype.slice.call(wrap.querySelectorAll('.be-schema-repeatable-item'));
-                            if (! items.length) {
-                                return;
-                            }
-                            var hasValue = items.some(function (item) {
-                                var input = item.querySelector('input[type="text"]');
-                                return input && input.value && input.value.trim().length > 0;
-                            });
-                            if (hasValue) {
-                                return;
-                            }
-                            items.forEach(function (item, idx) {
-                                if (idx === 0) {
-                                    var input = item.querySelector('input[type="text"]');
-                                    if (input) {
-                                        input.value = '';
-                                    }
-                                } else {
-                                    item.remove();
-                                }
-                            });
-                        });
-                    }
-
-                    function showProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        if (field.classList.contains('is-hidden')) {
-                            resetRepeatables(field);
-                        }
-                        field.classList.remove('is-hidden');
-                        normalizeEmptyRepeatables(field);
-                        setOptionDisabled(prop, true);
-                        syncHidden();
-                        syncAddButton();
-                    }
-
-                    function hideProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        clearFields(prop);
-                        field.classList.add('is-hidden');
-                        setOptionDisabled(prop, false);
-                        syncHidden();
-                        syncAddButton();
-                    }
-
-                    function propHasValue(prop) {
-                        if (typeof config.propHasValue === 'function') {
-                            return config.propHasValue(prop);
-                        }
-                        return false;
-                    }
-
-                    optionalSelect.addEventListener('change', syncAddButton);
-
-                    optionalAdd.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        var val = optionalSelect.value;
-                        if (! val) {
-                            return;
-                        }
-                        var visible = getVisibleProps().indexOf(val) !== -1;
-                        var isSingleton = singletonProps.indexOf(val) !== -1;
-                        var repeatable = repeatableHandlers[val];
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + val + '"]');
-                        var wasHidden = field && field.classList.contains('is-hidden');
-                        if (visible && ! isSingleton) {
-                            if (repeatable) {
-                                repeatable();
-                                syncAddButton();
-                                return;
-                            }
-                        }
-                        if (visible) {
-                            return;
-                        }
-                        showProp(val);
-                        if (repeatable && wasHidden && field) {
-                            field.querySelectorAll('.be-schema-repeatable-items').forEach(function (wrap) {
-                                wrap.querySelectorAll('.be-schema-repeatable-item').forEach(function (item) {
-                                    item.remove();
-                                });
-                                var addBtn = wrap.closest('.be-schema-repeatable') ? wrap.closest('.be-schema-repeatable').querySelector('.be-schema-repeatable-add') : null;
-                                if (addBtn) {
-                                    addBtn.click();
-                                }
-                            });
-                        }
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + val + '"]');
-                        if (field) {
-                            normalizeEmptyRepeatables(field);
-                        }
-                        optionalSelect.value = '';
-                        syncAddButton();
-                    });
-
-                    optionalContainer.querySelectorAll('.be-schema-optional-remove').forEach(function (btn) {
-                        btn.addEventListener('click', function (event) {
-                            event.preventDefault();
-                            var prop = btn.getAttribute('data-optional-remove');
-                            hideProp(prop);
-                        });
-                    });
-
-                    var initial = [];
-                    if (optionalHidden.value) {
-                        initial = optionalHidden.value.split(',').map(function (s) {
-                            return s.trim();
-                        }).filter(Boolean);
-                    }
-
-                    var knownProps = config.props && config.props.length
-                        ? config.props
-                        : Array.prototype.map.call(optionalContainer.querySelectorAll('.be-schema-optional-field'), function (field) {
-                            return field.getAttribute('data-optional-prop');
-                        });
-
-                    knownProps.forEach(function (prop) {
-                        if (initial.indexOf(prop) !== -1 || propHasValue(prop)) {
-                            showProp(prop);
-                        }
-                    });
-
-                    syncHidden();
-                    syncAddButton();
+                // Optional dropdowns now use the shared helper.
+                if (window.beSchemaInitAllOptionalGroups) {
+                    window.beSchemaInitAllOptionalGroups();
                 }
-
-                initOptionalProperties({
-                    scope: 'person',
-                    containerId: 'be-schema-person-optional-fields',
-                    selectId: 'be-schema-person-optional',
-                    hiddenInputId: 'be_schema_person_optional',
-                    props: ['description', 'honorific_prefix', 'honorific_suffix', 'person_url', 'alumni_of', 'job_title', 'affiliation', 'sameas'],
-                    singletons: ['description', 'person_url'],
-                    repeatableHandlers: {
-                        honorific_prefix: function () {
-                            if (repeatableAdders.honorific_prefix) {
-                                repeatableAdders.honorific_prefix();
-                            }
-                        },
-                        honorific_suffix: function () {
-                            if (repeatableAdders.honorific_suffix) {
-                                repeatableAdders.honorific_suffix();
-                            }
-                        },
-                        alumni_of: function () {
-                            if (repeatableAdders.alumni_of) {
-                                repeatableAdders.alumni_of();
-                            }
-                        },
-                        job_title: function () {
-                            if (repeatableAdders.job_title) {
-                                repeatableAdders.job_title();
-                            }
-                        },
-                        affiliation: function () {
-                            if (repeatableAdders.affiliation) {
-                                repeatableAdders.affiliation();
-                            }
-                        }
-                    },
-                    propHasValue: function (prop) {
-                        if (prop === 'description') {
-                            var desc = document.getElementById('be_schema_person_description');
-                            return desc && desc.value.trim().length > 0;
-                        }
-                        if (prop === 'honorific_prefix') {
-                            return repeatableHasValue('be_schema_person_honorific_prefix[]');
-                        }
-                        if (prop === 'honorific_suffix') {
-                            return repeatableHasValue('be_schema_person_honorific_suffix[]');
-                        }
-                        if (prop === 'person_url') {
-                            var url = document.getElementById('be_schema_person_url');
-                            return url && url.value.trim().length > 0;
-                        }
-                        if (prop === 'alumni_of') {
-                            return repeatableHasValue('be_schema_person_alumni_of[]');
-                        }
-                        if (prop === 'job_title') {
-                            return repeatableHasValue('be_schema_person_job_title[]');
-                        }
-                        if (prop === 'affiliation') {
-                            return repeatableHasValue('be_schema_person_affiliation[]');
-                        }
-                        if (prop === 'sameas') {
-                            var sameas = document.getElementById('be_schema_person_sameas_raw');
-                            return sameas && sameas.value.trim().length > 0;
-                        }
-                        return false;
-                    }
-                });
-                initOptionalProperties({
-                    scope: 'person-images',
-                    containerId: 'be-schema-person-images-optional-fields',
-                    selectId: 'be-schema-person-images-optional',
-                    hiddenInputId: 'be_schema_person_images_optional',
-                    props: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
-                    singletons: ['image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
-                    previewIds: {
-                        image_16_9: 'be_schema_person_image_16_9_preview',
-                        image_4_3: 'be_schema_person_image_4_3_preview',
-                        image_1_1: 'be_schema_person_image_1_1_preview',
-                        image_3_4: 'be_schema_person_image_3_4_preview',
-                        image_9_16: 'be_schema_person_image_9_16_preview'
-                    },
-                    propHasValue: function (prop) {
-                        var map = {
-                            image_16_9: document.getElementById('be_schema_person_image_16_9'),
-                            image_4_3: document.getElementById('be_schema_person_image_4_3'),
-                            image_1_1: document.getElementById('be_schema_person_image_1_1'),
-                            image_3_4: document.getElementById('be_schema_person_image_3_4'),
-                            image_9_16: document.getElementById('be_schema_person_image_9_16')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-
-                initOptionalProperties({
-                    scope: 'publisher-entity',
-                    containerId: 'be-schema-publisher-entity-optional-fields',
-                    selectId: 'be-schema-publisher-entity-optional',
-                    hiddenInputId: 'be_schema_publisher_entity_optional',
-                    props: ['copyright_year', 'license_url', 'publishing_principles', 'corrections_policy', 'ownership_funding'],
-                    singletons: ['copyright_year', 'license_url', 'publishing_principles', 'corrections_policy', 'ownership_funding'],
-                    propHasValue: function (prop) {
-                        var map = {
-                            copyright_year: document.getElementById('be_schema_copyright_year'),
-                            license_url: document.getElementById('be_schema_license_url'),
-                            publishing_principles: document.getElementById('be_schema_publishing_principles'),
-                            corrections_policy: document.getElementById('be_schema_corrections_policy'),
-                            ownership_funding: document.getElementById('be_schema_ownership_funding')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-
-                initOptionalProperties({
-                    scope: 'publisher-dedicated',
-                    containerId: 'be-schema-publisher-dedicated-optional-fields',
-                    selectId: 'be-schema-publisher-dedicated-optional',
-                    hiddenInputId: 'be_schema_publisher_dedicated_optional',
-                    props: ['custom_name', 'custom_url'],
-                    singletons: ['custom_name', 'custom_url'],
-                    propHasValue: function (prop) {
-                        var map = {
-                            custom_name: document.getElementById('be_schema_publisher_custom_name'),
-                            custom_url: document.getElementById('be_schema_publisher_custom_url')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-                initOptionalProperties({
-                    scope: 'publisher-dedicated-images',
-                    containerId: 'be-schema-publisher-dedicated-images-optional-fields',
-                    selectId: 'be-schema-publisher-dedicated-images-optional',
-                    hiddenInputId: 'be_schema_publisher_dedicated_images_optional',
-                    props: ['custom_logo', 'image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
-                    singletons: ['custom_logo', 'image_16_9', 'image_4_3', 'image_1_1', 'image_3_4', 'image_9_16'],
-                    previewIds: {
-                        custom_logo: 'be_schema_publisher_custom_logo_preview',
-                        image_16_9: 'be_schema_publisher_image_16_9_preview',
-                        image_4_3: 'be_schema_publisher_image_4_3_preview',
-                        image_1_1: 'be_schema_publisher_image_1_1_preview',
-                        image_3_4: 'be_schema_publisher_image_3_4_preview',
-                        image_9_16: 'be_schema_publisher_image_9_16_preview'
-                    },
-                    propHasValue: function (prop) {
-                        if (prop === 'custom_logo') {
-                            var logo = document.getElementById('be_schema_publisher_custom_logo');
-                            return logo && logo.value.trim().length > 0;
-                        }
-                        if (prop === 'image_16_9') {
-                            var img169 = document.getElementById('be_schema_publisher_image_16_9');
-                            return img169 && img169.value.trim().length > 0;
-                        }
-                        if (prop === 'image_4_3') {
-                            var img43 = document.getElementById('be_schema_publisher_image_4_3');
-                            return img43 && img43.value.trim().length > 0;
-                        }
-                        if (prop === 'image_1_1') {
-                            var img11 = document.getElementById('be_schema_publisher_image_1_1');
-                            return img11 && img11.value.trim().length > 0;
-                        }
-                        if (prop === 'image_3_4') {
-                            var img34 = document.getElementById('be_schema_publisher_image_3_4');
-                            return img34 && img34.value.trim().length > 0;
-                        }
-                        if (prop === 'image_9_16') {
-                            var img916 = document.getElementById('be_schema_publisher_image_9_16');
-                            return img916 && img916.value.trim().length > 0;
-                        }
-                        return false;
-                    }
-                });
 
                 initOptionalProperties({
                     scope: 'organisation',
@@ -4889,9 +4540,9 @@ function be_schema_engine_render_schema_page() {
                     var select = document.getElementById('be-schema-publisher-dedicated-optional');
                     var add = document.querySelector('[data-optional-add="publisher-dedicated"]');
                     var fields = document.getElementById('be-schema-publisher-dedicated-optional-fields');
-                    var imageControls = document.querySelector('.be-schema-optional-controls[data-optional-scope="publisher-dedicated-images"]');
+                    var imageControls = document.querySelector('.be-schema-optional-controls[data-optional-scope="publisher-images"]');
                     var imageSelect = document.getElementById('be-schema-publisher-dedicated-images-optional');
-                    var imageAdd = document.querySelector('[data-optional-add="publisher-dedicated-images"]');
+                    var imageAdd = document.querySelector('[data-optional-add="publisher-images"]');
                     var imageFields = document.getElementById('be-schema-publisher-dedicated-images-optional-fields');
                     var typePill = document.getElementById('be-schema-publisher-type-pill');
 

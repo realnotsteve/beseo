@@ -3,7 +3,7 @@
  * Plugin Name:       BESEO
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
- * Version:           1.3.73
+ * Version:           1.3.74
  * Author:            Bill Evans
  * Author URI:        https://billevans.be/
  * Text Domain:       beseo
@@ -41,7 +41,7 @@ if ( ! defined( 'BE_SCHEMA_ENGINE_PLUGIN_URL' ) ) {
 
 // Plugin version (used for cache-busting if needed).
 if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.73' );
+    define( 'BE_SCHEMA_ENGINE_VERSION', '1.3.74' );
 }
 
 /**
@@ -76,6 +76,7 @@ add_action( 'plugins_loaded', 'be_schema_engine_load_textdomain' );
 // Core engine lives under includes/engine.
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-helpers.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-debug.php';
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-social-settings.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-site-entities.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-special-pages.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-posts.php';

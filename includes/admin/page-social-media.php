@@ -51,13 +51,16 @@ function be_schema_engine_save_social_settings() {
         return;
     }
 
-    // Load current settings from helper if available.
+    // Load current settings with defaults via helper when available.
     if ( function_exists( 'be_schema_social_get_settings' ) ) {
         $settings = be_schema_social_get_settings();
     } else {
         $settings = get_option( 'be_schema_social_settings', array() );
         if ( ! is_array( $settings ) ) {
             $settings = array();
+        }
+        if ( function_exists( 'be_schema_social_merge_defaults' ) ) {
+            $settings = be_schema_social_merge_defaults( $settings );
         }
     }
 
@@ -74,6 +77,12 @@ function be_schema_engine_save_social_settings() {
     // Optional: keep legacy keys in sync if they existed before.
     $settings['og_enabled']      = $settings['social_enable_og'];
     $settings['twitter_enabled'] = $settings['social_enable_twitter'];
+    $settings['enabled']         = ( '1' === $settings['social_enable_og'] || '1' === $settings['social_enable_twitter'] ) ? '1' : '0';
+
+    // Re-merge defaults in case new keys were added in code (prevents notices).
+    if ( function_exists( 'be_schema_social_merge_defaults' ) ) {
+        $settings = be_schema_social_merge_defaults( $settings );
+    }
 
     // Global default fallback image (must align with social_default_image).
     $settings['social_default_image'] = be_schema_social_validate_url_field(
@@ -232,6 +241,14 @@ function be_schema_engine_render_social_media_page() {
     if ( function_exists( 'wp_enqueue_media' ) ) {
         wp_enqueue_media();
     }
+    // Enqueue shared optional field helper.
+    wp_enqueue_script(
+        'be-schema-optional-fields',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-optional-fields.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
 
     // Save on POST.
     if ( isset( $_POST['be_schema_social_settings_submitted'] ) ) {
@@ -849,7 +866,10 @@ function be_schema_engine_render_social_media_page() {
                                                 <img src="<?php echo esc_url( $global_image_1_1 ); ?>" alt="" />
                                             <?php endif; ?>
                                         </div>
-                                        <div class="be-schema-optional-controls" data-optional-scope="global-default-images">
+                                        <div class="be-schema-optional-controls"
+                                             data-optional-scope="global-default-images"
+                                             data-optional-hidden="be_schema_global_images_optional"
+                                             data-optional-singleton="image_16_9,image_5_4,image_4_5,image_1_1_91,image_9_16">
                                             <label class="screen-reader-text" for="be-schema-global-images-optional"><?php esc_html_e( 'Add global default image', 'beseo' ); ?></label>
                                             <select id="be-schema-global-images-optional" aria-label="<?php esc_attr_e( 'Add global default image', 'beseo' ); ?>">
                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -1111,7 +1131,10 @@ function be_schema_engine_render_social_media_page() {
                                                     <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-optional-controls" data-optional-scope="facebook">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="facebook"
+                                                         data-optional-hidden="be_schema_facebook_optional"
+                                                         data-optional-singleton="facebook_page_url,facebook_app_id,facebook_notes">
                                                         <label class="screen-reader-text" for="be-schema-facebook-optional"><?php esc_html_e( 'Add optional Facebook property', 'beseo' ); ?></label>
                                                         <select id="be-schema-facebook-optional" aria-label="<?php esc_attr_e( 'Add optional Facebook property', 'beseo' ); ?>">
                                                             <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -1296,7 +1319,10 @@ function be_schema_engine_render_social_media_page() {
                                                     <?php esc_html_e( 'Optional Properties', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-optional-controls" data-optional-scope="twitter">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="twitter"
+                                                         data-optional-hidden="be_schema_twitter_optional"
+                                                         data-optional-singleton="twitter_handle,twitter_notes">
                                                         <label class="screen-reader-text" for="be-schema-twitter-optional"><?php esc_html_e( 'Add optional Twitter property', 'beseo' ); ?></label>
                                                         <select id="be-schema-twitter-optional" aria-label="<?php esc_attr_e( 'Add optional Twitter property', 'beseo' ); ?>">
                                                             <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -1438,7 +1464,10 @@ function be_schema_engine_render_social_media_page() {
                                                     <?php esc_html_e( 'Additional Aspect Ratios', 'beseo' ); ?>
                                                 </th>
                                                 <td>
-                                                    <div class="be-schema-optional-controls" data-optional-scope="twitter-additional-images">
+                                                    <div class="be-schema-optional-controls"
+                                                         data-optional-scope="twitter-additional-images"
+                                                         data-optional-hidden="be_schema_twitter_images_optional"
+                                                         data-optional-singleton="image_16_9,image_5_4,image_1_1,image_4_5,image_1_1_91,image_9_16">
                                                         <label class="screen-reader-text" for="be-schema-twitter-additional-images-optional"><?php esc_html_e( 'Add Twitter image', 'beseo' ); ?></label>
                                                         <select id="be-schema-twitter-additional-images-optional" aria-label="<?php esc_attr_e( 'Add Twitter image', 'beseo' ); ?>">
                                                             <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
@@ -1826,230 +1855,9 @@ function be_schema_engine_render_social_media_page() {
                     });
                 });
 
-                function initOptionalProperties(config) {
-                    var optionalContainer = document.getElementById(config.containerId);
-                    var optionalSelect = document.getElementById(config.selectId);
-                    var optionalAdd = document.querySelector('[data-optional-add="' + config.scope + '"]');
-                    var optionalHidden = document.getElementById(config.hiddenInputId);
-
-                    if (! optionalContainer || ! optionalSelect || ! optionalAdd || ! optionalHidden) {
-                        return;
-                    }
-
-                    function getVisibleProps() {
-                        var props = [];
-                        optionalContainer.querySelectorAll('.be-schema-optional-field').forEach(function (field) {
-                            if (! field.classList.contains('is-hidden')) {
-                                var prop = field.getAttribute('data-optional-prop');
-                                if (prop) {
-                                    props.push(prop);
-                                }
-                            }
-                        });
-                        return props;
-                    }
-
-                    function syncHidden() {
-                        optionalHidden.value = getVisibleProps().join(',');
-                    }
-
-                    function syncAddButton() {
-                        var val = optionalSelect.value;
-                        var exists = val && getVisibleProps().indexOf(val) !== -1;
-                        var disabled = ! val || exists;
-                        optionalAdd.disabled = disabled;
-                        if (disabled) {
-                            optionalAdd.classList.add('disabled');
-                        } else {
-                            optionalAdd.classList.remove('disabled');
-                        }
-                    }
-
-                    function clearFields(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        field.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
-                            input.value = '';
-                        });
-                        if (config.previewIds && config.previewIds[prop]) {
-                            var preview = document.getElementById(config.previewIds[prop]);
-                            if (preview) {
-                                preview.innerHTML = '';
-                            }
-                        }
-                    }
-
-                    function showProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        field.classList.remove('is-hidden');
-                        syncHidden();
-                        syncAddButton();
-                    }
-
-                    function hideProp(prop) {
-                        var field = optionalContainer.querySelector('[data-optional-prop="' + prop + '"]');
-                        if (! field) {
-                            return;
-                        }
-                        clearFields(prop);
-                        field.classList.add('is-hidden');
-                        syncHidden();
-                        syncAddButton();
-                    }
-
-                    function propHasValue(prop) {
-                        if (typeof config.propHasValue === 'function') {
-                            return config.propHasValue(prop);
-                        }
-                        return false;
-                    }
-
-                    optionalSelect.addEventListener('change', syncAddButton);
-
-                    optionalAdd.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        var val = optionalSelect.value;
-                        if (! val) {
-                            return;
-                        }
-                        if (getVisibleProps().indexOf(val) !== -1) {
-                            return;
-                        }
-                        showProp(val);
-                        optionalSelect.value = '';
-                        syncAddButton();
-                    });
-
-                    optionalContainer.querySelectorAll('.be-schema-optional-remove').forEach(function (btn) {
-                        btn.addEventListener('click', function (event) {
-                            event.preventDefault();
-                            var prop = btn.getAttribute('data-optional-remove');
-                            hideProp(prop);
-                        });
-                    });
-
-                    var initial = [];
-                    if (optionalHidden.value) {
-                        initial = optionalHidden.value.split(',').map(function (s) {
-                            return s.trim();
-                        }).filter(Boolean);
-                    }
-
-                    var knownProps = config.props && config.props.length
-                        ? config.props
-                        : Array.prototype.map.call(optionalContainer.querySelectorAll('.be-schema-optional-field'), function (field) {
-                            return field.getAttribute('data-optional-prop');
-                        });
-
-                    knownProps.forEach(function (prop) {
-                        if (initial.indexOf(prop) !== -1 || propHasValue(prop)) {
-                            showProp(prop);
-                        }
-                    });
-
-                    syncHidden();
-                    syncAddButton();
+                if (window.beSchemaInitAllOptionalGroups) {
+                    window.beSchemaInitAllOptionalGroups();
                 }
-
-                initOptionalProperties({
-                    scope: 'facebook',
-                    containerId: 'be-schema-facebook-optional-fields',
-                    selectId: 'be-schema-facebook-optional',
-                    hiddenInputId: 'be_schema_facebook_optional',
-                    props: ['facebook_page_url', 'facebook_app_id', 'facebook_notes'],
-                    singletons: ['facebook_page_url', 'facebook_app_id', 'facebook_notes'],
-                    propHasValue: function (prop) {
-                        var map = {
-                            facebook_page_url: document.getElementById('be_schema_facebook_page_url'),
-                            facebook_app_id: document.getElementById('be_schema_facebook_app_id'),
-                            facebook_notes: document.getElementById('be_schema_facebook_notes')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-
-                initOptionalProperties({
-                    scope: 'facebook-images',
-                    containerId: 'be-schema-facebook-images-optional-fields',
-                    selectId: 'be-schema-facebook-images-optional',
-                    hiddenInputId: 'be_schema_facebook_optional_images',
-                    props: ['facebook_default_image'],
-                    singletons: ['facebook_default_image'],
-                    previewIds: {
-                        facebook_default_image: 'be_schema_facebook_default_image_preview'
-                    },
-                    propHasValue: function (prop) {
-                        if (prop === 'facebook_default_image') {
-                            var image = document.getElementById('be_schema_facebook_default_image');
-                            return !! (image && image.value.trim().length > 0);
-                        }
-                        return false;
-                    }
-                });
-
-                initOptionalProperties({
-                    scope: 'twitter',
-                    containerId: 'be-schema-twitter-optional-fields',
-                    selectId: 'be-schema-twitter-optional',
-                    hiddenInputId: 'be_schema_twitter_optional',
-                    props: ['twitter_handle', 'twitter_notes'],
-                    singletons: ['twitter_handle', 'twitter_notes'],
-                    propHasValue: function (prop) {
-                        var map = {
-                            twitter_handle: document.getElementById('be_schema_twitter_handle'),
-                            twitter_notes: document.getElementById('be_schema_twitter_notes')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-
-                    initOptionalProperties({
-                        scope: 'global-default-images',
-                        containerId: 'be-schema-global-images-optional-fields',
-                        selectId: 'be-schema-global-images-optional',
-                        hiddenInputId: 'be_schema_global_images_optional',
-                        props: ['image_16_9', 'image_5_4', 'image_4_5', 'image_1_1_91', 'image_9_16'],
-                        singletons: ['image_16_9', 'image_5_4', 'image_4_5', 'image_1_1_91', 'image_9_16'],
-                        propHasValue: function (prop) {
-                            var map = {
-                                image_16_9: document.getElementById('be_schema_global_image_16_9'),
-                                image_5_4: document.getElementById('be_schema_global_image_5_4'),
-                                image_4_5: document.getElementById('be_schema_global_image_4_5'),
-                                image_1_1_91: document.getElementById('be_schema_global_image_1_1_91'),
-                                image_9_16: document.getElementById('be_schema_global_image_9_16')
-                            };
-                            var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
-
-                initOptionalProperties({
-                    scope: 'twitter-additional-images',
-                    containerId: 'be-schema-twitter-additional-images-optional-fields',
-                    selectId: 'be-schema-twitter-additional-images-optional',
-                    hiddenInputId: 'be_schema_twitter_images_optional',
-                    props: ['image_16_9', 'image_5_4', 'image_1_1', 'image_4_5', 'image_1_1_91', 'image_9_16'],
-                    singletons: ['image_16_9', 'image_5_4', 'image_1_1', 'image_4_5', 'image_1_1_91', 'image_9_16'],
-                    propHasValue: function (prop) {
-                        var map = {
-                            image_16_9: document.getElementById('be_schema_twitter_image_16_9'),
-                            image_5_4: document.getElementById('be_schema_twitter_image_5_4'),
-                            image_1_1: document.getElementById('be_schema_twitter_image_1_1'),
-                            image_4_5: document.getElementById('be_schema_twitter_image_4_5'),
-                            image_1_1_91: document.getElementById('be_schema_twitter_image_1_1_91'),
-                            image_9_16: document.getElementById('be_schema_twitter_image_9_16')
-                        };
-                        var input = map[prop];
-                        return !! (input && input.value.trim().length > 0);
-                    }
-                });
 
                 // Media pickers.
                 var selectButtons = document.querySelectorAll('.be-schema-image-select');

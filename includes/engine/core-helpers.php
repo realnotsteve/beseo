@@ -86,6 +86,9 @@ function be_schema_engine_get_settings() {
 		'org_logo'         => '', // Could be attachment ID or URL depending on your UI.
 		'org_logo_enabled' => '1',
 
+		// Image validation toggle (UI pill checks).
+		'image_validation_enabled' => '1',
+
 		// Publisher custom organisation.
 		'publisher_custom_name' => '',
 		'publisher_custom_url'  => '',
