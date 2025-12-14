@@ -45,6 +45,7 @@ function be_schema_social_get_settings() {
 		// Master enable for social meta.
 		'enabled' => '0',
 		'dry_run' => '0',
+		'twitter_dry_run' => '0',
 
 		// Default images (attachment IDs or URLs depending on UI).
 		'default_facebook_image_id' => '',
@@ -449,11 +450,14 @@ function be_schema_output_social_meta() {
 	$twitter_image_url = be_schema_social_get_twitter_image_url();
 	$twitter_card_type = be_schema_social_get_twitter_card_type();
 
-	$settings      = be_schema_social_get_settings();
-	$twitter_site  = be_schema_social_normalize_twitter_handle( $settings['twitter_site'] );
+	$settings        = be_schema_social_get_settings();
+	$twitter_site    = be_schema_social_normalize_twitter_handle( $settings['twitter_site'] );
 	$twitter_creator = be_schema_social_normalize_twitter_handle( $settings['twitter_creator'] );
 	$facebook_app_id = isset( $settings['facebook_app_id'] ) ? trim( (string) $settings['facebook_app_id'] ) : '';
-	$dry_run         = ! empty( $settings['dry_run'] ) && '1' === (string) $settings['dry_run'];
+
+	// Safety toggles.
+	$og_dry_run       = ! empty( $settings['dry_run'] ) && '1' === (string) $settings['dry_run'];
+	$twitter_dry_run  = ! empty( $settings['twitter_dry_run'] ) && '1' === (string) $settings['twitter_dry_run'];
 
 	// Automatic values before any potential future overrides (for debug).
 	$automatic = array(
@@ -467,7 +471,7 @@ function be_schema_output_social_meta() {
 	$final = $automatic;
 
 	$og_enabled      = true;
-	$twitter_enabled = true;
+	$twitter_enabled = ! $twitter_dry_run;
 
 	// Debug snapshot.
 	if ( function_exists( 'be_schema_is_debug_enabled' ) && be_schema_is_debug_enabled() ) {
@@ -504,7 +508,7 @@ function be_schema_output_social_meta() {
 		);
 	}
 
-	if ( $dry_run ) {
+	if ( $og_dry_run || $twitter_dry_run ) {
 		$dry_run_snapshot = array(
 			'url'               => $url,
 			'title'             => $final['title'],
@@ -513,39 +517,42 @@ function be_schema_output_social_meta() {
 			'twitter_card_type' => $twitter_card_type,
 			'og_image'          => $final['og_image'],
 			'tw_image'          => $final['tw_image'],
+			'og_dry_run'        => $og_dry_run,
+			'twitter_dry_run'   => $twitter_dry_run,
 		);
 		error_log( 'BE_SOCIAL_DRY_RUN ' . wp_json_encode( $dry_run_snapshot ) );
-		return;
 	}
 
-	// Output OG tags.
-	echo "\n" . '<meta property="og:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
-	echo '<meta property="og:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
-	echo '<meta property="og:type" content="' . esc_attr( $og_type ) . '" />' . "\n";
-	echo '<meta property="og:url" content="' . esc_attr( $url ) . '" />' . "\n";
-	echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
+	// Output OG tags unless OpenGraph dry run is enabled.
+	if ( $og_enabled && ! $og_dry_run ) {
+		echo "\n" . '<meta property="og:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
+		echo '<meta property="og:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
+		echo '<meta property="og:type" content="' . esc_attr( $og_type ) . '" />' . "\n";
+		echo '<meta property="og:url" content="' . esc_attr( $url ) . '" />' . "\n";
+		echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
 
-	if ( $final['og_image'] ) {
-		echo '<meta property="og:image" content="' . esc_url( $final['og_image'] ) . '" />' . "\n";
-	}
+		if ( $final['og_image'] ) {
+			echo '<meta property="og:image" content="' . esc_url( $final['og_image'] ) . '" />' . "\n";
+		}
 
-	// Article extras for singular content.
-	if ( is_singular() && 'article' === $og_type ) {
-		$post = get_post();
-		if ( $post ) {
-			$published = get_the_date( DATE_W3C, $post );
-			$modified  = get_the_modified_date( DATE_W3C, $post );
+		// Article extras for singular content.
+		if ( is_singular() && 'article' === $og_type ) {
+			$post = get_post();
+			if ( $post ) {
+				$published = get_the_date( DATE_W3C, $post );
+				$modified  = get_the_modified_date( DATE_W3C, $post );
 
-			if ( $published ) {
-				echo '<meta property="article:published_time" content="' . esc_attr( $published ) . '" />' . "\n";
-			}
-			if ( $modified ) {
-				echo '<meta property="article:modified_time" content="' . esc_attr( $modified ) . '" />' . "\n";
-			}
+				if ( $published ) {
+					echo '<meta property="article:published_time" content="' . esc_attr( $published ) . '" />' . "\n";
+				}
+				if ( $modified ) {
+					echo '<meta property="article:modified_time" content="' . esc_attr( $modified ) . '" />' . "\n";
+				}
 
-			$author_name = get_the_author_meta( 'display_name', $post->post_author );
-			if ( $author_name ) {
-				echo '<meta property="article:author" content="' . esc_attr( $author_name ) . '" />' . "\n";
+				$author_name = get_the_author_meta( 'display_name', $post->post_author );
+				if ( $author_name ) {
+					echo '<meta property="article:author" content="' . esc_attr( $author_name ) . '" />' . "\n";
+				}
 			}
 		}
 	}
@@ -555,21 +562,23 @@ function be_schema_output_social_meta() {
 		echo '<meta property="fb:app_id" content="' . esc_attr( $facebook_app_id ) . '" />' . "\n";
 	}
 
-	// Twitter Card tags.
-	echo '<meta name="twitter:card" content="' . esc_attr( $twitter_card_type ) . '" />' . "\n";
-	echo '<meta name="twitter:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
-	echo '<meta name="twitter:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
+	// Twitter Card tags (skip when twitter dry run is enabled).
+	if ( $twitter_enabled && ! $twitter_dry_run ) {
+		echo '<meta name="twitter:card" content="' . esc_attr( $twitter_card_type ) . '" />' . "\n";
+		echo '<meta name="twitter:title" content="' . esc_attr( $final['title'] ) . '" />' . "\n";
+		echo '<meta name="twitter:description" content="' . esc_attr( $final['description'] ) . '" />' . "\n";
 
-	if ( $final['tw_image'] ) {
-		echo '<meta name="twitter:image" content="' . esc_url( $final['tw_image'] ) . '" />' . "\n";
-	}
+		if ( $final['tw_image'] ) {
+			echo '<meta name="twitter:image" content="' . esc_url( $final['tw_image'] ) . '" />' . "\n";
+		}
 
-	if ( $twitter_site ) {
-		echo '<meta name="twitter:site" content="' . esc_attr( $twitter_site ) . '" />' . "\n";
-	}
+		if ( $twitter_site ) {
+			echo '<meta name="twitter:site" content="' . esc_attr( $twitter_site ) . '" />' . "\n";
+		}
 
-	if ( $twitter_creator ) {
-		echo '<meta name="twitter:creator" content="' . esc_attr( $twitter_creator ) . '" />' . "\n";
+		if ( $twitter_creator ) {
+			echo '<meta name="twitter:creator" content="' . esc_attr( $twitter_creator ) . '" />' . "\n";
+		}
 	}
 }
 

@@ -777,62 +777,7 @@ function be_schema_engine_render_social_media_page() {
                         <?php endif; ?>
                     </div>
 
-                                <div class="be-schema-social-section">
-                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h4>
-                                    <div class="be-schema-social-mini-summary" style="margin-top:0;">
-                                        <p class="be-schema-social-description">
-                                            <?php esc_html_e(
-                                                'Twitter chooses images in this order when there is no featured image:',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-                                        <ul>
-                                            <li><?php esc_html_e( 'Use the Twitter default image (if set).', 'beseo' ); ?></li>
-                                            <li><?php esc_html_e( 'If that is empty, use the Global default image.', 'beseo' ); ?></li>
-                                        </ul>
-
-                                        <p class="be-schema-social-description">
-                                            <?php esc_html_e(
-                                                'Below is a quick preview of the images that will be used when there is no featured image on a page:',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-
-                                        <div class="be-schema-social-mini-summary-images">
-                                            <div>
-                                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
-                                                <?php if ( $twitter_default_image ) : ?>
-                                                    <div class="be-schema-image-preview">
-                                                        <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                                    </div>
-                                                    <code><?php echo esc_html( $twitter_default_image ); ?></code>
-                                                <?php else : ?>
-                                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                                <?php endif; ?>
-                                            </div>
-
-                                            <div>
-                                                <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
-                                                <?php if ( $global_default_image ) : ?>
-                                                    <div class="be-schema-image-preview">
-                                                        <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                                    </div>
-                                                    <code><?php echo esc_html( $global_default_image ); ?></code>
-                                                <?php else : ?>
-                                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-
-                                        <p class="be-schema-social-description" style="margin-top: 8px;">
-                                            <?php esc_html_e(
-                                                'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
 
                 <?php if ( ! $is_platforms ) : ?>
                 <div id="be-schema-social-tab-content" class="be-schema-social-tab-panel">
@@ -1338,61 +1283,6 @@ function be_schema_engine_render_social_media_page() {
                                             'beseo'
                                         ); ?>
                                     </p>
-                                </div>
-                                <div class="be-schema-social-section">
-                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Image Selection Summary', 'beseo' ); ?></h4>
-                                    <div class="be-schema-social-mini-summary" style="margin-top:0;">
-                                        <p class="be-schema-social-description">
-                                            <?php esc_html_e(
-                                                'Twitter chooses images in this order when there is no featured image:',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-                                        <ul>
-                                            <li><?php esc_html_e( 'Use the Twitter default image (if set).', 'beseo' ); ?></li>
-                                            <li><?php esc_html_e( 'If that is empty, use the Global default image.', 'beseo' ); ?></li>
-                                        </ul>
-
-                    <p class="be-schema-social-description">
-                                            <?php esc_html_e(
-                                                'Below is a quick preview of the images that will be used when there is no featured image on a page:',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-
-                                        <div class="be-schema-social-mini-summary-images">
-                                            <div>
-                                                <strong><?php esc_html_e( 'Twitter Default Card Image', 'beseo' ); ?></strong>
-                                                <?php if ( $twitter_default_image ) : ?>
-                                                    <div class="be-schema-image-preview">
-                                                        <img src="<?php echo esc_url( $twitter_default_image ); ?>" alt="" />
-                                                    </div>
-                                                    <code><?php echo esc_html( $twitter_default_image ); ?></code>
-                                                <?php else : ?>
-                                                    <em><?php esc_html_e( 'Not set – Twitter will fall back to Global image (if any).', 'beseo' ); ?></em>
-                                                <?php endif; ?>
-                                            </div>
-
-                                            <div>
-                                                <strong><?php esc_html_e( 'Global Fallback Image', 'beseo' ); ?></strong>
-                                                <?php if ( $global_default_image ) : ?>
-                                                    <div class="be-schema-image-preview">
-                                                        <img src="<?php echo esc_url( $global_default_image ); ?>" alt="" />
-                                                    </div>
-                                                    <code><?php echo esc_html( $global_default_image ); ?></code>
-                                                <?php else : ?>
-                                                    <em><?php esc_html_e( 'Not set – no final fallback.', 'beseo' ); ?></em>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-
-                                        <p class="be-schema-social-description" style="margin-top: 8px;">
-                                            <?php esc_html_e(
-                                                'To see the exact image chosen for a specific URL, view that page on the front end and, if debug is enabled, check the BE_SOCIAL_DEBUG entry in your PHP error log.',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
 
