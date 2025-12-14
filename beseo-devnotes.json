@@ -420,6 +420,9 @@
     "Introduced a shared image validation toggle (default on) and began moving image status checks behind a reusable helper; Schema settings now expose an Image Validation Pills toggle.",
     "Schema optional dropdowns now use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels."
   ],
+  "ui_notes_tools": [
+    "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema → WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
+  ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
     "Person profile image helper now notes 1200x1200 WebP guidance and shows an inline status pill (Undefined Image / 1200x1200 WebP green/red based on size+type).",
