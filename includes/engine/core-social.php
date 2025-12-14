@@ -46,6 +46,8 @@ function be_schema_social_get_settings() {
 		'enabled' => '0',
 		'dry_run' => '0',
 		'twitter_dry_run' => '0',
+		'social_enable_og' => '1',
+		'social_enable_twitter' => '1',
 
 		// Default images (attachment IDs or URLs depending on UI).
 		'default_facebook_image_id' => '',
@@ -470,8 +472,8 @@ function be_schema_output_social_meta() {
 	// For now, "final" == "automatic"; no per-post overrides are implemented.
 	$final = $automatic;
 
-	$og_enabled      = true;
-	$twitter_enabled = ! $twitter_dry_run;
+	$og_enabled      = ! empty( $settings['social_enable_og'] ) && '1' === (string) $settings['social_enable_og'];
+	$twitter_enabled = ! empty( $settings['social_enable_twitter'] ) && '1' === (string) $settings['social_enable_twitter'];
 
 	// Debug snapshot.
 	if ( function_exists( 'be_schema_is_debug_enabled' ) && be_schema_is_debug_enabled() ) {
@@ -519,6 +521,8 @@ function be_schema_output_social_meta() {
 			'tw_image'          => $final['tw_image'],
 			'og_dry_run'        => $og_dry_run,
 			'twitter_dry_run'   => $twitter_dry_run,
+			'og_enabled'        => $og_enabled,
+			'twitter_enabled'   => $twitter_enabled,
 		);
 		error_log( 'BE_SOCIAL_DRY_RUN ' . wp_json_encode( $dry_run_snapshot ) );
 	}

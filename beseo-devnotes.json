@@ -410,6 +410,9 @@
     "Social Dashboard no longer shows the OpenGraph dry-run safety box (moved to Platforms > Facebook > Tools).",
     "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI."
   ],
+  "logic_notes": [
+    "Social engine now honors the per-network enable toggles: Open Graph output depends on social_enable_og, Twitter Cards on social_enable_twitter, and both keys now have defaults to avoid notices on fresh installs."
+  ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
     "Person profile image helper now notes 1200x1200 WebP guidance and shows an inline status pill (Undefined Image / 1200x1200 WebP green/red based on size+type).",
