@@ -869,11 +869,12 @@ function be_schema_engine_render_tools_page() {
                         <label style="margin-left:8px;"><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
                     </div>
                     <div class="be-schema-validator-actions">
+                        <div class="be-schema-validator-type">
+                            <label><input type="radio" name="be_schema_validator_type" value="native" checked /> <?php esc_html_e( 'Native/Internal', 'beseo' ); ?></label>
+                            <label style="margin-left:12px;"><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
+                        </div>
                         <label style="margin-right:12px;"><input type="checkbox" id="be-schema-validator-crops" /> <?php esc_html_e( 'Possible Crops', 'beseo' ); ?></label>
                         <button type="button" class="button button-primary" id="be-schema-validator-run" disabled><?php esc_html_e( 'Validate', 'beseo' ); ?></button>
-                        <a class="button" href="https://cards-dev.twitter.com/validator" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e( 'Open Twitter Validator (new tab)', 'beseo' ); ?>
-                        </a>
                     </div>
                 </div>
                 <div class="be-schema-validator-row">
@@ -884,15 +885,22 @@ function be_schema_engine_render_tools_page() {
                     <div class="be-schema-validator-platforms">
                         <label><input type="checkbox" id="be-schema-validator-og" checked /> <?php esc_html_e( 'Open Graph', 'beseo' ); ?></label>
                         <label style="margin-left:12px;"><input type="checkbox" id="be-schema-validator-twitter" checked /> <?php esc_html_e( 'Twitter Cards', 'beseo' ); ?></label>
+                        <select id="be-schema-validator-service" style="margin-left:12px; min-width:180px;" disabled>
+                            <option value=""><?php esc_html_e( 'Select a service', 'beseo' ); ?></option>
+                            <option value="twitter" data-url="https://cards-dev.twitter.com/validator"><?php esc_html_e( 'Twitter Card Validator', 'beseo' ); ?></option>
+                            <option value="facebook" data-url="https://developers.facebook.com/tools/debug/"><?php esc_html_e( 'Facebook Sharing Debugger', 'beseo' ); ?></option>
+                        </select>
+                        <label style="margin-left:12px;"><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy source to clipboard', 'beseo' ); ?></label>
                     </div>
                 </div>
                 <div class="be-schema-validator-context" id="be-schema-validator-context">
                     <span class="badge"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
                     <span class="badge"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
                     <span class="badge"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
+                    <span class="badge"><span class="label"><?php esc_html_e( 'Result', 'beseo' ); ?>:</span> <span id="be-schema-context-result">—</span></span>
                     <button type="button" class="button" id="be-schema-validator-rerun" disabled><?php esc_html_e( 'Re-run', 'beseo' ); ?></button>
                 </div>
-                <p class="description" id="be-schema-validator-note"><?php esc_html_e( 'Select a page or enter a URL, then choose platforms to run validation.', 'beseo' ); ?></p>
+                <p class="description" id="be-schema-validator-note"></p>
             </div>
             <div class="be-schema-validator-grid">
                 <div class="be-schema-validator-card">
@@ -975,15 +983,18 @@ function be_schema_engine_render_tools_page() {
                 var panels = document.querySelectorAll('.be-schema-tools-panel');
                 var defaultTab = '<?php echo esc_js( $tools_default_tab ); ?>';
 
-                var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
-                var validatorSelect = document.getElementById('be-schema-validator-select');
-                var validatorManual = document.getElementById('be-schema-validator-manual');
-                var searchWrap = document.querySelector('.be-schema-validator-search');
-                var searchInput = document.getElementById('be-schema-validator-search');
-                var includePosts = document.getElementById('be-schema-validator-include-posts');
+                    var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
+                    var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
+                    var validatorSelect = document.getElementById('be-schema-validator-select');
+                    var validatorManual = document.getElementById('be-schema-validator-manual');
+                    var searchWrap = document.querySelector('.be-schema-validator-search');
+                    var searchInput = document.getElementById('be-schema-validator-search');
+                    var includePosts = document.getElementById('be-schema-validator-include-posts');
                     var ogCheckbox = document.getElementById('be-schema-validator-og');
                     var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
                     var cropsCheckbox = document.getElementById('be-schema-validator-crops');
+                    var serviceSelect = document.getElementById('be-schema-validator-service');
+                    var copyCheckbox = document.getElementById('be-schema-validator-copy');
                     var validateBtn = document.getElementById('be-schema-validator-run');
                     var reRunBtn = document.getElementById('be-schema-validator-rerun');
                     var validatorNote = document.getElementById('be-schema-validator-note');
@@ -992,6 +1003,7 @@ function be_schema_engine_render_tools_page() {
                     var contextUrl = document.getElementById('be-schema-context-url');
                     var contextPlatforms = document.getElementById('be-schema-context-platforms');
                     var contextTime = document.getElementById('be-schema-context-time');
+                    var contextResult = document.getElementById('be-schema-context-result');
 
                     var previewTwitter = {
                         wrap: document.getElementById('be-schema-preview-twitter'),
@@ -1035,15 +1047,25 @@ function be_schema_engine_render_tools_page() {
 
                 activateTab(defaultTab || 'dashboard');
 
-                function currentMode() {
-                    var mode = 'dropdown';
-                    validatorMode.forEach(function (radio) {
-                        if (radio.checked) {
-                            mode = radio.value;
-                        }
-                    });
-                    return mode;
-                }
+                    function currentMode() {
+                        var mode = 'dropdown';
+                        validatorMode.forEach(function (radio) {
+                            if (radio.checked) {
+                                mode = radio.value;
+                            }
+                        });
+                        return mode;
+                    }
+
+                    function currentValidationType() {
+                        var type = 'native';
+                        validatorType.forEach(function (radio) {
+                            if (radio.checked) {
+                                type = radio.value;
+                            }
+                        });
+                        return type;
+                    }
 
                 function isValidHttpUrl(value) {
                     if (!value) {
@@ -1119,24 +1141,44 @@ function be_schema_engine_render_tools_page() {
                     updateButtonState();
                 }
 
+                function syncValidationType() {
+                    var type = currentValidationType();
+                    var isNative = type === 'native';
+                    if (ogCheckbox) { ogCheckbox.disabled = !isNative; }
+                    if (twitterCheckbox) { twitterCheckbox.disabled = !isNative; }
+                    if (cropsCheckbox) { cropsCheckbox.disabled = !isNative; }
+                    if (serviceSelect) { serviceSelect.disabled = isNative; }
+                    if (copyCheckbox) { copyCheckbox.disabled = isNative; }
+                    updateButtonState();
+                }
+
                 function updateButtonState() {
                     var url = currentUrl();
+                    var type = currentValidationType();
                     var platformsOn = (ogCheckbox && ogCheckbox.checked) || (twitterCheckbox && twitterCheckbox.checked);
                     var validUrl = isValidHttpUrl(url);
+                    var externalReady = (serviceSelect && serviceSelect.value);
                     if (validateBtn) {
-                        validateBtn.disabled = !(platformsOn && validUrl);
+                        if (type === 'native') {
+                            validateBtn.disabled = !(platformsOn && validUrl);
+                        } else {
+                            validateBtn.disabled = !(externalReady && validUrl);
+                        }
                     }
                     if (reRunBtn) {
-                        reRunBtn.disabled = validateBtn.disabled;
+                        reRunBtn.disabled = validateBtn ? validateBtn.disabled : true;
                     }
-                    if (validatorNote) {
-                        if (!validUrl) {
-                            validatorNote.textContent = '<?php echo esc_js( __( 'Select a page or enter a full URL to enable validation.', 'beseo' ) ); ?>';
-                        } else if (!platformsOn) {
-                            validatorNote.textContent = '<?php echo esc_js( __( 'Turn on at least one platform to validate.', 'beseo' ) ); ?>';
-                        } else {
-                            validatorNote.textContent = '';
+                    if (contextResult) {
+                        var guidance = '—';
+                        if (type === 'native' && !platformsOn && validUrl) {
+                            guidance = '<?php echo esc_js( __( 'Turn on at least one platform to validate.', 'beseo' ) ); ?>';
+                        } else if (type === 'external' && !externalReady && validUrl) {
+                            guidance = '<?php echo esc_js( __( 'Choose an external service to continue.', 'beseo' ) ); ?>';
+                        } else if (validUrl) {
+                            guidance = '<?php echo esc_js( __( 'Ready', 'beseo' ) ); ?>';
                         }
+                        contextResult.textContent = guidance;
+                        contextResult.dataset.state = 'guidance';
                     }
                 }
 
@@ -1310,6 +1352,12 @@ function be_schema_engine_render_tools_page() {
                     if (contextTime) {
                         contextTime.textContent = new Date().toLocaleTimeString();
                     }
+                    if (contextResult) {
+                        contextResult.textContent = data.fetch && data.fetch.status && data.fetch.status >= 200 && data.fetch.status < 300
+                            ? '<?php echo esc_js( __( 'Validated', 'beseo' ) ); ?>'
+                            : '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
+                        contextResult.dataset.state = 'result';
+                    }
                     if (reRunBtn) {
                         reRunBtn.disabled = false;
                     }
@@ -1339,8 +1387,29 @@ function be_schema_engine_render_tools_page() {
 
                 function runValidation() {
                     var url = currentUrl();
+                    var type = currentValidationType();
                     if (!isValidHttpUrl(url) || !validateBtn) {
                         updateButtonState();
+                        return;
+                    }
+                    if (type === 'external') {
+                        var svc = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex] : null;
+                        var svcUrl = svc && svc.getAttribute('data-url');
+                        if (copyCheckbox && copyCheckbox.checked && navigator.clipboard) {
+                            navigator.clipboard.writeText(url);
+                        }
+                        if (svcUrl) {
+                            window.open(svcUrl, '_blank', 'noopener,noreferrer');
+                            if (validatorNote) {
+                                validatorNote.textContent = '<?php echo esc_js( __( 'Opening external validator…', 'beseo' ) ); ?>';
+                            }
+                            if (contextResult) {
+                                contextResult.textContent = '<?php echo esc_js( __( 'External validator opened', 'beseo' ) ); ?>';
+                                contextResult.dataset.state = 'result';
+                            }
+                        } else if (validatorNote) {
+                            validatorNote.textContent = '<?php echo esc_js( __( 'Select an external service to continue.', 'beseo' ) ); ?>';
+                        }
                         return;
                     }
                     validateBtn.disabled = true;
@@ -1348,6 +1417,10 @@ function be_schema_engine_render_tools_page() {
                     validateBtn.textContent = '<?php echo esc_js( __( 'Validating…', 'beseo' ) ); ?>';
                     if (reRunBtn) {
                         reRunBtn.disabled = true;
+                    }
+                    if (contextResult) {
+                        contextResult.textContent = '<?php echo esc_js( __( 'Validating…', 'beseo' ) ); ?>';
+                        contextResult.dataset.state = 'result';
                     }
                     if (validatorNote) {
                         validatorNote.textContent = '<?php echo esc_js( __( 'Running validation…', 'beseo' ) ); ?>';
@@ -1375,6 +1448,10 @@ function be_schema_engine_render_tools_page() {
                                 var errorMsg = (payload && payload.data && payload.data.message) ? payload.data.message : '<?php echo esc_js( __( 'Validation failed.', 'beseo' ) ); ?>';
                                 validatorNote.textContent = errorMsg;
                             }
+                            if (contextResult) {
+                                contextResult.textContent = '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
+                                contextResult.dataset.state = 'result';
+                            }
                             if (reRunBtn) {
                                 reRunBtn.disabled = validateBtn.disabled;
                             }
@@ -1390,11 +1467,18 @@ function be_schema_engine_render_tools_page() {
                         if (validatorNote) {
                             validatorNote.textContent = '<?php echo esc_js( __( 'Validation failed.', 'beseo' ) ); ?>';
                         }
+                        if (contextResult) {
+                            contextResult.textContent = '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
+                            contextResult.dataset.state = 'result';
+                        }
                     });
                 }
 
                 validatorMode.forEach(function (radio) {
                     radio.addEventListener('change', syncValidatorMode);
+                });
+                validatorType.forEach(function (radio) {
+                    radio.addEventListener('change', syncValidationType);
                 });
                 if (validatorSelect) {
                     validatorSelect.addEventListener('change', updateButtonState);
@@ -1427,6 +1511,7 @@ function be_schema_engine_render_tools_page() {
 
                 renderSelectOptions();
                 syncValidatorMode();
+                syncValidationType();
                 updateButtonState();
                 toggleCrops();
             });
