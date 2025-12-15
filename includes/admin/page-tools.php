@@ -544,61 +544,140 @@ function be_schema_engine_render_tools_page() {
             .be-schema-tools-panel.active {
                 display: block;
             }
-            .be-schema-validator-top {
+            .be-schema-validator-header {
                 border: 1px solid #ccd0d4;
                 background: #fff;
-                padding: 12px;
                 border-radius: 6px;
                 margin-top: 8px;
+                overflow: hidden;
             }
-            .be-schema-validator-row {
+            .be-schema-header-titles {
+                display: grid;
+                grid-template-columns: max-content max-content max-content 1fr;
+                background: #e5e7ea;
+                color: #444;
+                font-weight: 600;
+                font-size: 13px;
+                text-transform: uppercase;
+                padding: 8px 12px;
+                gap: 0;
+            }
+            .be-schema-header-titles div {
+                border-left: 1px solid #d1d4d8;
+                padding-left: 10px;
+            }
+            .be-schema-header-titles div:first-child {
+                border-left: none;
+            }
+            .be-schema-header-grid {
+                display: grid;
+                grid-template-columns: max-content max-content max-content 1fr;
+                gap: 0;
+                padding: 14px 12px 6px 12px;
+            }
+            .be-schema-header-section {
+                padding: 4px 14px 10px;
+                border-left: 1px solid #dfe2e6;
+                min-height: 120px;
                 display: flex;
-                flex-wrap: wrap;
+                flex-direction: column;
                 gap: 12px;
-                align-items: flex-end;
-                margin-bottom: 10px;
+                justify-content: flex-start;
+            }
+            .be-schema-header-section:first-child {
+                border-left: none;
+                padding-left: 0;
+            }
+            .be-schema-header-section:last-child {
+                padding-right: 0;
             }
             .be-schema-validator-context {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                align-items: center;
-                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
                 font-size: 12px;
                 color: #444;
             }
-            .be-schema-validator-context .badge {
-                background: #f0f4f8;
+            .be-schema-context-line {
+                background: #eef2f5;
                 border-radius: 999px;
-                padding: 3px 10px;
+                padding: 6px 10px;
                 display: inline-flex;
                 align-items: center;
                 gap: 6px;
+                width: fit-content;
             }
-            .be-schema-validator-context .label {
-                font-weight: 600;
+            .be-schema-context-line .label {
+                font-weight: 700;
+                color: #2c3e50;
             }
             .be-schema-validator-select-wrap {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
                 min-width: 260px;
+                width: 100%;
             }
             .be-schema-validator-select-wrap select,
             .be-schema-validator-select-wrap input[type="text"] {
                 min-width: 260px;
+                width: 100%;
             }
             .be-schema-validator-search input[type="text"] {
-                width: 220px;
+                width: 100%;
+                min-width: 260px;
             }
             .be-schema-validator-actions {
-                margin-left: auto;
                 display: flex;
-                align-items: center;
+                flex-direction: column;
                 gap: 8px;
+                align-items: flex-start;
+            }
+            .be-schema-validator-actions button {
+                min-width: 130px;
             }
             .be-schema-validator-platforms label {
                 margin-right: 8px;
+                margin-bottom: 2px;
+            }
+            .be-schema-engine-box {
+                background: #eef2f5;
+                border-radius: 8px;
+                padding: 10px 12px;
+                display: inline-flex;
+                flex-wrap: wrap;
+                gap: 10px 16px;
+                align-items: center;
+                width: auto;
+            }
+            .be-schema-engine-box .be-schema-validator-platforms {
+                margin: 0;
+            }
+            .be-schema-engine-row {
+                display: flex;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            .be-schema-engine-col {
+                flex: 0 1 auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .be-schema-validator-rowline {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                align-items: center;
+                white-space: nowrap;
+            }
+            .be-schema-validator-rowline label {
+                margin-right: 8px;
+                white-space: nowrap;
+            }
+            .be-schema-engine-box label {
+                white-space: nowrap;
             }
             .be-schema-validator-grid {
                 display: grid;
@@ -857,50 +936,78 @@ function be_schema_engine_render_tools_page() {
             <p class="description">
                 <?php esc_html_e( 'Validate Open Graph and Twitter Cards with live previews and source mapping.', 'beseo' ); ?>
             </p>
-            <div class="be-schema-validator-top">
-                <div class="be-schema-validator-row">
-                    <div class="be-schema-validator-mode">
-                        <label><input type="radio" name="be_schema_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Site Page', 'beseo' ); ?></label>
-                        <label style="margin-left:12px;"><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                    </div>
-                    <div class="be-schema-validator-search">
-                        <label class="screen-reader-text" for="be-schema-validator-search"><?php esc_html_e( 'Search pages/posts', 'beseo' ); ?></label>
-                        <input type="text" id="be-schema-validator-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search pages/posts', 'beseo' ); ?>" />
-                        <label style="margin-left:8px;"><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
-                    </div>
-                    <div class="be-schema-validator-actions">
-                        <div class="be-schema-validator-type">
-                            <label><input type="radio" name="be_schema_validator_type" value="native" checked /> <?php esc_html_e( 'Native/Internal', 'beseo' ); ?></label>
-                            <label style="margin-left:12px;"><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
+            <div class="be-schema-validator-header">
+                <div class="be-schema-header-titles">
+                    <div><?php esc_html_e( 'Source', 'beseo' ); ?></div>
+                    <div><?php esc_html_e( 'Engine', 'beseo' ); ?></div>
+                    <div><?php esc_html_e( 'Action', 'beseo' ); ?></div>
+                    <div><?php esc_html_e( 'Messages', 'beseo' ); ?></div>
+                </div>
+                <div class="be-schema-header-grid">
+                    <div class="be-schema-header-section">
+                        <div class="be-schema-validator-rowline">
+                            <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                            <label><input type="radio" name="be_schema_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Site Page', 'beseo' ); ?></label>
+                            <label style="margin-left:-10px;"><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
                         </div>
-                        <label style="margin-right:12px;"><input type="checkbox" id="be-schema-validator-crops" /> <?php esc_html_e( 'Possible Crops', 'beseo' ); ?></label>
-                        <button type="button" class="button button-primary" id="be-schema-validator-run" disabled><?php esc_html_e( 'Validate', 'beseo' ); ?></button>
+                        <div class="be-schema-validator-select-wrap">
+                            <select id="be-schema-validator-select" class="regular-text"></select>
+                            <input type="text" id="be-schema-validator-manual" class="regular-text" placeholder="https://" style="display:none;" />
+                        </div>
+                        <div class="be-schema-validator-search">
+                            <label class="screen-reader-text" for="be-schema-validator-search"><?php esc_html_e( 'Search pages/posts', 'beseo' ); ?></label>
+                            <input type="text" id="be-schema-validator-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search pages/posts', 'beseo' ); ?>" />
+                        </div>
+                    </div>
+                    <div class="be-schema-header-section">
+                        <div class="be-schema-engine-row">
+                            <div class="be-schema-engine-col">
+                                <div class="be-schema-validator-rowline">
+                                    <label><input type="radio" name="be_schema_validator_type" value="native" checked /> <?php esc_html_e( 'Native Validation', 'beseo' ); ?></label>
+                                </div>
+                                <div class="be-schema-engine-box">
+                                    <div class="be-schema-validator-platforms">
+                                        <label><input type="checkbox" id="be-schema-validator-og" checked /> <?php esc_html_e( 'Open Graph', 'beseo' ); ?></label>
+                                        <label><input type="checkbox" id="be-schema-validator-twitter" checked /> <?php esc_html_e( 'Twitter Cards', 'beseo' ); ?></label>
+                                    </div>
+                                </div>
+                                <label><input type="checkbox" id="be-schema-validator-crops" /> <?php esc_html_e( 'Possible Crops', 'beseo' ); ?></label>
+                            </div>
+                                <div class="be-schema-engine-col">
+                                    <div class="be-schema-validator-rowline">
+                                        <label><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
+                                    </div>
+                                    <div class="be-schema-engine-box" style="flex-direction: column; align-items: flex-start;">
+                                        <label><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy Source URL to Clipboard', 'beseo' ); ?></label>
+                                        <label><input type="checkbox" id="be-schema-validator-open-new" disabled /> <?php esc_html_e( 'Open and Switch to New Tab', 'beseo' ); ?></label>
+                                    <select id="be-schema-validator-service" style="min-width:200px; margin-top:8px;" disabled>
+                                        <option value=""><?php esc_html_e( 'Choose a service', 'beseo' ); ?></option>
+                                        <option value="twitter" data-url="https://cards-dev.twitter.com/validator"><?php esc_html_e( 'Twitter Card Validator', 'beseo' ); ?></option>
+                                        <option value="facebook" data-url="https://developers.facebook.com/tools/debug/"><?php esc_html_e( 'Facebook Sharing Debugger', 'beseo' ); ?></option>
+                                        <option value="linkedin" data-url="https://www.linkedin.com/post-inspector/inspect/"><?php esc_html_e( 'LinkedIn Post Inspector', 'beseo' ); ?></option>
+                                        <option disabled>──────────</option>
+                                        <option value="metatags" data-url="https://metatags.io"><?php esc_html_e( 'Metatags', 'beseo' ); ?></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="be-schema-header-section">
+                        <div class="be-schema-validator-actions">
+                            <button type="button" class="button button-primary" id="be-schema-validator-run" disabled><?php esc_html_e( 'Validate', 'beseo' ); ?></button>
+                            <button type="button" class="button" id="be-schema-validator-rerun" disabled><?php esc_html_e( 'Re-run', 'beseo' ); ?></button>
+                        </div>
+                    </div>
+                    <div class="be-schema-header-section">
+                        <div class="be-schema-validator-context" id="be-schema-validator-context">
+                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Result', 'beseo' ); ?>:</span> <span id="be-schema-context-result">—</span></span>
+                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
+                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
+                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
+                        </div>
+                        <p class="description" id="be-schema-validator-note" style="margin-top:6px;"></p>
                     </div>
                 </div>
-                <div class="be-schema-validator-row">
-                    <div class="be-schema-validator-select-wrap">
-                        <select id="be-schema-validator-select" class="regular-text"></select>
-                        <input type="text" id="be-schema-validator-manual" class="regular-text" placeholder="https://" style="display:none;" />
-                    </div>
-                    <div class="be-schema-validator-platforms">
-                        <label><input type="checkbox" id="be-schema-validator-og" checked /> <?php esc_html_e( 'Open Graph', 'beseo' ); ?></label>
-                        <label style="margin-left:12px;"><input type="checkbox" id="be-schema-validator-twitter" checked /> <?php esc_html_e( 'Twitter Cards', 'beseo' ); ?></label>
-                        <select id="be-schema-validator-service" style="margin-left:12px; min-width:180px;" disabled>
-                            <option value=""><?php esc_html_e( 'Select a service', 'beseo' ); ?></option>
-                            <option value="twitter" data-url="https://cards-dev.twitter.com/validator"><?php esc_html_e( 'Twitter Card Validator', 'beseo' ); ?></option>
-                            <option value="facebook" data-url="https://developers.facebook.com/tools/debug/"><?php esc_html_e( 'Facebook Sharing Debugger', 'beseo' ); ?></option>
-                        </select>
-                        <label style="margin-left:12px;"><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy source to clipboard', 'beseo' ); ?></label>
-                    </div>
-                </div>
-                <div class="be-schema-validator-context" id="be-schema-validator-context">
-                    <span class="badge"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
-                    <span class="badge"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
-                    <span class="badge"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
-                    <span class="badge"><span class="label"><?php esc_html_e( 'Result', 'beseo' ); ?>:</span> <span id="be-schema-context-result">—</span></span>
-                    <button type="button" class="button" id="be-schema-validator-rerun" disabled><?php esc_html_e( 'Re-run', 'beseo' ); ?></button>
-                </div>
-                <p class="description" id="be-schema-validator-note"></p>
             </div>
             <div class="be-schema-validator-grid">
                 <div class="be-schema-validator-card">
@@ -995,6 +1102,7 @@ function be_schema_engine_render_tools_page() {
                     var cropsCheckbox = document.getElementById('be-schema-validator-crops');
                     var serviceSelect = document.getElementById('be-schema-validator-service');
                     var copyCheckbox = document.getElementById('be-schema-validator-copy');
+                    var openNewCheckbox = document.getElementById('be-schema-validator-open-new');
                     var validateBtn = document.getElementById('be-schema-validator-run');
                     var reRunBtn = document.getElementById('be-schema-validator-rerun');
                     var validatorNote = document.getElementById('be-schema-validator-note');
@@ -1138,6 +1246,9 @@ function be_schema_engine_render_tools_page() {
                     if (validatorManual) {
                         validatorManual.style.display = (mode === 'manual') ? 'inline-block' : 'none';
                     }
+                    if (includePosts) {
+                        includePosts.disabled = (mode !== 'dropdown');
+                    }
                     updateButtonState();
                 }
 
@@ -1149,6 +1260,7 @@ function be_schema_engine_render_tools_page() {
                     if (cropsCheckbox) { cropsCheckbox.disabled = !isNative; }
                     if (serviceSelect) { serviceSelect.disabled = isNative; }
                     if (copyCheckbox) { copyCheckbox.disabled = isNative; }
+                    if (openNewCheckbox) { openNewCheckbox.disabled = isNative; }
                     updateButtonState();
                 }
 
@@ -1399,7 +1511,8 @@ function be_schema_engine_render_tools_page() {
                             navigator.clipboard.writeText(url);
                         }
                         if (svcUrl) {
-                            window.open(svcUrl, '_blank', 'noopener,noreferrer');
+                            var target = (openNewCheckbox && openNewCheckbox.checked) ? '_blank' : '_self';
+                            window.open(svcUrl, target, 'noopener,noreferrer');
                             if (validatorNote) {
                                 validatorNote.textContent = '<?php echo esc_js( __( 'Opening external validator…', 'beseo' ) ); ?>';
                             }
