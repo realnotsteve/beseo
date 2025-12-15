@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.0.0",
+    "version": "2.0.2",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -23,7 +23,7 @@
     "pre_commit": {
       "hook_path": ".githooks/pre-commit",
       "enable_command": "git config core.hooksPath .githooks",
-      "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates beseo.php and BE_SEO-Dev_Notes.json, and prepends a changelog entry listing staged files.",
+      "behavior": "On commit, auto-bumps the version (BESEO_BUMP=minor|patch; default patch), updates beseo.php and beseo-devnotes.json, and prepends a changelog entry listing staged files.",
       "changelog": "CHANGELOG.md is auto-maintained by the pre-commit hook.",
       "description_logic": "Changelog summary line is prefixed with 'Summary:' and capitalizes the first letter of the summary text (BESEO_CHANGELOG_DESC overrides). Sections (Added/Changed/Fixed/Removed/Security/Upgrade Notes) render only when populated, and the staged file list appears under Files only. Header uses an HTML <hr /> divider and the Overview changelog renderer converts --- or <hr> lines into a styled horizontal rule.",
       "runtime": "Requires python3 (preferred) or python in PATH; hook exits if neither is available."
@@ -420,7 +420,7 @@
     "Schema optional dropdowns now use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels."
   ],
   "ui_notes_tools": [
-    "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema → WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
+    "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema \u2192 WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
   ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",

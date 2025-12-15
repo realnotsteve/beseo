@@ -21,7 +21,7 @@ if [[ "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
 fi
 
 VERSION_FILE="beseo.php"
-NOTES_FILE="BE_SEO-Dev_Notes.json"
+NOTES_FILE="beseo-devnotes.json"
 CHANGELOG_FILE="CHANGELOG.md"
 
 if [[ ! -f "$VERSION_FILE" ]]; then
@@ -101,7 +101,7 @@ def categorize(files):
             add_part("tooling")
         if f.startswith("tests/"):
             add_part("tests")
-        if f in ("beseo-devnotes.json", "BE_SEO-Dev_Notes.json"):
+        if f == "beseo-devnotes.json":
             add_part("devnotes")
     return parts
 

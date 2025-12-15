@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.0.2] - 2025-12-14
+Summary: Tooling + devnotes.
+
+### Changed
+- Touched areas: tooling, devnotes.
+
+### Files
+- .githooks/pre-commit
+- .githooks/prepare-commit-msg
+- BE_SEO-Dev_Notes.json
+- CHANGELOG.md
+- beseo-devnotes.json
+
+
 ## [2.0.1] - 2025-12-14
 Summary: Devnotes + engine.
 
@@ -11,28 +25,12 @@ Summary: Devnotes + engine.
 - Touched areas: devnotes, engine.
 
 ### Files
-- BE_SEO-Dev_Notes.json
 - CHANGELOG.md
 - beseo-devnotes.json
 - beseo.php
 - includes/engine/core-site-entities.php
 - includes/engine/core-social-settings.php
 - includes/engine/core-social.php
-
-
-## [2.0.0] - 2025-12-14
-Summary: Schema/social fixes + devnotes sync.
-
-### Changed
-- Touched areas: schema engine, social engine, devnotes.
-
-### Files
-- beseo.php
-- includes/engine/core-site-entities.php
-- includes/engine/core-social-settings.php
-- includes/engine/core-social.php
-- BE_SEO-Dev_Notes.json
-- beseo-devnotes.json
 
 
 ## [1.3.76] - 2025-12-14
@@ -42,7 +40,7 @@ Summary: Devnotes.
 - Touched areas: devnotes.
 
 ### Files
-- BE_SEO-Dev_Notes.json
+- beseo-devnotes.json
 
 
 ## [1.3.75] - 2025-12-14
@@ -187,7 +185,6 @@ Summary: Tooling + devnotes.
 
 ### Files
 - .githooks/prepare-commit-msg
-- BE_SEO-Dev_Notes.json
 - CHANGELOG.md
 - beseo-devnotes.json
 - beseo.php
@@ -302,4 +299,3 @@ Summary: Schema admin.
 
 ### Files
 - includes/admin/page-schema.php
-

@@ -65,7 +65,7 @@ else
     [[ "$f" == includes/engine/* ]] && add_part "engine"
     [[ "$f" == .githooks/* ]] && add_part "tooling"
     [[ "$f" == tests/* ]] && add_part "tests"
-    [[ "$f" == beseo-devnotes.json || "$f" == BE_SEO-Dev_Notes.json ]] && add_part "devnotes"
+    [[ "$f" == beseo-devnotes.json ]] && add_part "devnotes"
   done <<<"$staged_files"
 
   if [[ ${#summary_parts[@]} -eq 0 ]]; then
