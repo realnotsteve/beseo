@@ -30,6 +30,10 @@ function be_schema_social_get_default_settings() {
 		'twitter_dry_run' => '0',
 
 		// Default images (attachment IDs or URLs depending on UI).
+		'social_default_image'     => '',
+		'facebook_default_image'   => '',
+		'twitter_default_image'    => '',
+		'twitter_default_image_alt'=> '',
 		'default_facebook_image_id' => '',
 		'default_twitter_image_id'  => '',
 		'default_global_image_id'   => '',

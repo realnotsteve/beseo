@@ -235,24 +235,36 @@ function be_schema_social_get_featured_image_url() {
  *
  * @return string
  */
-function be_schema_social_get_default_image_url_from_settings( $id_key ) {
-	$settings = be_schema_social_get_settings();
+function be_schema_social_get_image_url_from_settings( $settings, $keys ) {
+	foreach ( (array) $keys as $key ) {
+		if ( ! isset( $settings[ $key ] ) ) {
+			continue;
+		}
 
-	if ( empty( $settings[ $id_key ] ) ) {
-		return '';
+		$value = $settings[ $key ];
+
+		// Attachment ID.
+		if ( false !== strpos( $key, '_id' ) ) {
+			$attachment_id = (int) $value;
+			if ( ! $attachment_id ) {
+				continue;
+			}
+
+			$src = wp_get_attachment_image_src( $attachment_id, 'full' );
+			if ( $src && ! empty( $src[0] ) ) {
+				return (string) $src[0];
+			}
+			continue;
+		}
+
+		// URL string.
+		$url = esc_url_raw( trim( (string) $value ) );
+		if ( '' !== $url ) {
+			return $url;
+		}
 	}
 
-	$attachment_id = (int) $settings[ $id_key ];
-	if ( ! $attachment_id ) {
-		return '';
-	}
-
-	$src = wp_get_attachment_image_src( $attachment_id, 'full' );
-	if ( ! $src || empty( $src[0] ) ) {
-		return '';
-	}
-
-	return (string) $src[0];
+	return '';
 }
 
 /**
@@ -266,6 +278,8 @@ function be_schema_social_get_default_image_url_from_settings( $id_key ) {
  * @return string
  */
 function be_schema_social_get_og_image_url() {
+	$settings = be_schema_social_get_settings();
+
 	// 1. Featured image first.
 	$featured = be_schema_social_get_featured_image_url();
 	if ( $featured ) {
@@ -273,13 +287,19 @@ function be_schema_social_get_og_image_url() {
 	}
 
 	// 2. Default Facebook image.
-	$fb_default = be_schema_social_get_default_image_url_from_settings( 'default_facebook_image_id' );
+	$fb_default = be_schema_social_get_image_url_from_settings(
+		$settings,
+		array( 'default_facebook_image_id', 'facebook_default_image' )
+	);
 	if ( $fb_default ) {
 		return $fb_default;
 	}
 
 	// 3. Global default.
-	$global_default = be_schema_social_get_default_image_url_from_settings( 'default_global_image_id' );
+	$global_default = be_schema_social_get_image_url_from_settings(
+		$settings,
+		array( 'default_global_image_id', 'social_default_image', 'global_default_image' )
+	);
 	if ( $global_default ) {
 		return $global_default;
 	}
@@ -298,6 +318,8 @@ function be_schema_social_get_og_image_url() {
  * @return string
  */
 function be_schema_social_get_twitter_image_url() {
+	$settings = be_schema_social_get_settings();
+
 	// 1. Featured image first.
 	$featured = be_schema_social_get_featured_image_url();
 	if ( $featured ) {
@@ -305,13 +327,19 @@ function be_schema_social_get_twitter_image_url() {
 	}
 
 	// 2. Default Twitter image.
-	$tw_default = be_schema_social_get_default_image_url_from_settings( 'default_twitter_image_id' );
+	$tw_default = be_schema_social_get_image_url_from_settings(
+		$settings,
+		array( 'default_twitter_image_id', 'twitter_default_image', 'twitter_default_image_alt' )
+	);
 	if ( $tw_default ) {
 		return $tw_default;
 	}
 
 	// 3. Global default.
-	$global_default = be_schema_social_get_default_image_url_from_settings( 'default_global_image_id' );
+	$global_default = be_schema_social_get_image_url_from_settings(
+		$settings,
+		array( 'default_global_image_id', 'social_default_image', 'global_default_image' )
+	);
 	if ( $global_default ) {
 		return $global_default;
 	}

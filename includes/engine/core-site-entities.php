@@ -233,8 +233,15 @@ function be_schema_get_site_entities() {
         }
 
         // Person sameAs: from textarea, one URL per line.
+        $person_sameas_source = null;
         if ( ! empty( $settings['person_sameas'] ) ) {
-            $lines = preg_split( '/\r\n|\r|\n/', (string) $settings['person_sameas'] );
+            $person_sameas_source = $settings['person_sameas'];
+        } elseif ( ! empty( $settings['person_sameas_raw'] ) ) {
+            $person_sameas_source = $settings['person_sameas_raw'];
+        }
+
+        if ( null !== $person_sameas_source ) {
+            $lines = preg_split( '/\r\n|\r|\n/', (string) $person_sameas_source );
             $urls  = be_schema_engine_normalize_url_list( $lines );
             if ( ! empty( $urls ) ) {
                 $person_node['sameAs'] = $urls;
@@ -244,7 +251,7 @@ function be_schema_get_site_entities() {
 
     /**
      * ---------------------------------------------------------------------
-     * Organisation (#organization)
+     * Organisation (#organisation)
      * ---------------------------------------------------------------------
      */
     $organization_node  = null;
@@ -252,10 +259,12 @@ function be_schema_get_site_entities() {
     $organization_name  = ! empty( $settings['org_name'] ) ? $settings['org_name'] : $site_name;
     $organization_legal = ! empty( $settings['org_legal_name'] ) ? $settings['org_legal_name'] : '';
 
-    if ( ! empty( $settings['org_enabled'] ) ) {
+    $organization_enabled = ! empty( $settings['organization_enabled'] );
+
+    if ( $organization_enabled ) {
         $organization_node = array(
             '@type' => 'Organization',
-            '@id'   => $site_url . '#organization',
+            '@id'   => $site_url . '#organisation',
             'name'  => $organization_name,
             'url'   => $organization_url,
         );
@@ -296,11 +305,11 @@ function be_schema_get_site_entities() {
     $publisher_ref       = null;
 
     $publisher_enabled        = ! empty( $settings['publisher_enabled'] );
-    $publisher_use_custom_org = ! empty( $settings['publisher_use_custom_org'] );
+    $publisher_use_custom_org = $publisher_enabled && ! empty( $settings['publisher_dedicated_enabled'] );
 
     if ( $publisher_enabled && $publisher_use_custom_org ) {
-        $publisher_name = ! empty( $settings['publisher_name'] ) ? $settings['publisher_name'] : $organization_name;
-        $publisher_url  = ! empty( $settings['publisher_url'] ) ? esc_url_raw( $settings['publisher_url'] ) : $organization_url;
+        $publisher_name = ! empty( $settings['publisher_custom_name'] ) ? $settings['publisher_custom_name'] : $organization_name;
+        $publisher_url  = ! empty( $settings['publisher_custom_url'] ) ? esc_url_raw( $settings['publisher_custom_url'] ) : $organization_url;
 
         $publisher_node = array(
             '@type' => 'Organization',
@@ -309,9 +318,29 @@ function be_schema_get_site_entities() {
             'url'   => $publisher_url,
         );
 
-        // Custom publisher logo.
-        if ( ! empty( $settings['publisher_logo'] ) ) {
-            $publisher_logo_node = be_schema_engine_build_image_object( $settings['publisher_logo'], '#publisher-logo' );
+        // Custom publisher logo (dedicated block images take precedence, then custom logo, then shared site logo).
+        $publisher_logo_candidates = array(
+            $settings['publisher_image_1_1'] ?? '',
+            $settings['publisher_image_16_9'] ?? '',
+            $settings['publisher_image_4_3'] ?? '',
+            $settings['publisher_image_3_4'] ?? '',
+            $settings['publisher_image_9_16'] ?? '',
+            $settings['publisher_custom_logo'] ?? '',
+        );
+
+        foreach ( $publisher_logo_candidates as $candidate_logo ) {
+            if ( ! empty( $candidate_logo ) ) {
+                $publisher_logo_node = be_schema_engine_build_image_object( $candidate_logo, '#publisher-logo' );
+                if ( $publisher_logo_node ) {
+                    break;
+                }
+            }
+        }
+
+        // Fallback to the shared site logo if nothing else was provided.
+        if ( ! $publisher_logo_node && $logo_node ) {
+            $publisher_logo_node = $logo_node;
+            $publisher_logo_node['@id'] = $logo_node['contentUrl'] . '#publisher-logo';
         }
 
         if ( $publisher_logo_node ) {
