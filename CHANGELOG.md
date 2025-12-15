@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.0.15] - 2025-12-15
+Summary: Devnotes + social admin.
+
+### Changed
+- Touched areas: devnotes, social admin.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/page-social-media.php
+
+
+## [2.0.13] - 2025-12-15
+Summary: Twitter validator button fallback.
+
+### Changed
+- Added load/fallback logic and clearer note for the Twitter Card Validator embed; auto-opens a new tab if embedding is blocked.
+- Versions bumped to 2.0.13.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+
+## [2.0.14] - 2025-12-15
+Summary: Twitter Tools validator UI revamp.
+
+### Changed
+- Removed the iframe attempt; added BESEO Validator button with dropdown/manual URL selection and a backup button for Twitter’s validator.
+- Added mode toggle (site page vs manual URL) with inline feedback.
+
+### Files
+- includes/admin/page-social-media.php
+
+
+## [2.0.12] - 2025-12-15
+Summary: Twitter validator buttons + embed load.
+
+### Changed
+- Twitter > Tools now offers buttons to load the Card Validator in-panel or in a new tab; the iframe starts blank until loaded.
+- Versions bumped to 2.0.12.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+
+
+## [2.0.11] - 2025-12-15
+Summary: Twitter Tools default to validator.
+
+### Changed
+- Twitter > Tools now opens with the Tools subtab active so the Card Validator iframe is immediately visible.
+- Versions bumped to 2.0.11.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+
+
 ## [2.0.10] - 2025-12-15
 Summary: Social admin.
 
