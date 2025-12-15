@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.0.10] - 2025-12-15
+Summary: Social admin.
+
+### Changed
+- Touched areas: social admin.
+
+### Files
+- includes/admin/js/be-twitter-handles.js
+- includes/admin/page-social-media.php
+
+
 ## [2.0.9] - 2025-12-15
 Summary: Devnotes + schema admin + social admin.
 

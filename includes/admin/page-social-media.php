@@ -197,6 +197,9 @@ function be_schema_engine_save_social_settings() {
     $settings['twitter_optional'] = isset( $_POST['be_schema_twitter_optional'] )
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_optional'] ) )
         : '';
+    $settings['twitter_site']    = isset( $_POST['be_schema_twitter_site'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_site'] ) ) : '';
+    $settings['twitter_creator'] = isset( $_POST['be_schema_twitter_creator'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_creator'] ) ) : '';
+    $settings['twitter_image_alt'] = isset( $_POST['be_schema_twitter_image_alt'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_image_alt'] ) ) : '';
 
     update_option( 'be_schema_social_settings', $settings );
 
@@ -224,6 +227,13 @@ function be_schema_engine_render_social_media_page() {
     wp_enqueue_script(
         'be-schema-optional-fields',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-optional-fields.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+    wp_enqueue_script(
+        'be-schema-twitter-handles',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-twitter-handles.js',
         array(),
         BE_SCHEMA_ENGINE_VERSION,
         true
@@ -274,6 +284,9 @@ function be_schema_engine_render_social_media_page() {
     $facebook_images_optional_raw = isset( $settings['facebook_images_optional'] ) ? $settings['facebook_images_optional'] : '';
 
     $twitter_handle        = isset( $settings['twitter_handle'] ) ? $settings['twitter_handle'] : '';
+    $twitter_site          = isset( $settings['twitter_site'] ) ? $settings['twitter_site'] : '';
+    $twitter_creator       = isset( $settings['twitter_creator'] ) ? $settings['twitter_creator'] : '';
+    $twitter_image_alt     = isset( $settings['twitter_image_alt'] ) ? $settings['twitter_image_alt'] : '';
     $twitter_card_type     = isset( $settings['twitter_card_type'] ) ? $settings['twitter_card_type'] : 'summary_large_image';
     $twitter_default_image = isset( $settings['twitter_default_image'] ) ? $settings['twitter_default_image'] : '';
     $twitter_default_image_alt = isset( $settings['twitter_default_image_alt'] ) ? $settings['twitter_default_image_alt'] : '';
@@ -370,12 +383,15 @@ function be_schema_engine_render_social_media_page() {
             )
         );
     }
-    if ( ! empty( $twitter_handle ) && ! in_array( 'twitter_handle', $twitter_optional_props, true ) ) {
-        $twitter_optional_props[] = 'twitter_handle';
+    // Always include the new keys when values exist.
+    if ( ! empty( $twitter_site ) && ! in_array( 'twitter_site', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_site';
     }
-    $twitter_optional_props = array_diff( $twitter_optional_props, array( 'twitter_default_image' ) );
-    if ( ! empty( $twitter_notes ) && ! in_array( 'twitter_notes', $twitter_optional_props, true ) ) {
-        $twitter_optional_props[] = 'twitter_notes';
+    if ( ! empty( $twitter_creator ) && ! in_array( 'twitter_creator', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_creator';
+    }
+    if ( ! empty( $twitter_image_alt ) && ! in_array( 'twitter_image_alt', $twitter_optional_props, true ) ) {
+        $twitter_optional_props[] = 'twitter_image_alt';
     }
     $twitter_optional_serialized = implode( ',', $twitter_optional_props );
 
@@ -663,6 +679,10 @@ function be_schema_engine_render_social_media_page() {
                 margin-bottom: 16px;
                 background: #f9fafb;
                 color: #111;
+            }
+            .be-schema-social-panel-disabled {
+                opacity: 0.55;
+                pointer-events: none;
             }
 
             .be-schema-social-section-title {
@@ -1249,7 +1269,7 @@ function be_schema_engine_render_social_media_page() {
                                     <a href="#be-schema-twitter-content"
                                        class="be-schema-social-subtab"
                                        data-twitter-tab="content">
-                                        <?php esc_html_e( 'Content', 'beseo' ); ?>
+                                        <?php esc_html_e( 'Cards', 'beseo' ); ?>
                                     </a>
                                 </li>
                                 <li>
@@ -1301,7 +1321,7 @@ function be_schema_engine_render_social_media_page() {
 
                             <div id="be-schema-twitter-content" class="be-schema-social-panel">
                                 <div class="be-schema-social-section">
-                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Content', 'beseo' ); ?></h4>
+                                    <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Cards', 'beseo' ); ?></h4>
                                     <table class="form-table">
                                         <tbody>
                                             <tr class="be-schema-optional-row">
@@ -1312,12 +1332,13 @@ function be_schema_engine_render_social_media_page() {
                                                     <div class="be-schema-optional-controls"
                                                          data-optional-scope="twitter"
                                                          data-optional-hidden="be_schema_twitter_optional"
-                                                         data-optional-singleton="twitter_handle,twitter_notes">
+                                                         data-optional-singleton="twitter_site,twitter_creator,twitter_image_alt">
                                                         <label class="screen-reader-text" for="be-schema-twitter-optional"><?php esc_html_e( 'Add optional Twitter property', 'beseo' ); ?></label>
                                                         <select id="be-schema-twitter-optional" aria-label="<?php esc_attr_e( 'Add optional Twitter property', 'beseo' ); ?>">
                                                             <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
-                                                            <option value="twitter_handle"><?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?></option>
-                                                            <option value="twitter_notes"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></option>
+                                                            <option value="twitter_site"><?php esc_html_e( '@Your Handle', 'beseo' ); ?></option>
+                                                            <option value="twitter_creator"><?php esc_html_e( '@Author Handle', 'beseo' ); ?></option>
+                                                            <option value="twitter_image_alt"><?php esc_html_e( 'Accessible Image Description', 'beseo' ); ?></option>
                                                         </select>
                                                         <button type="button"
                                                                 class="button be-schema-optional-add"
@@ -1329,33 +1350,49 @@ function be_schema_engine_render_social_media_page() {
                                                     </div>
 
                                                     <div class="be-schema-optional-fields" id="be-schema-twitter-optional-fields">
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_handle', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_handle">
-                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="twitter_handle">−</button>
-                                                            <label for="be_schema_twitter_handle" class="screen-reader-text"><?php esc_html_e( 'Twitter Handle (Without @)', 'beseo' ); ?></label>
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_site', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_site">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="twitter_site">−</button>
+                                                            <label for="be_schema_twitter_site" class="screen-reader-text"><?php esc_html_e( 'Twitter Site Handle', 'beseo' ); ?></label>
                                                             <input type="text"
-                                                                   name="be_schema_twitter_handle"
-                                                                   id="be_schema_twitter_handle"
-                                                                   value="<?php echo esc_attr( $twitter_handle ); ?>"
+                                                                   name="be_schema_twitter_site"
+                                                                   id="be_schema_twitter_site"
+                                                                   value="<?php echo esc_attr( $twitter_site ); ?>"
                                                                    class="regular-text" />
                                                             <p class="description be-schema-social-description">
                                                                 <?php esc_html_e(
-                                                                    'Used to populate twitter:site and twitter:creator (with @ prefix) when Twitter Cards are enabled.',
+                                                                    'Outputs <meta name="twitter:site" content="@…"> using this handle (with @ added if missing).',
                                                                     'beseo'
                                                                 ); ?>
                                                             </p>
                                                         </div>
 
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_notes', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_notes">
-                                                            <button type="button" class="button-link be-schema-optional-remove" data-optional-remove="twitter_notes">−</button>
-                                                            <label for="be_schema_twitter_notes" class="screen-reader-text"><?php esc_html_e( 'Notes (Admin-Only)', 'beseo' ); ?></label>
-                                                            <textarea
-                                                                name="be_schema_twitter_notes"
-                                                                id="be_schema_twitter_notes"
-                                                                rows="4"
-                                                                class="large-text code"><?php echo esc_textarea( $twitter_notes ); ?></textarea>
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_creator', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_creator">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="twitter_creator">−</button>
+                                                            <label for="be_schema_twitter_creator" class="screen-reader-text"><?php esc_html_e( 'Twitter Creator Handle', 'beseo' ); ?></label>
+                                                            <input type="text"
+                                                                   name="be_schema_twitter_creator"
+                                                                   id="be_schema_twitter_creator"
+                                                                   value="<?php echo esc_attr( $twitter_creator ); ?>"
+                                                                   class="regular-text" />
                                                             <p class="description be-schema-social-description">
                                                                 <?php esc_html_e(
-                                                                    'Free-form notes for your own reference. This is never output on the front end.',
+                                                                    'Outputs <meta name="twitter:creator" content="@…"> using this handle (with @ added if missing).',
+                                                                    'beseo'
+                                                                ); ?>
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="be-schema-optional-field<?php echo in_array( 'twitter_image_alt', $twitter_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="twitter_image_alt">
+                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="twitter_image_alt">−</button>
+                                                            <label for="be_schema_twitter_image_alt" class="screen-reader-text"><?php esc_html_e( 'Twitter Image Alt Text', 'beseo' ); ?></label>
+                                                            <input type="text"
+                                                                   name="be_schema_twitter_image_alt"
+                                                                   id="be_schema_twitter_image_alt"
+                                                                   value="<?php echo esc_attr( $twitter_image_alt ); ?>"
+                                                                   class="regular-text" />
+                                                            <p class="description be-schema-social-description">
+                                                                <?php esc_html_e(
+                                                                    'Outputs <meta name="twitter:image:alt" content="..."> when provided.',
                                                                     'beseo'
                                                                 ); ?>
                                                             </p>
@@ -1627,6 +1664,8 @@ function be_schema_engine_render_social_media_page() {
                 // Twitter vertical subtabs.
                 var twLinks = document.querySelectorAll('.be-schema-social-subtab[data-twitter-tab]');
                 var twPanels = document.querySelectorAll('#be-schema-social-tab-twitter .be-schema-social-panel');
+                var twEnableCheckbox = document.querySelector('input[name="be_schema_twitter_enabled"]');
+                var twContentPanel = document.getElementById('be-schema-twitter-content');
 
                 function activateTwitterTab(tabKey) {
                     twLinks.forEach(function (link) {
@@ -1653,6 +1692,24 @@ function be_schema_engine_render_social_media_page() {
                         activateTwitterTab(tabKey);
                     });
                 });
+
+                function toggleTwitterCards(enabled) {
+                    if (!twContentPanel) {
+                        return;
+                    }
+                    var inputs = twContentPanel.querySelectorAll('input, select, textarea, button');
+                    inputs.forEach(function (el) {
+                        el.disabled = !enabled;
+                    });
+                    twContentPanel.classList.toggle('be-schema-social-panel-disabled', !enabled);
+                }
+
+                if (twEnableCheckbox) {
+                    toggleTwitterCards(twEnableCheckbox.checked);
+                    twEnableCheckbox.addEventListener('change', function () {
+                        toggleTwitterCards(twEnableCheckbox.checked);
+                    });
+                }
 
                 if (window.beSchemaInitAllOptionalGroups) {
                     window.beSchemaInitAllOptionalGroups();
