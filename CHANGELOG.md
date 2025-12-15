@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
-## [2.0.15] - 2025-12-15
+## [2.0.18] - 2025-12-15
 Summary: Devnotes + social admin.
 
 ### Changed
@@ -15,6 +15,37 @@ Summary: Devnotes + social admin.
 - beseo-devnotes.json
 - beseo.php
 - includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+
+
+## [2.0.17] - 2025-12-15
+Summary: Tools Validator UI + server-side validation.
+
+### Added
+- New Validator tab layout with previews, source map, warnings, optional posts, search, manual URL mode, and crop overlays.
+- Server-side validator that fetches pages/images, resolves platform sources, and flags Twitter downgrade, type, and aspect-ratio issues.
+
+### Changed
+- Tools now defaults to the Validator tab; Twitter Tools points users to the Validator.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+
+## [2.0.16] - 2025-12-15
+Summary: Tools Validator tab + cleanup.
+
+### Changed
+- Added a Validator tab under Tools with dropdown/manual URL selection and buttons for BESEO validator and Twitter’s validator (new tab).
+- Removed the Twitter Tools embed/controls; Twitter Tools now points users to Tools → Validator.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
 
 
 ## [2.0.13] - 2025-12-15

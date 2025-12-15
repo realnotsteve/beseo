@@ -284,11 +284,6 @@ function be_schema_engine_render_social_media_page() {
     $facebook_images_optional_raw = isset( $settings['facebook_images_optional'] ) ? $settings['facebook_images_optional'] : '';
 
     $twitter_handle        = isset( $settings['twitter_handle'] ) ? $settings['twitter_handle'] : '';
-    $twitter_validator_pages = get_pages(
-        array(
-            'post_status' => 'publish',
-        )
-    );
     $twitter_site          = isset( $settings['twitter_site'] ) ? $settings['twitter_site'] : '';
     $twitter_creator       = isset( $settings['twitter_creator'] ) ? $settings['twitter_creator'] : '';
     $twitter_image_alt     = isset( $settings['twitter_image_alt'] ) ? $settings['twitter_image_alt'] : '';
@@ -1527,32 +1522,10 @@ function be_schema_engine_render_social_media_page() {
                                     <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Tools', 'beseo' ); ?></h4>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Use the validator to preview and clear cache after changing images or titles.',
+                                            'Use the Validator tab under Tools for Twitter Card validation and previews.',
                                             'beseo'
                                         ); ?>
                                     </p>
-                                    <p>
-                                        <label><input type="radio" name="be_schema_twitter_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Use site page', 'beseo' ); ?></label>
-                                        <label style="margin-left:12px;"><input type="radio" name="be_schema_twitter_validator_mode" value="manual" /> <?php esc_html_e( 'Use manual URL', 'beseo' ); ?></label>
-                                    </p>
-                                    <div class="be-schema-social-validator-controls">
-                                        <select id="be-schema-twitter-validator-select" class="regular-text">
-                                            <?php foreach ( (array) $twitter_validator_pages as $page ) : ?>
-                                                <option value="<?php echo esc_url( get_permalink( $page->ID ) ); ?>"><?php echo esc_html( $page->post_title ); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="text" id="be-schema-twitter-validator-manual" class="regular-text" placeholder="https://" style="display:none;" />
-                                    </div>
-                                    <p>
-                    <button type="button" class="button button-primary" id="be-schema-twitter-validator-open">
-                        <?php esc_html_e( 'Open BESEO Validator', 'beseo' ); ?>
-                    </button>
-                    <a class="button" href="https://cards-dev.twitter.com/validator" target="_blank" rel="noopener noreferrer">
-                        <?php esc_html_e( 'Open Twitter Validator (new tab)', 'beseo' ); ?>
-                    </a>
-                </p>
-                                    <p class="description be-schema-social-description" id="be-schema-twitter-validator-note"></p>
-                                    <div style="border:1px solid #ccd0d4; border-radius:4px; padding:12px; background:#fff;" id="be-schema-twitter-validator-target"></div>
                                 </div>
                                 <div class="be-schema-social-section">
                                     <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Dry Run', 'beseo' ); ?></h4>
@@ -1733,68 +1706,8 @@ function be_schema_engine_render_social_media_page() {
                     });
                 }
 
-                // Default to the Tools subtab so the validator is visible on load.
-                activateTwitterTab('tools');
 
                 // Twitter validator embed loader.
-                var validatorBtn = document.getElementById('be-schema-twitter-validator-open');
-                var validatorSelect = document.getElementById('be-schema-twitter-validator-select');
-                var validatorManual = document.getElementById('be-schema-twitter-validator-manual');
-                var validatorMode = document.querySelectorAll('input[name="be_schema_twitter_validator_mode"]');
-                var validatorNote = document.getElementById('be-schema-twitter-validator-note');
-                var validatorTarget = document.getElementById('be-schema-twitter-validator-target');
-
-                function syncValidatorMode() {
-                    var mode = 'dropdown';
-                    validatorMode.forEach(function (radio) {
-                        if (radio.checked) {
-                            mode = radio.value;
-                        }
-                    });
-                    if (validatorSelect) {
-                        validatorSelect.style.display = (mode === 'dropdown') ? 'inline-block' : 'none';
-                    }
-                    if (validatorManual) {
-                        validatorManual.style.display = (mode === 'manual') ? 'inline-block' : 'none';
-                    }
-                }
-
-                validatorMode.forEach(function (radio) {
-                    radio.addEventListener('change', syncValidatorMode);
-                });
-                syncValidatorMode();
-
-                if (validatorBtn) {
-                    validatorBtn.addEventListener('click', function () {
-                        var mode = 'dropdown';
-                        validatorMode.forEach(function (radio) {
-                            if (radio.checked) {
-                                mode = radio.value;
-                            }
-                        });
-                        var url = '';
-                        if (mode === 'manual' && validatorManual) {
-                            url = validatorManual.value.trim();
-                        } else if (validatorSelect) {
-                            url = validatorSelect.value;
-                        }
-                        if (!url) {
-                            if (validatorNote) {
-                                validatorNote.textContent = '<?php echo esc_js( __( 'Please select a page or enter a URL.', 'beseo' ) ); ?>';
-                            }
-                            return;
-                        }
-                        if (validatorNote) {
-                            validatorNote.textContent = '<?php echo esc_js( __( 'Opening BESEO validator in a new tab…', 'beseo' ) ); ?>';
-                        }
-                        if (validatorTarget) {
-                            validatorTarget.textContent = url;
-                        }
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                        activateTwitterTab('tools');
-                    });
-                }
-
                 if (window.beSchemaInitAllOptionalGroups) {
                     window.beSchemaInitAllOptionalGroups();
                 }
