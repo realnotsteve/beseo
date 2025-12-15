@@ -490,6 +490,13 @@ function be_schema_engine_render_schema_page() {
         true
     );
     wp_enqueue_script(
+        'be-schema-help-accent',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-help-accent.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+    wp_enqueue_script(
         'be-schema-image-pills',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-image-pills.js',
         array(),
@@ -903,6 +910,9 @@ function be_schema_engine_render_schema_page() {
         </p>
 
         <style>
+            .be-schema-help-accent {
+                color: #00a0d2;
+            }
             .be-schema-tabs {
                 margin-top: 20px;
             }
@@ -2473,7 +2483,7 @@ function be_schema_engine_render_schema_page() {
                                                         <?php esc_html_e( 'Used by the WebSite or WebPage schema when a featured image is needed.', 'beseo' ); ?>
                                                     </p>
                                                         <div class="be-schema-optional-controls"
-                                                             data-optional-scope="website"
+                                                             data-optional-scope="website-images"
                                                              data-optional-hidden="be_schema_website_images_optional"
                                                              data-optional-singleton="image_16_9,image_4_3,image_1_1,image_3_4,image_9_16">
                                                             <label class="screen-reader-text" for="be-schema-website-images-optional"><?php esc_html_e( 'Add optional WebSite image', 'beseo' ); ?></label>

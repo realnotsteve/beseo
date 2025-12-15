@@ -4,6 +4,113 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.0.9] - 2025-12-15
+Summary: Devnotes + schema admin + social admin.
+
+### Changed
+- Touched areas: devnotes, schema admin, social admin.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/admin-menu.php
+- includes/admin/js/be-help-accent.js
+- includes/admin/js/be-optional-fields.js
+- includes/admin/page-help-text.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+
+
+## [2.0.7] - 2025-12-14
+Summary: Remove Twitter additional aspect ratios.
+
+### Changed
+- Removed the Additional Aspect Ratios dropdown and fields from Twitter > Content.
+- Bumped versions to 2.0.7.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+
+## [2.0.8] - 2025-12-14
+Summary: Twitter image labels + card type toggle.
+
+### Changed
+- Renamed Twitter images to Large Summary Card / Summary Card and added a radio toggle for card type.
+- Kept Summary Card image as the secondary fallback, Large Summary as primary.
+- Bumped versions to 2.0.8.
+
+### Files
+- includes/admin/page-social-media.php
+- beseo.php
+- beseo-devnotes.json
+
+
+## [2.0.6] - 2025-12-14
+Summary: Cyan help accents via {braces}.
+
+### Changed
+- Added a shared helper script to highlight help text wrapped in {curly braces} using WordPress cyan (#00a0d2).
+- Enqueued the helper and styling across Schema, Social, and Settings/Help tabs.
+- Bumped versions to 2.0.6.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/js/be-help-accent.js
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+
+
+## [2.0.5] - 2025-12-14
+Summary: Keep Help tab active after saving overrides.
+
+### Changed
+- Settings submenu now returns to the Help Text tab after saving overrides (or when `tab=help` is requested).
+- Bumped versions to 2.0.5.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+
+
+## [2.0.4] - 2025-12-14
+Summary: Help text overrides now live under Settings tab.
+
+### Changed
+- Moved Help Text overrides into a tab under the Settings submenu; removed the separate Help Text submenu.
+- Reused override form within Settings tabs; defaults still apply unless overridden.
+- Bumped versions to 2.0.4.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/admin-menu.php
+- includes/admin/page-help-text.php
+- includes/admin/page-tools.php
+
+
+## [2.0.3] - 2025-12-14
+Summary: Help text overrides + settings submenu.
+
+### Changed
+- Added Help Text submenu with override UI and gettext-based overrides.
+- Bumped plugin/devnotes version to 2.0.3 for the new feature.
+- Tools page now adapts tabs for the Help Text entry point.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/admin-menu.php
+- includes/admin/page-help-text.php
+- includes/admin/page-tools.php
+
+
 ## [2.0.2] - 2025-12-14
 Summary: Tooling + devnotes.
 

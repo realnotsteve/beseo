@@ -198,27 +198,6 @@ function be_schema_engine_save_social_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_optional'] ) )
         : '';
 
-    $settings['twitter_images_optional'] = isset( $_POST['be_schema_twitter_images_optional'] )
-        ? sanitize_text_field( wp_unslash( $_POST['be_schema_twitter_images_optional'] ) )
-        : '';
-
-    $twitter_image_variants = array(
-        'twitter_image_16_9'   => 'be_schema_twitter_image_16_9',
-        'twitter_image_5_4'    => 'be_schema_twitter_image_5_4',
-        'twitter_image_1_1'    => 'be_schema_twitter_image_1_1',
-        'twitter_image_4_5'    => 'be_schema_twitter_image_4_5',
-        'twitter_image_1_1_91' => 'be_schema_twitter_image_1_1_91',
-        'twitter_image_9_16'   => 'be_schema_twitter_image_9_16',
-    );
-
-    foreach ( $twitter_image_variants as $settings_key => $field_name ) {
-        $settings[ $settings_key ] = be_schema_social_validate_url_field(
-            isset( $_POST[ $field_name ] ) ? wp_unslash( $_POST[ $field_name ] ) : '',
-            __( 'Default Twitter Card Image', 'beseo' ),
-            $validation_errors
-        );
-    }
-
     update_option( 'be_schema_social_settings', $settings );
 
     foreach ( $validation_errors as $message ) {
@@ -245,6 +224,13 @@ function be_schema_engine_render_social_media_page() {
     wp_enqueue_script(
         'be-schema-optional-fields',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-optional-fields.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+    wp_enqueue_script(
+        'be-schema-help-accent',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-help-accent.js',
         array(),
         BE_SCHEMA_ENGINE_VERSION,
         true
@@ -294,8 +280,6 @@ function be_schema_engine_render_social_media_page() {
     $twitter_dry_run       = ! empty( $settings['twitter_dry_run'] ) && '1' === (string) $settings['twitter_dry_run'];
     $twitter_notes         = isset( $settings['twitter_notes'] ) ? $settings['twitter_notes'] : '';
     $twitter_optional_raw  = isset( $settings['twitter_optional'] ) ? $settings['twitter_optional'] : '';
-    $twitter_images_optional_raw = isset( $settings['twitter_images_optional'] ) ? $settings['twitter_images_optional'] : '';
-
     $facebook_optional_props = array();
     if ( ! empty( $facebook_optional_raw ) ) {
         $facebook_optional_props = array_filter(
@@ -395,34 +379,37 @@ function be_schema_engine_render_social_media_page() {
     }
     $twitter_optional_serialized = implode( ',', $twitter_optional_props );
 
-    $twitter_images_optional_props = array();
-    if ( ! empty( $twitter_images_optional_raw ) ) {
-        $twitter_images_optional_props = array_filter(
-            array_map(
-                'trim',
-                explode( ',', $twitter_images_optional_raw )
-            )
-        );
-    }
-
-    $twitter_image_flags = array(
-        'image_16_9'   => isset( $settings['twitter_image_16_9'] ) ? $settings['twitter_image_16_9'] : '',
-        'image_5_4'    => isset( $settings['twitter_image_5_4'] ) ? $settings['twitter_image_5_4'] : '',
-        'image_1_1'    => isset( $settings['twitter_image_1_1'] ) ? $settings['twitter_image_1_1'] : '',
-        'image_4_5'    => isset( $settings['twitter_image_4_5'] ) ? $settings['twitter_image_4_5'] : '',
-        'image_1_1_91' => isset( $settings['twitter_image_1_1_91'] ) ? $settings['twitter_image_1_1_91'] : '',
-        'image_9_16'   => isset( $settings['twitter_image_9_16'] ) ? $settings['twitter_image_9_16'] : '',
-    );
-
-    foreach ( $twitter_image_flags as $key => $value ) {
-        if ( ! empty( $value ) && ! in_array( $key, $twitter_images_optional_props, true ) ) {
-            $twitter_images_optional_props[] = $key;
-        }
-    }
-
-    $twitter_images_optional_serialized = implode( ',', $twitter_images_optional_props );
-
     ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var cardRadios = document.querySelectorAll('input[name="be_schema_twitter_card_type"]');
+            var largeInput = document.getElementById('be_schema_twitter_default_image');
+            var largeButtons = document.querySelectorAll('[data-target-input="be_schema_twitter_default_image"]');
+            var summaryInput = document.getElementById('be_schema_twitter_default_image_alt');
+            var summaryButtons = document.querySelectorAll('[data-target-input="be_schema_twitter_default_image_alt"]');
+
+            function setEnabled(el, enable) {
+                if (!el) return;
+                el.disabled = !enable;
+            }
+            function setButtonGroup(btns, enable) {
+                btns.forEach(function (btn) { btn.disabled = !enable; });
+            }
+            function syncTwitterCardInputs() {
+                var type = document.querySelector('input[name="be_schema_twitter_card_type"]:checked');
+                var isLarge = type && type.value === 'summary_large_image';
+                var isSummary = type && type.value === 'summary';
+                setEnabled(largeInput, isLarge);
+                setButtonGroup(largeButtons, isLarge);
+                setEnabled(summaryInput, isSummary);
+                setButtonGroup(summaryButtons, isSummary);
+            }
+            cardRadios.forEach(function (radio) {
+                radio.addEventListener('change', syncTwitterCardInputs);
+            });
+            syncTwitterCardInputs();
+        });
+    </script>
     <div class="wrap beseo-wrap beseo-social-wrap">
         <h1><?php esc_html_e( 'BE SEO – Social Media', 'beseo' ); ?></h1>
 
@@ -436,6 +423,9 @@ function be_schema_engine_render_social_media_page() {
         </p>
 
         <style>
+            .be-schema-help-accent {
+                color: #00a0d2;
+            }
             .be-schema-social-tabs {
                 margin-top: 20px;
             }
@@ -1382,8 +1372,34 @@ function be_schema_engine_render_social_media_page() {
                                     <table class="form-table">
                                         <tbody>
                                             <tr>
+                                                <th scope="row"><?php esc_html_e( 'Card Type', 'beseo' ); ?></th>
+                                                <td>
+                                                    <fieldset>
+                                                        <label style="display:block; margin-bottom:6px;">
+                                                            <input type="radio"
+                                                                   name="be_schema_twitter_card_type"
+                                                                   value="summary_large_image"
+                                                                   <?php checked( 'summary_large_image', $twitter_card_type ); ?>
+                                                                   data-target-enable="be_schema_twitter_default_image"
+                                                                   data-target-disable="be_schema_twitter_default_image_alt" />
+                                                            <?php esc_html_e( 'Large Summary Card', 'beseo' ); ?>
+                                                        </label>
+                                                        <label style="display:block;">
+                                                            <input type="radio"
+                                                                   name="be_schema_twitter_card_type"
+                                                                   value="summary"
+                                                                   <?php checked( 'summary', $twitter_card_type ); ?>
+                                                                   data-target-enable="be_schema_twitter_default_image_alt"
+                                                                   data-target-disable="be_schema_twitter_default_image" />
+                                                            <?php esc_html_e( 'Summary Card', 'beseo' ); ?>
+                                                        </label>
+                                                    </fieldset>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Default Twitter Card Image', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Large Summary Card', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-image-field">
@@ -1422,7 +1438,7 @@ function be_schema_engine_render_social_media_page() {
 
                                             <tr>
                                                 <th scope="row">
-                                                    <?php esc_html_e( 'Alternate Twitter Card Image', 'beseo' ); ?>
+                                                    <?php esc_html_e( 'Summary Card', 'beseo' ); ?>
                                                 </th>
                                                 <td>
                                                     <div class="be-schema-image-field">
@@ -1446,7 +1462,7 @@ function be_schema_engine_render_social_media_page() {
                                                     </div>
                                                     <p class="description be-schema-social-description">
                                                         <?php esc_html_e(
-                                                            'Optional secondary fallback for twitter:image. If empty, Twitter follows the usual order: featured image → Default Twitter Card Image → Global default.',
+                                                            'Optional secondary fallback for twitter:image. If empty, Twitter follows the usual order: featured image → Large Summary Card image → Global default.',
                                                             'beseo'
                                                         ); ?>
                                                     </p>
@@ -1459,223 +1475,6 @@ function be_schema_engine_render_social_media_page() {
                                                 </td>
                                             </tr>
 
-                                            <tr class="be-schema-optional-row">
-                                                <th scope="row">
-                                                    <?php esc_html_e( 'Additional Aspect Ratios', 'beseo' ); ?>
-                                                </th>
-                                                <td>
-                                                    <div class="be-schema-optional-controls"
-                                                         data-optional-scope="twitter-additional-images"
-                                                         data-optional-hidden="be_schema_twitter_images_optional"
-                                                         data-optional-singleton="image_16_9,image_5_4,image_1_1,image_4_5,image_1_1_91,image_9_16">
-                                                        <label class="screen-reader-text" for="be-schema-twitter-additional-images-optional"><?php esc_html_e( 'Add Twitter image', 'beseo' ); ?></label>
-                                                        <select id="be-schema-twitter-additional-images-optional" aria-label="<?php esc_attr_e( 'Add Twitter image', 'beseo' ); ?>">
-                                                            <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
-                                                            <option value="image_16_9"><?php esc_html_e( '16:9 @ 1200x675', 'beseo' ); ?></option>
-                                                            <option value="image_5_4"><?php esc_html_e( '5:4 @ 1350x1080', 'beseo' ); ?></option>
-                                                            <option value="image_1_1"><?php esc_html_e( '1:1 @ 1200x1200', 'beseo' ); ?></option>
-                                                            <option value="image_4_5"><?php esc_html_e( '4:5 @ 1080x1350', 'beseo' ); ?></option>
-                                                            <option value="image_1_1_91"><?php esc_html_e( '1:1.91 @ 630x1200', 'beseo' ); ?></option>
-                                                            <option value="image_9_16"><?php esc_html_e( '9:16 @ 675x1200', 'beseo' ); ?></option>
-                                                        </select>
-                                                        <button type="button"
-                                                                class="button be-schema-optional-add"
-                                                                data-optional-add="twitter-additional-images"
-                                                                disabled>
-                                                            +
-                                                        </button>
-                                                        <input type="hidden" name="be_schema_twitter_images_optional" id="be_schema_twitter_images_optional" value="<?php echo esc_attr( $twitter_images_optional_serialized ); ?>" />
-                                                    </div>
-
-                                                    <div class="be-schema-optional-fields" id="be-schema-twitter-additional-images-optional-fields">
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_16_9', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_16_9">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_16_9">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '16:9 @ 1200x675', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_16_9" class="screen-reader-text"><?php esc_html_e( '16:9 @ 1200x675', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_16_9"
-                                                                       name="be_schema_twitter_image_16_9"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_16_9'] ) ? $settings['twitter_image_16_9'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_16_9"
-                                                                        data-target-preview="be_schema_twitter_image_16_9_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_16_9"
-                                                                        data-target-preview="be_schema_twitter_image_16_9_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_16_9_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_16_9'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_16_9'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_5_4', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_5_4">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_5_4">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '5:4 @ 1350x1080', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_5_4" class="screen-reader-text"><?php esc_html_e( '5:4 @ 1350x1080', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_5_4"
-                                                                       name="be_schema_twitter_image_5_4"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_5_4'] ) ? $settings['twitter_image_5_4'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_5_4"
-                                                                        data-target-preview="be_schema_twitter_image_5_4_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_5_4"
-                                                                        data-target-preview="be_schema_twitter_image_5_4_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_5_4_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_5_4'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_5_4'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_1_1', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '1:1 @ 1200x1200', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_1_1" class="screen-reader-text"><?php esc_html_e( '1:1 @ 1200x1200', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_1_1"
-                                                                       name="be_schema_twitter_image_1_1"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_1_1'] ) ? $settings['twitter_image_1_1'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_1_1"
-                                                                        data-target-preview="be_schema_twitter_image_1_1_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_1_1"
-                                                                        data-target-preview="be_schema_twitter_image_1_1_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_1_1_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_1_1'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_1_1'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_4_5', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_4_5">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_4_5">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '4:5 @ 1080x1350', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_4_5" class="screen-reader-text"><?php esc_html_e( '4:5 @ 1080x1350', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_4_5"
-                                                                       name="be_schema_twitter_image_4_5"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_4_5'] ) ? $settings['twitter_image_4_5'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_4_5"
-                                                                        data-target-preview="be_schema_twitter_image_4_5_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_4_5"
-                                                                        data-target-preview="be_schema_twitter_image_4_5_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_4_5_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_4_5'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_4_5'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_1_1_91', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_1_1_91">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_1_1_91">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '1:1.91 @ 630x1200', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_1_1_91" class="screen-reader-text"><?php esc_html_e( '1:1.91 @ 630x1200', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_1_1_91"
-                                                                       name="be_schema_twitter_image_1_1_91"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_1_1_91'] ) ? $settings['twitter_image_1_1_91'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_1_1_91"
-                                                                        data-target-preview="be_schema_twitter_image_1_1_91_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_1_1_91"
-                                                                        data-target-preview="be_schema_twitter_image_1_1_91_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_1_1_91_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_1_1_91'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_1_1_91'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="be-schema-optional-field<?php echo in_array( 'image_9_16', $twitter_images_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="image_9_16">
-                                                            <button type="button" class="button be-schema-optional-remove" data-optional-remove="image_9_16">−</button>
-                                                            <div class="be-schema-image-field">
-                                                                <span class="be-schema-optional-label"><?php esc_html_e( '9:16 @ 675x1200', 'beseo' ); ?></span>
-                                                                <label for="be_schema_twitter_image_9_16" class="screen-reader-text"><?php esc_html_e( '9:16 @ 675x1200', 'beseo' ); ?></label>
-                                                                <input type="text"
-                                                                       id="be_schema_twitter_image_9_16"
-                                                                       name="be_schema_twitter_image_9_16"
-                                                                       value="<?php echo esc_url( isset( $settings['twitter_image_9_16'] ) ? $settings['twitter_image_9_16'] : '' ); ?>"
-                                                                       class="regular-text" />
-                                                                <button type="button"
-                                                                        class="button be-schema-image-select"
-                                                                        data-target-input="be_schema_twitter_image_9_16"
-                                                                        data-target-preview="be_schema_twitter_image_9_16_preview">
-                                                                    <?php esc_html_e( 'Select Image', 'beseo' ); ?>
-                                                                </button>
-                                                                <button type="button"
-                                                                        class="button be-schema-image-clear"
-                                                                        data-target-input="be_schema_twitter_image_9_16"
-                                                                        data-target-preview="be_schema_twitter_image_9_16_preview">
-                                                                    <?php esc_html_e( 'Clear', 'beseo' ); ?>
-                                                                </button>
-                                                            </div>
-                                                            <div id="be_schema_twitter_image_9_16_preview"
-                                                                 class="be-schema-image-preview">
-                                                                <?php if ( ! empty( $settings['twitter_image_9_16'] ) ) : ?>
-                                                                    <img src="<?php echo esc_url( $settings['twitter_image_9_16'] ); ?>" alt="" />
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>

@@ -76,12 +76,30 @@
         var hiddenEl = hiddenId ? document.getElementById(hiddenId) : null;
         var singletonProps = toList(controlsEl.getAttribute('data-optional-singleton'));
         var allProps = getAllProps(fieldsEl);
+        var activeProps = function () { return getActiveProps(fieldsEl); };
+
+        function updateAddButton() {
+            if (!addBtn || !selectEl) {
+                return;
+            }
+            var val = selectEl.value;
+            var selectedOpt = selectEl.options[selectEl.selectedIndex] || null;
+            var disabled = !val;
+            if (selectedOpt && selectedOpt.disabled) {
+                disabled = true;
+            }
+            if (!disabled && activeProps().indexOf(val) !== -1) {
+                disabled = true;
+            }
+            addBtn.disabled = disabled;
+        }
 
         function syncHidden() {
             if (!hiddenEl) {
                 return;
             }
             hiddenEl.value = getActiveProps(fieldsEl).join(',');
+            updateAddButton();
         }
 
         function syncOptionDisable() {
@@ -105,6 +123,7 @@
                     opt.disabled = false;
                 }
             });
+            updateAddButton();
         }
 
         function showProp(prop) {
@@ -135,13 +154,15 @@
                 if (!val) {
                     return;
                 }
-                if (getActiveProps(fieldsEl).indexOf(val) !== -1) {
+                if (activeProps().indexOf(val) !== -1) {
                     return;
                 }
                 showProp(val);
                 selectEl.value = '';
                 syncOptionDisable();
             });
+
+            selectEl.addEventListener('change', updateAddButton);
         }
 
         fieldsEl.querySelectorAll('.be-schema-optional-remove').forEach(function (btn) {
@@ -168,6 +189,7 @@
 
         syncHidden();
         syncOptionDisable();
+        updateAddButton();
     }
 
     window.beSchemaInitOptionalGroup = initOptionalGroup;
