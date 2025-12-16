@@ -1,0 +1,589 @@
+.be-schema-help-accent {
+                color: #00a0d2;
+            }
+            .be-schema-tabs {
+                margin-top: 20px;
+            }
+
+            .be-schema-tabs-nav {
+                display: flex;
+                gap: 8px;
+                border-bottom: 1px solid #ccd0d4;
+                margin-bottom: 0;
+                padding-left: 0;
+                list-style: none;
+            }
+
+            .be-schema-tabs-nav a {
+                display: inline-block;
+                padding: 8px 14px;
+                text-decoration: none;
+                border: 1px solid transparent;
+                border-bottom: none;
+                background: #f3f4f5;
+                color: #555;
+                cursor: pointer;
+            }
+
+            .be-schema-tabs-nav a:hover {
+                background: #e5e5e5;
+            }
+
+            .be-schema-tabs-nav a.be-schema-tab-active {
+                background: #fff;
+                border-color: #ccd0d4;
+                border-bottom: 1px solid #fff;
+                color: #000;
+                font-weight: 600;
+            }
+
+            .be-schema-tab-panel {
+                display: none;
+                padding: 16px 12px 12px;
+                border: 1px solid #ccd0d4;
+                border-top: none;
+                background: #fff;
+            }
+
+            .be-schema-tab-panel-active {
+                display: block;
+            }
+
+            .be-schema-description {
+                max-width: none;
+            }
+
+            .be-schema-status-pill {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                margin-right: 6px;
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-status-pill.off {
+                background: #fbeaea;
+                color: #8a1f11;
+            }
+
+            .be-schema-info-box {
+                margin-top: 12px;
+                padding: 12px;
+                border-left: 4px solid #ccd0d4;
+                background: #f8f9fa;
+            }
+
+            .be-schema-health-link {
+                display: inline-block;
+                margin-top: 6px;
+            }
+
+            /* Vertical nav inside Website tab */
+            .be-schema-website-layout {
+                display: flex;
+                gap: 24px;
+                margin-top: 10px;
+            }
+
+            .be-schema-website-nav {
+                width: 220px;
+                border-right: 1px solid #ccd0d4;
+            }
+
+            .be-schema-website-nav ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .be-schema-website-nav li {
+                margin: 0;
+                padding: 0;
+            }
+
+            .be-schema-website-nav a {
+                display: block;
+                padding: 8px 10px;
+                text-decoration: none;
+                color: #444;
+                cursor: pointer;
+            }
+
+            .be-schema-website-nav a:hover {
+                background: #f1f1f1;
+            }
+
+            .be-schema-website-nav a.be-schema-website-tab-active {
+                background: #2271b1;
+                color: #fff;
+            }
+
+            .be-schema-website-panels {
+                flex: 1;
+            }
+
+            .be-schema-website-panel {
+                display: none;
+            }
+
+            .be-schema-website-panel-active {
+                display: block;
+            }
+
+            /* Vertical nav inside Overview tab */
+            .be-schema-overview-layout {
+                display: flex;
+                gap: 24px;
+                margin-top: 10px;
+            }
+
+            .be-schema-overview-nav {
+                width: 220px;
+                border-right: 1px solid #ccd0d4;
+            }
+
+            .be-schema-overview-nav ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .be-schema-overview-nav li {
+                margin: 0;
+                padding: 0;
+            }
+
+            .be-schema-overview-nav a {
+                display: block;
+                padding: 8px 10px;
+                text-decoration: none;
+                color: #444;
+                cursor: pointer;
+            }
+
+            .be-schema-overview-nav a:hover {
+                background: #f1f1f1;
+            }
+
+            .be-schema-overview-nav a.be-schema-overview-tab-active {
+                background: #2271b1;
+                color: #fff;
+            }
+
+            .be-schema-overview-panels {
+                flex: 1;
+            }
+
+            .be-schema-overview-panel {
+                display: none;
+            }
+
+            .be-schema-overview-panel-active {
+                display: block;
+            }
+
+            /* Global tab sections */
+            .be-schema-global-section {
+                border: 1px solid #ccd0d4;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 16px;
+                background: #f9fafb;
+                color: #111;
+            }
+
+            .be-schema-global-section .form-table th {
+                white-space: nowrap;
+                width: 1%;
+            }
+
+            .be-schema-section-title {
+                display: block;
+                margin: -15px -15px 12px;
+                padding: 12px 15px;
+                background: #e1e4e8;
+                color: #111;
+            }
+
+            .be-schema-global-section h4 {
+                margin: 0;
+            }
+
+            .be-schema-global-divider {
+                margin: 16px 0;
+                border: 0;
+                border-top: 1px solid #dcdcde;
+            }
+
+            .be-schema-identity-options {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .be-schema-identity-option {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: nowrap;
+            }
+
+            .be-schema-identity-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                flex: 0 0 380px;
+            }
+
+            .be-schema-identity-toggle label {
+                white-space: nowrap;
+            }
+
+            .be-schema-identity-priority {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .be-schema-identity-toggle label,
+            .be-schema-identity-priority label {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                margin: 0;
+            }
+
+            .be-schema-identity-toggle label {
+                font-weight: 600;
+            }
+
+            .be-schema-identity-priority label {
+                font-weight: 400;
+            }
+
+            .be-schema-identity-priority label.be-identity-radio-active {
+                font-weight: 700;
+            }
+
+            .be-schema-website-nav a.be-schema-website-tab-disabled {
+                opacity: 0.5;
+                pointer-events: none;
+                cursor: default;
+            }
+
+            .be-schema-image-field {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .be-schema-image-field .be-schema-image-enable-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin: 0;
+                font-weight: 600;
+                align-self: center;
+            }
+
+            .be-schema-image-field input[type="checkbox"] {
+                vertical-align: middle;
+                margin: 0;
+            }
+
+            .be-schema-image-field input[type="text"] {
+                width: 360px;
+            }
+
+            .be-schema-image-preview {
+                margin-top: 8px;
+            }
+
+            .be-schema-image-preview img {
+                max-width: 150px;
+                height: auto;
+                border: 1px solid #ccd0d4;
+                padding: 2px;
+                background: #fff;
+            }
+
+            .be-schema-image-status {
+                display: inline-block;
+                margin-left: 8px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                background: #f1f2f3;
+                color: #444;
+            }
+
+            .be-schema-image-status.verified {
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-image-status.resolution {
+                background: #fbeaea;
+                color: #8a1f11;
+            }
+
+            .be-schema-conditional-block {
+                border-left: 3px solid #ccd0d4;
+                padding-left: 12px;
+                margin-top: 8px;
+            }
+
+            /* Person block */
+            #be-schema-person-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            #be-schema-person-images-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            #be-schema-person-links-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            /* Organisation block */
+            #be-schema-organization-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            /* Publisher block */
+            #be-schema-publisher-block {
+                border-left: 0;
+                padding-left: 0;
+            }
+
+            #be-schema-person-block table.form-table th,
+            #be-schema-person-block table.form-table td {
+                padding-left: 0 !important;
+                text-align: left;
+                vertical-align: top;
+            }
+
+            #be-schema-person-block table.form-table th {
+                padding-right: 12px !important;
+                white-space: nowrap;
+            }
+
+            #be-schema-person-block table.form-table td {
+                padding-right: 0 !important;
+            }
+
+            .be-schema-optional-row th,
+            .be-schema-optional-row td {
+                vertical-align: top;
+            }
+
+            .be-schema-person-enable-row th,
+            .be-schema-person-enable-row td {
+                vertical-align: baseline !important;
+                padding-left: 0 !important;
+                text-align: left;
+            }
+
+            .be-schema-person-enable-row td label {
+                display: inline-flex;
+                align-items: baseline;
+                gap: 6px;
+            }
+
+            .be-schema-optional-controls {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                margin: 8px 0 12px;
+                padding-left: 0;
+            }
+
+            table.form-table tr.be-schema-optional-row td {
+                padding-left: 0 !important;
+            }
+
+            .be-schema-optional-controls.is-disabled {
+                opacity: 0.55;
+            }
+
+            .be-schema-optional-controls select {
+                min-width: 200px;
+            }
+
+            .be-schema-optional-fields {
+                padding-left: 0;
+            }
+
+            .be-schema-optional-fields .be-schema-optional-field {
+                border-left: 0;
+                padding-left: 0;
+                margin: 0 0 16px;
+                position: relative;
+                padding-left: 0;
+            }
+
+            .be-schema-optional-field td {
+                position: relative;
+                padding-left: 0 !important;
+            }
+
+            .be-schema-optional-field.is-hidden {
+                display: none;
+            }
+
+            .be-schema-optional-field .be-schema-optional-remove {
+                position: absolute;
+                left: -64px;
+                top: 0;
+                margin: 0;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .be-schema-repeatable {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .be-schema-repeatable-items {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .be-schema-repeatable-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .be-schema-repeatable-item input[type="text"] {
+                flex: 1 1 auto;
+            }
+
+            .be-schema-repeatable-add,
+            .be-schema-repeatable-remove {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            #be-schema-website-images-optional-fields .be-schema-optional-field th {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            #be-schema-website-images-optional-fields .be-schema-optional-remove {
+                position: static;
+                margin: 0;
+            }
+
+            .be-schema-honorifics {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .be-schema-honorific-field {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .be-schema-honorific-field span {
+                font-weight: 600;
+            }
+
+            .be-schema-honorific-field input[type="text"] {
+                width: 180px;
+            }
+
+            .be-schema-status-pill {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+                margin-right: 6px;
+                background: #e5f5e0;
+                color: #13610b;
+            }
+
+            .be-schema-status-pill.off {
+                background: #fbeaea;
+                color: #8a1f11;
+            }
+
+            .be-schema-status-pill.neutral {
+                background: #eef1f6;
+                color: #1f2d3d;
+            }
+
+            .be-schema-conditional-block.is-disabled {
+                opacity: 0.55;
+            }
+
+            .be-schema-settings-snapshot {
+                margin-top: 24px;
+            }
+
+            .be-schema-settings-snapshot table {
+                border-collapse: collapse;
+                width: 100%;
+                background: #fff;
+            }
+
+            .be-schema-settings-snapshot th,
+            .be-schema-settings-snapshot td {
+                border: 1px solid #e2e4e7;
+                padding: 4px 6px;
+                font-size: 12px;
+            }
+
+            .be-schema-settings-snapshot th {
+                background: #f3f4f5;
+                text-align: left;
+            }
+
+            .be-schema-settings-snapshot-key {
+                width: 32%;
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            }
+
+            .be-schema-settings-snapshot-value {
+                width: 68%;
+            }
+
+            /* Health check table */
+            .be-schema-health-table {
+                margin-top: 16px;
+            }
+
+            .be-schema-health-table table {
+                border-collapse: collapse;
+                width: 100%;
+                background: #fff;
+            }
+
+            .be-schema-health-table th,
+            .be-schema-health-table td {
+                border: 1px solid #e2e4e7;
+                padding: 4px 6px;
+                font-size: 12px;
+            }
+
+            .be-schema-health-table th {
+                background: #f3f4f5;
+                text-align: left;
+            }

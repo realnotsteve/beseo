@@ -4,6 +4,92 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.9] - 2025-12-15
+Summary: Devnotes + schema admin.
+
+### Changed
+- Touched areas: devnotes, schema admin.
+
+### Files
+- CHANGELOG.md
+- assets/css/schema.css
+- assets/js/schema.js
+- beseo-devnotes.json
+- beseo.php
+- bin/smoke-schema.sh
+- includes/admin/page-schema.php
+- includes/admin/schema-view-settings.php
+- includes/admin/schema-view-website.php
+- includes/admin/schema-view.php
+
+
+## [2.1.8.11] - 2025-12-16
+Summary: Fix schema Website tab load order and fatal.
+
+### Fixed
+- Load the Website tab partial only inside the schema render flow so translations/variables are initialised correctly, removing the early textdomain notice and the in_array fatal on schema admin.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/schema-view.php
+- includes/admin/schema-view-website.php
+
+## [2.1.8.9] - 2025-12-15
+Summary: Schema assets externalised + smoke script.
+
+### Changed
+- Moved schema admin CSS/JS out of the view into `assets/css/schema.css` and `assets/js/schema.js`, with localized strings and screen-scoped enqueue.
+- Added a light smoke script `bin/smoke-schema.sh` to lint key schema files (and optional WP bootstrap check when wp-cli is available).
+- Ran `bin/smoke-schema.sh` to verify schema files lint clean.
+
+## [2.1.8.10] - 2025-12-15
+Summary: Ensure schema assets load consistently.
+
+### Changed
+- Schema admin CSS/JS now enqueues without screen gating to avoid missing styles/scripts on the Schema page after the extraction.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+- includes/admin/schema-view.php
+- assets/css/schema.css
+- assets/js/schema.js
+- bin/smoke-schema.sh
+
+## [2.1.8.8] - 2025-12-15
+Summary: Website tab extracted to partial.
+
+### Changed
+- Moved the full Website tab markup out of `schema-view.php` into `schema-view-website.php`, replacing it with a single include to shrink the main view.
+- Loader now pulls the website partial alongside the settings partial.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/schema-view.php
+- includes/admin/schema-view-website.php
+
+## [2.1.8.7] - 2025-12-15
+Summary: Schema settings tab extracted.
+
+### Changed
+- Wired the schema Dashboard tab to a dedicated partial (`schema-view-settings.php`) via the loader, continuing the break-up of the 5k-line schema view.
+- Bumped version metadata to match the refactor step.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-schema.php
+- includes/admin/schema-view.php
+- includes/admin/schema-view-settings.php
+
 ## [2.1.8] - 2025-12-15
 Summary: Devnotes + schema admin.
 
