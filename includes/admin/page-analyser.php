@@ -102,6 +102,8 @@ function be_schema_engine_handle_analyser_start() {
         'max'       => $max,
         'processed' => 0,
         'host'      => $parsed['host'],
+        'errors'    => 0,
+        'titles'    => array(),
     );
     be_schema_engine_analyser_state_set( $state );
 
@@ -112,6 +114,8 @@ function be_schema_engine_handle_analyser_start() {
                 'processed' => 0,
                 'queued'    => 1,
                 'max'       => $max,
+                'start'     => $state['start'],
+                'errors'    => 0,
             ),
         )
     );
@@ -130,7 +134,13 @@ function be_schema_engine_handle_analyser_step() {
         wp_send_json_success(
             array(
                 'done' => true,
-                'state'=> array(),
+                'state'=> array(
+                    'processed' => 0,
+                    'queued'    => 0,
+                    'max'       => 0,
+                    'errors'    => 0,
+                    'start'     => isset( $state['start'] ) ? $state['start'] : 0,
+                ),
             )
         );
     }
@@ -144,6 +154,9 @@ function be_schema_engine_handle_analyser_step() {
                 'state'=> array(
                     'processed' => $state['processed'],
                     'queued'    => count( $state['queue'] ),
+                    'max'       => $state['max'],
+                    'errors'    => isset( $state['errors'] ) ? $state['errors'] : 0,
+                    'start'     => isset( $state['start'] ) ? $state['start'] : 0,
                 ),
                 'last' => null,
             )
@@ -152,6 +165,24 @@ function be_schema_engine_handle_analyser_step() {
 
     $state['visited'][ $url ] = true;
     $analysis = be_schema_engine_analyse_url( $url );
+    if ( ! isset( $state['titles'] ) || ! is_array( $state['titles'] ) ) {
+        $state['titles'] = array();
+    }
+    $title_key = '';
+    if ( ! empty( $analysis['title'] ) ) {
+        $title_key = strtolower( trim( $analysis['title'] ) );
+    }
+    if ( $title_key ) {
+        if ( isset( $state['titles'][ $title_key ] ) && $state['titles'][ $title_key ] && $state['titles'][ $title_key ] !== $url ) {
+            $analysis['issues'][] = array(
+                'severity' => 'warn',
+                'type'     => 'metadata',
+                'message'  => sprintf( __( 'Duplicate title also used on %s', 'beseo' ), $state['titles'][ $title_key ] ),
+            );
+        } else {
+            $state['titles'][ $title_key ] = $url;
+        }
+    }
     $state['processed']      += 1;
     $state['results'][ $url ] = $analysis['issues'];
 
@@ -173,6 +204,16 @@ function be_schema_engine_handle_analyser_step() {
         }
     }
 
+    $error_count = 0;
+    foreach ( $state['results'] as $page_issues ) {
+        foreach ( (array) $page_issues as $issue ) {
+            if ( isset( $issue['severity'] ) && 'error' === $issue['severity'] ) {
+                $error_count++;
+            }
+        }
+    }
+    $state['errors'] = $error_count;
+
     if ( ! empty( $analysis['internal'] ) && isset( $state['host'] ) ) {
         foreach ( $analysis['internal'] as $link ) {
             if ( count( $state['visited'] ) + count( $state['queue'] ) >= $state['max'] ) {
@@ -186,6 +227,9 @@ function be_schema_engine_handle_analyser_step() {
     }
 
     $done = ( $state['processed'] >= $state['max'] ) || empty( $state['queue'] );
+    if ( $done && empty( $state['queue'] ) && $state['processed'] < $state['max'] ) {
+        $state['max'] = $state['processed'];
+    }
     if ( $done ) {
         be_schema_engine_analyser_history_push(
             array(
@@ -195,6 +239,8 @@ function be_schema_engine_handle_analyser_step() {
                 'stats'     => array(
                     'processed' => $state['processed'],
                     'max'       => $state['max'],
+                    'errors'    => $error_count,
+                    'start'     => isset( $state['start'] ) ? $state['start'] : time(),
                 ),
             )
         );
@@ -216,6 +262,8 @@ function be_schema_engine_handle_analyser_step() {
                 'processed' => $state['processed'],
                 'queued'    => count( $state['queue'] ),
                 'max'       => $state['max'],
+                'errors'    => $error_count,
+                'start'     => isset( $state['start'] ) ? $state['start'] : time(),
             ),
             'summary'   => array_values( $summary ),
             'pages'     => $state['results'],
@@ -370,6 +418,14 @@ function be_schema_engine_render_analyser_page() {
             .be-schema-website-list li {
                 margin-bottom: 6px;
             }
+            .be-schema-analyser-progress {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+                margin-top: 6px;
+                font-size: 12px;
+            }
         </style>
 
         <div class="be-schema-analyser-tabs">
@@ -396,7 +452,16 @@ function be_schema_engine_render_analyser_page() {
                 <input type="number" id="be-schema-analyser-limit" class="small-text" value="10" min="1" max="100" style="width:70px;" />
                 <button class="button button-primary" id="be-schema-analyser-run"><?php esc_html_e( 'Run analysis', 'beseo' ); ?></button>
                 <button class="button" id="be-schema-analyser-stop" disabled><?php esc_html_e( 'Stop', 'beseo' ); ?></button>
+                <button class="button" id="be-schema-analyser-pause" disabled><?php esc_html_e( 'Pause', 'beseo' ); ?></button>
+                <button class="button" id="be-schema-analyser-resume" disabled><?php esc_html_e( 'Resume', 'beseo' ); ?></button>
+                <button class="button" id="be-schema-analyser-export-csv" disabled><?php esc_html_e( 'Export CSV', 'beseo' ); ?></button>
+                <button class="button" id="be-schema-analyser-export-json" disabled><?php esc_html_e( 'Export JSON', 'beseo' ); ?></button>
                 <span id="be-schema-analyser-status"></span>
+                <div class="be-schema-analyser-progress">
+                    <span id="be-schema-analyser-current"></span>
+                    <span id="be-schema-analyser-elapsed"></span>
+                    <span id="be-schema-analyser-errors"></span>
+                </div>
             </div>
         </div>
 
@@ -476,9 +541,19 @@ function be_schema_engine_render_analyser_page() {
                 var sitesUrl = document.getElementById('be-schema-sites-url');
                 var historyList = document.getElementById('be-schema-history-list');
                 var historyDelta = document.getElementById('be-schema-history-delta');
+                var pauseBtn = document.getElementById('be-schema-analyser-pause');
+                var resumeBtn = document.getElementById('be-schema-analyser-resume');
+                var exportCsvBtn = document.getElementById('be-schema-analyser-export-csv');
+                var exportJsonBtn = document.getElementById('be-schema-analyser-export-json');
+                var currentNode = document.getElementById('be-schema-analyser-current');
+                var elapsedNode = document.getElementById('be-schema-analyser-elapsed');
+                var errorsNode = document.getElementById('be-schema-analyser-errors');
 
                 var sitesStoreKey = 'be-schema-analyser-sites';
                 var sites = [];
+                var paused = false;
+                var crawlTimer = null;
+                var lastCrawlData = null;
 
                 function activate(key) {
                     tabs.forEach(function(tab) {
@@ -583,7 +658,37 @@ function be_schema_engine_render_analyser_page() {
                     }
                 }
 
-                var crawlTimer = null;
+                function toggleExports(enabled) {
+                    if (exportCsvBtn) { exportCsvBtn.disabled = !enabled; }
+                    if (exportJsonBtn) { exportJsonBtn.disabled = !enabled; }
+                }
+
+                function formatElapsed(startSeconds) {
+                    if (!startSeconds) {
+                        return '';
+                    }
+                    var ms = Date.now() - (startSeconds * 1000);
+                    if (ms < 0) { ms = 0; }
+                    var totalSeconds = Math.floor(ms / 1000);
+                    var mins = Math.floor(totalSeconds / 60);
+                    var secs = totalSeconds % 60;
+                    var parts = [];
+                    if (mins > 0) { parts.push(mins + 'm'); }
+                    parts.push((secs < 10 && mins > 0 ? '0' : '') + secs + 's');
+                    return parts.join(' ');
+                }
+
+                function updateProgress(state, last) {
+                    if (currentNode) {
+                        currentNode.textContent = (last && last.url) ? '<?php echo esc_js( __( 'Current:', 'beseo' ) ); ?> ' + last.url : '';
+                    }
+                    if (elapsedNode) {
+                        elapsedNode.textContent = (state && state.start) ? '<?php echo esc_js( __( 'Elapsed:', 'beseo' ) ); ?> ' + formatElapsed(state.start) : '';
+                    }
+                    if (errorsNode) {
+                        errorsNode.textContent = (state && typeof state.errors !== 'undefined') ? '<?php echo esc_js( __( 'Errors:', 'beseo' ) ); ?> ' + state.errors : '';
+                    }
+                }
 
                 function loadHistory() {
                     var form = new FormData();
@@ -622,7 +727,11 @@ function be_schema_engine_render_analyser_page() {
                         card.appendChild(heading);
                         var info = document.createElement('p');
                         info.className = 'description';
-                        info.textContent = '<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + (entry.stats ? entry.stats.processed : 0);
+                        var processedText = '<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + (entry.stats ? entry.stats.processed : 0);
+                        if (entry.stats && typeof entry.stats.errors !== 'undefined') {
+                            processedText += ' · <?php echo esc_js( __( 'Errors', 'beseo' ) ); ?> ' + entry.stats.errors;
+                        }
+                        info.textContent = processedText;
                         card.appendChild(info);
                         if (entry.summary && entry.summary.length) {
                             var table = document.createElement('table');
@@ -727,17 +836,18 @@ function be_schema_engine_render_analyser_page() {
                         li.textContent = '<?php echo esc_js( __( 'No saved websites yet.', 'beseo' ) ); ?>';
                         sitesList.appendChild(li);
                     }
-                    sites.forEach(function(site, idx) {
-                        var li = document.createElement('li');
-                        li.textContent = site.label + ' — ' + site.url;
-                        var btn = document.createElement('button');
-                        btn.className = 'button-link delete';
-                        btn.textContent = '<?php echo esc_js( __( 'Remove', 'beseo' ) ); ?>';
-                        btn.addEventListener('click', function() {
-                            sites.splice(idx, 1);
-                            saveSites();
-                            renderSites();
-                        });
+                        sites.forEach(function(site, idx) {
+                            var li = document.createElement('li');
+                            li.textContent = site.label + ' — ' + site.url;
+                            var btn = document.createElement('button');
+                            btn.className = 'button button-secondary';
+                            btn.style.marginLeft = '8px';
+                            btn.textContent = '<?php echo esc_js( __( 'Remove', 'beseo' ) ); ?>';
+                            btn.addEventListener('click', function() {
+                                sites.splice(idx, 1);
+                                saveSites();
+                                renderSites();
+                            });
                         li.appendChild(btn);
                         sitesList.appendChild(li);
 
@@ -764,6 +874,9 @@ function be_schema_engine_render_analyser_page() {
                 }
 
                 function pollStep() {
+                    if (paused) {
+                        return;
+                    }
                     var form = new FormData();
                     form.append('action', 'be_schema_analyser_step');
                     form.append('nonce', nonce);
@@ -776,6 +889,8 @@ function be_schema_engine_render_analyser_page() {
                             setStatus((payload && payload.data && payload.data.message) ? payload.data.message : '<?php echo esc_js( __( 'Crawl failed.', 'beseo' ) ); ?>');
                             if (runBtn) { runBtn.disabled = false; }
                             if (stopBtn) { stopBtn.disabled = true; }
+                            if (pauseBtn) { pauseBtn.disabled = true; }
+                            if (resumeBtn) { resumeBtn.disabled = true; }
                             return;
                         }
                         if (payload.data) {
@@ -783,14 +898,31 @@ function be_schema_engine_render_analyser_page() {
                             if (payload.data.pages) {
                                 renderPages(payload.data.pages);
                             }
+                            lastCrawlData = payload.data;
+                            toggleExports(true);
                         }
                         var state = payload.data.state || {};
-                        setStatus('<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + (state.processed || 0) + ' / ' + (state.max || '') + ' · ' + (state.queued || 0) + ' <?php echo esc_js( __( 'queued', 'beseo' ) ); ?>');
+                        var maxVal = (state.max || state.processed || 0);
+                        var processedVal = state.processed || 0;
+                        var statusText = '<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + processedVal;
+                        if (maxVal) {
+                            statusText += ' / ' + maxVal;
+                        }
+                        statusText += ' · ' + (state.queued || 0) + ' <?php echo esc_js( __( 'queued', 'beseo' ) ); ?>';
+                        setStatus(statusText);
+                        updateProgress(state, payload.data.last);
                         var done = payload.data.done;
+                        if (paused) {
+                            crawlTimer = null;
+                            return;
+                        }
                         if (done) {
                             if (runBtn) { runBtn.disabled = false; }
                             if (stopBtn) { stopBtn.disabled = true; }
+                            if (pauseBtn) { pauseBtn.disabled = true; }
+                            if (resumeBtn) { resumeBtn.disabled = true; }
                             crawlTimer = null;
+                            loadHistory();
                         } else {
                             crawlTimer = setTimeout(pollStep, 600);
                         }
@@ -798,6 +930,8 @@ function be_schema_engine_render_analyser_page() {
                         setStatus('<?php echo esc_js( __( 'Crawl failed.', 'beseo' ) ); ?>');
                         if (runBtn) { runBtn.disabled = false; }
                         if (stopBtn) { stopBtn.disabled = true; }
+                        if (pauseBtn) { pauseBtn.disabled = true; }
+                        if (resumeBtn) { resumeBtn.disabled = true; }
                         crawlTimer = null;
                     });
                 }
@@ -810,9 +944,17 @@ function be_schema_engine_render_analyser_page() {
                             setStatus('<?php echo esc_js( __( 'Enter a URL to analyse.', 'beseo' ) ); ?>');
                             return;
                         }
+                        paused = false;
+                        lastCrawlData = null;
+                        toggleExports(false);
+                        if (currentNode) { currentNode.textContent = ''; }
+                        if (elapsedNode) { elapsedNode.textContent = ''; }
+                        if (errorsNode) { errorsNode.textContent = ''; }
                         setStatus('<?php echo esc_js( __( 'Starting…', 'beseo' ) ); ?>');
                         runBtn.disabled = true;
                         if (stopBtn) { stopBtn.disabled = false; }
+                        if (pauseBtn) { pauseBtn.disabled = false; }
+                        if (resumeBtn) { resumeBtn.disabled = true; }
                         var form = new FormData();
                         form.append('action', 'be_schema_analyser_start');
                         form.append('nonce', nonce);
@@ -827,17 +969,23 @@ function be_schema_engine_render_analyser_page() {
                             if (!payload || !payload.success) {
                                 setStatus((payload && payload.data && payload.data.message) ? payload.data.message : '<?php echo esc_js( __( 'Analysis failed.', 'beseo' ) ); ?>');
                                 if (stopBtn) { stopBtn.disabled = true; }
+                                if (pauseBtn) { pauseBtn.disabled = true; }
+                                if (resumeBtn) { resumeBtn.disabled = true; }
                                 return;
                             }
                             setStatus('<?php echo esc_js( __( 'Crawl started…', 'beseo' ) ); ?>');
                             runBtn.disabled = true;
                             if (stopBtn) { stopBtn.disabled = false; }
+                            if (pauseBtn) { pauseBtn.disabled = false; }
+                            if (resumeBtn) { resumeBtn.disabled = true; }
                             pollStep();
                             loadHistory();
                         }).catch(function() {
                             runBtn.disabled = false;
                             setStatus('<?php echo esc_js( __( 'Analysis failed.', 'beseo' ) ); ?>');
                             if (stopBtn) { stopBtn.disabled = true; }
+                            if (pauseBtn) { pauseBtn.disabled = true; }
+                            if (resumeBtn) { resumeBtn.disabled = true; }
                         });
                     });
                 }
@@ -856,11 +1004,85 @@ function be_schema_engine_render_analyser_page() {
                                 clearTimeout(crawlTimer);
                                 crawlTimer = null;
                             }
+                            paused = false;
                             setStatus('<?php echo esc_js( __( 'Crawl stopped.', 'beseo' ) ); ?>');
                             if (runBtn) { runBtn.disabled = false; }
                             stopBtn.disabled = true;
+                            if (pauseBtn) { pauseBtn.disabled = true; }
+                            if (resumeBtn) { resumeBtn.disabled = true; }
                             loadHistory();
                         });
+                    });
+                }
+
+                if (pauseBtn) {
+                    pauseBtn.addEventListener('click', function() {
+                        paused = true;
+                        if (crawlTimer) {
+                            clearTimeout(crawlTimer);
+                            crawlTimer = null;
+                        }
+                        pauseBtn.disabled = true;
+                        if (resumeBtn) { resumeBtn.disabled = false; }
+                        setStatus('<?php echo esc_js( __( 'Crawl paused.', 'beseo' ) ); ?>');
+                    });
+                }
+
+                if (resumeBtn) {
+                    resumeBtn.addEventListener('click', function() {
+                        paused = false;
+                        resumeBtn.disabled = true;
+                        if (pauseBtn) { pauseBtn.disabled = false; }
+                        setStatus('<?php echo esc_js( __( 'Resuming…', 'beseo' ) ); ?>');
+                        pollStep();
+                    });
+                }
+
+                function downloadBlob(filename, content, type) {
+                    var blob = new Blob([content], { type: type || 'text/plain' });
+                    var link = document.createElement('a');
+                    var urlObj = URL.createObjectURL(blob);
+                    link.href = urlObj;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(urlObj);
+                }
+
+                if (exportJsonBtn) {
+                    exportJsonBtn.addEventListener('click', function() {
+                        if (!lastCrawlData) {
+                            return;
+                        }
+                        downloadBlob('beseo-analyser.json', JSON.stringify(lastCrawlData, null, 2), 'application/json');
+                    });
+                }
+
+                if (exportCsvBtn) {
+                    exportCsvBtn.addEventListener('click', function() {
+                        if (!lastCrawlData || !lastCrawlData.pages) {
+                            return;
+                        }
+                        var rows = [['URL','Severity','Type','Message']];
+                        Object.keys(lastCrawlData.pages).forEach(function(url) {
+                            (lastCrawlData.pages[url] || []).forEach(function(issue) {
+                                rows.push([
+                                    url,
+                                    issue.severity || '',
+                                    issue.type || '',
+                                    (issue.message || '').replace(/\s+/g, ' ')
+                                ]);
+                            });
+                        });
+                        var csv = rows.map(function(r){ return r.map(function(col){
+                            var val = ('' + col).replace(/\"/g, '\"\"');
+                            if (val.search(/[\",\\n]/) >= 0) {
+                                val = '\"' + val + '\"';
+                            }
+                            return val;
+                        }).join(','); }).join('\\n');
+                        downloadBlob('beseo-analyser.csv', csv, 'text/csv');
                     });
                 }
 
@@ -1013,6 +1235,7 @@ function be_schema_engine_analyse_url( $url ) {
     }
 
     $canonical_nodes = $xpath->query( '//link[translate(@rel,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="canonical"]' );
+    $canonical       = '';
     if ( $canonical_nodes && $canonical_nodes->length ) {
         $canonical = trim( $canonical_nodes->item( 0 )->getAttribute( 'href' ) );
         if ( $canonical && ! wp_http_validate_url( $canonical ) ) {
@@ -1021,6 +1244,16 @@ function be_schema_engine_analyse_url( $url ) {
                 'type'     => 'metadata',
                 'message'  => __( 'Canonical URL is invalid.', 'beseo' ),
             );
+        } else {
+            $canonical_host = wp_parse_url( $canonical, PHP_URL_HOST );
+            $page_host      = wp_parse_url( $url, PHP_URL_HOST );
+            if ( $canonical_host && $page_host && $canonical_host !== $page_host ) {
+                $issues[] = array(
+                    'severity' => 'warn',
+                    'type'     => 'metadata',
+                    'message'  => __( 'Canonical URL points off-domain.', 'beseo' ),
+                );
+            }
         }
     } else {
         $issues[] = array(
@@ -1037,7 +1270,7 @@ function be_schema_engine_analyse_url( $url ) {
             $issues[] = array(
                 'severity' => 'warn',
                 'type'     => 'index',
-                'message'  => __( 'Robots meta contains noindex.', 'beseo' ),
+                'message'  => __( 'Robots meta contains noindex (ensure sitemaps exclude this URL).', 'beseo' ),
             );
         }
     }
@@ -1053,6 +1286,8 @@ function be_schema_engine_analyse_url( $url ) {
     }
     $internal_links = array();
     $host = wp_parse_url( $url, PHP_URL_HOST );
+    $checked_broken = 0;
+    $broken_limit   = 5;
     if ( $links && $host ) {
         foreach ( $links as $node ) {
             $href = trim( $node->getAttribute( 'href' ) );
@@ -1074,7 +1309,95 @@ function be_schema_engine_analyse_url( $url ) {
             $parsed = wp_parse_url( $href );
             if ( $parsed && isset( $parsed['host'] ) && $parsed['host'] === $host && wp_http_validate_url( $href ) ) {
                 $internal_links[] = $href;
+                if ( $checked_broken < $broken_limit ) {
+                    $checked_broken++;
+                    $head = wp_remote_head(
+                        $href,
+                        array(
+                            'timeout'     => 5,
+                            'redirection' => 3,
+                        )
+                    );
+                    if ( is_wp_error( $head ) ) {
+                        $issues[] = array(
+                            'severity' => 'warn',
+                            'type'     => 'links',
+                            'message'  => sprintf( __( 'Broken internal link: %s (%s)', 'beseo' ), $href, $head->get_error_message() ),
+                        );
+                    } else {
+                        $code = (int) wp_remote_retrieve_response_code( $head );
+                        if ( $code >= 400 ) {
+                            $issues[] = array(
+                                'severity' => 'error',
+                                'type'     => 'links',
+                                'message'  => sprintf( __( 'Broken internal link: %s (HTTP %d)', 'beseo' ), $href, $code ),
+                            );
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    $has_og_title       = (bool) $xpath->query( '//meta[translate(@property,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="og:title"]' )->length;
+    $has_og_description = (bool) $xpath->query( '//meta[translate(@property,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="og:description"]' )->length;
+    $has_og_image       = (bool) $xpath->query( '//meta[translate(@property,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="og:image"]' )->length;
+    if ( ! $has_og_title || ! $has_og_description || ! $has_og_image ) {
+        if ( ! $has_og_title ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Open Graph title missing.', 'beseo' ),
+            );
+        }
+        if ( ! $has_og_description ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Open Graph description missing.', 'beseo' ),
+            );
+        }
+        if ( ! $has_og_image ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Open Graph image missing.', 'beseo' ),
+            );
+        }
+    }
+
+    $has_tw_card        = (bool) $xpath->query( '//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="twitter:card"]' )->length;
+    $has_tw_title       = (bool) $xpath->query( '//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="twitter:title"]' )->length;
+    $has_tw_description = (bool) $xpath->query( '//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="twitter:description"]' )->length;
+    $has_tw_image       = (bool) $xpath->query( '//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="twitter:image"]' )->length;
+    if ( ! $has_tw_card || ! $has_tw_title || ! $has_tw_description || ! $has_tw_image ) {
+        if ( ! $has_tw_card ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Twitter card type missing.', 'beseo' ),
+            );
+        }
+        if ( ! $has_tw_title ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Twitter title missing.', 'beseo' ),
+            );
+        }
+        if ( ! $has_tw_description ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Twitter description missing.', 'beseo' ),
+            );
+        }
+        if ( ! $has_tw_image ) {
+            $issues[] = array(
+                'severity' => 'warn',
+                'type'     => 'social',
+                'message'  => __( 'Twitter image missing.', 'beseo' ),
+            );
         }
     }
 
@@ -1084,6 +1407,7 @@ function be_schema_engine_analyse_url( $url ) {
         'status'   => $status,
         'issues'   => $issues,
         'body'     => $body,
+        'title'    => $title_text,
         'internal' => array_values( array_unique( $internal_links ) ),
     );
 }
