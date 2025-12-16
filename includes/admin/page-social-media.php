@@ -721,7 +721,7 @@ function be_schema_engine_render_social_media_page() {
                             <a href="#be-schema-social-tab-content"
                                class="be-schema-social-tab-link"
                                data-social-tab="content">
-                                <?php esc_html_e( 'Content', 'beseo' ); ?>
+                                <?php esc_html_e( 'Open Graph', 'beseo' ); ?>
                             </a>
                         </li>
                     <?php endif; ?>
@@ -774,7 +774,7 @@ function be_schema_engine_render_social_media_page() {
                         <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Overview', 'beseo' ); ?></h4>
                         <p class="description be-schema-social-description">
                             <?php esc_html_e(
-                                'Global default images now live in Open Graph → Content.',
+                                'Global default images now live in Social Media → Open Graph.',
                                 'beseo'
                             ); ?>
                         </p>
@@ -808,7 +808,7 @@ function be_schema_engine_render_social_media_page() {
 
                 <?php if ( ! $is_platforms ) : ?>
                 <div id="be-schema-social-tab-content" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Open Graph Content', 'beseo' ); ?></h2>
+                    <h2><?php esc_html_e( 'Open Graph', 'beseo' ); ?></h2>
 
                     <div class="be-schema-social-section">
                         <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Global Defaults', 'beseo' ); ?></h4>

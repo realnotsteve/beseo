@@ -6,7 +6,7 @@
  * Submenus:
  *  - Home         (default landing)
  *  - Schema       (main configuration page)
- *  - Open Graph (Open Graph & Twitter Cards)
+ *  - Social Media (Open Graph & Twitter Cards)
  *  - Platforms    (placeholder for additional networks)
  *  - Tools        (placeholder for future utilities / validators)
  */
@@ -73,11 +73,11 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_schema_page'
     );
 
-    // "Open Graph" submenu.
+    // "Social Media" submenu.
     add_submenu_page(
         $top_level_slug,
-        __( 'Open Graph', 'beseo' ),
-        __( 'Open Graph', 'beseo' ),
+        __( 'Social Media', 'beseo' ),
+        __( 'Social Media', 'beseo' ),
         $capability,
         'beseo-social-media',
         'be_schema_engine_render_social_media_page'
