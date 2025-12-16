@@ -27,6 +27,7 @@ if ( defined( 'BE_SCHEMA_ENGINE_PLUGIN_DIR' ) ) {
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-schema.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-social-media.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-tools.php';
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-analyser.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-help-text.php';
 }
 
@@ -110,6 +111,16 @@ function be_schema_engine_register_admin_menu() {
         $capability,
         'beseo-tools',
         'be_schema_engine_render_tools_page'
+    );
+
+    // "Analyser" submenu.
+    add_submenu_page(
+        $top_level_slug,
+        __( 'Analyser', 'beseo' ),
+        __( 'Analyser', 'beseo' ),
+        $capability,
+        'beseo-analyser',
+        'be_schema_engine_render_analyser_page'
     );
 }
 add_action( 'admin_menu', 'be_schema_engine_register_admin_menu' );

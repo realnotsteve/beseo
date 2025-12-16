@@ -538,7 +538,7 @@ function be_schema_engine_render_tools_page() {
         } else {
             $tools_default_tab = 'validator';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'validator', 'images', 'analysis' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'validator', 'images' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
@@ -939,7 +939,6 @@ function be_schema_engine_render_tools_page() {
                 <a href="#be-schema-tools-dashboard" class="nav-tab<?php echo ( 'dashboard' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="dashboard"><?php esc_html_e( 'Dashboard', 'beseo' ); ?></a>
             <?php endif; ?>
             <a href="#be-schema-tools-validator" class="nav-tab<?php echo ( 'validator' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="validator"><?php esc_html_e( 'Validator', 'beseo' ); ?></a>
-            <a href="#be-schema-tools-analysis" class="nav-tab<?php echo ( 'analysis' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="analysis"><?php esc_html_e( 'Analysis', 'beseo' ); ?></a>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
             <?php endif; ?>
@@ -975,12 +974,6 @@ function be_schema_engine_render_tools_page() {
                 ?>
             </div>
         <?php endif; ?>
-
-        <div id="be-schema-tools-analysis" class="be-schema-tools-panel<?php echo ( 'analysis' === $tools_default_tab ) ? ' active' : ''; ?>">
-            <p class="description">
-                <?php esc_html_e( 'Analysis tools coming soon.', 'beseo' ); ?>
-            </p>
-        </div>
 
         <div id="be-schema-tools-validator" class="be-schema-tools-panel<?php echo ( 'validator' === $tools_default_tab ) ? ' active' : ''; ?>">
             <p class="description">
