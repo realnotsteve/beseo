@@ -2240,35 +2240,6 @@ function be_schema_engine_render_social_media_page() {
                     });
                 });
 
-                // Platforms → Twitter nested subtabs.
-                var platformTwitterLinks = document.querySelectorAll('#be-schema-platforms-twitter .be-schema-platforms-twitter-subtab');
-                var platformTwitterPanels = document.querySelectorAll('#be-schema-platforms-twitter .be-schema-social-panel');
-
-                function activatePlatformTwitterTab(tabKey) {
-                    platformTwitterLinks.forEach(function (link) {
-                        if (link.getAttribute('data-platform-twitter-tab') === tabKey) {
-                            link.classList.add('be-schema-social-subtab-active');
-                        } else {
-                            link.classList.remove('be-schema-social-subtab-active');
-                        }
-                    });
-
-                    platformTwitterPanels.forEach(function (panel) {
-                        if (panel.id === 'be-schema-platforms-twitter-' + tabKey) {
-                            panel.classList.add('be-schema-social-panel-active');
-                        } else {
-                            panel.classList.remove('be-schema-social-panel-active');
-                        }
-                    });
-                }
-
-                platformTwitterLinks.forEach(function (link) {
-                    link.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        var tabKey = link.getAttribute('data-platform-twitter-tab');
-                        activatePlatformTwitterTab(tabKey);
-                    });
-                });
 
                 function toggleTwitterCards(enabled) {
                     if (!twContentPanels || !twContentPanels.length) {
