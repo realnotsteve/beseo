@@ -4,6 +4,65 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.8] - 2025-12-15
+Summary: Devnotes + schema admin.
+
+### Changed
+- Touched areas: devnotes, schema admin.
+
+### Files
+- CHANGELOG.md
+- assets/css/analyser.css
+- assets/js/analyser.js
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/analyser-service.php
+- includes/admin/page-analyser.php
+- includes/admin/page-schema.php
+- includes/admin/schema-service.php
+
+
+## [2.1.7.5] - 2025-12-15
+Summary: Schema refactor groundwork.
+
+### Changed
+- Added schema-service include for shared helpers/saving logic and guarded definitions to allow further splitting without redeclare issues.
+- Ensured schema page pulls helpers from the new service file to prep for tab-level extraction.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/schema-service.php
+- includes/admin/page-schema.php
+- includes/admin/admin-menu.php
+
+## [2.1.7.4] - 2025-12-15
+Summary: Analyser refactor and asset extraction.
+
+### Changed
+- Split analyser into service/controller, external JS/CSS assets, and screen-scoped enqueues for cleaner maintenance.
+- Localized UI strings and preserved crawl controls (pause/resume, exports, progress) with the new asset pipeline.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/analyser-service.php
+- includes/admin/page-analyser.php
+- assets/js/analyser.js
+- assets/css/analyser.css
+
+## [2.1.7.3] - 2025-12-15
+Summary: Crawl UI polish and richer checks.
+
+### Added
+- Pause/resume controls, elapsed/current/error progress display, and CSV/JSON export for analyser crawls.
+- Extra crawl validations: broken internal links (sampled), duplicate titles across pages, missing OG/Twitter tags, and off-domain canonicals.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-analyser.php
+
 ## [2.1.7] - 2025-12-15
 Summary: Update.
 

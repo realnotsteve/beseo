@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Shared helpers live in the schema service.
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-service.php';
+
 /**
  * Save main BE Schema Engine settings.
  *
@@ -106,6 +109,7 @@ if ( ! function_exists( 'be_schema_admin_ensure_list' ) ) {
     }
 }
 
+if ( ! function_exists( 'be_schema_engine_save_settings' ) ) {
 function be_schema_engine_save_settings() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
@@ -468,6 +472,7 @@ function be_schema_engine_save_settings() {
     foreach ( $validation_errors as $message ) {
         add_settings_error( 'be_schema_engine', 'be_schema_engine_validation', $message, 'error' );
     }
+}
 }
 
 /**

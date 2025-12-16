@@ -1,0 +1,118 @@
+.be-schema-analyser-tabs {
+    margin-top: 12px;
+}
+.be-schema-analyser-tab {
+    display: inline-block;
+    padding: 8px 14px;
+    border: 1px solid #c3c4c7;
+    border-bottom: none;
+    background: #f6f7f7;
+    color: #50575e;
+    text-decoration: none;
+    margin-right: 4px;
+    border-radius: 3px 3px 0 0;
+}
+.be-schema-analyser-tab.active {
+    background: #fff;
+    color: #1d2327;
+    border-bottom: 1px solid #fff;
+}
+.be-schema-analyser-panel {
+    display: none;
+    border: 1px solid #ccd0d4;
+    padding: 16px;
+    background: #fff;
+}
+.be-schema-analyser-panel.active {
+    display: block;
+}
+.be-schema-issues-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+}
+.be-schema-issues-nav {
+    border: 1px solid #dfe2e6;
+    border-radius: 6px;
+    background: #f7f9fb;
+    padding: 10px;
+}
+.be-schema-issues-nav button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 6px;
+}
+.be-schema-issues-list {
+    border: 1px solid #dfe2e6;
+    border-radius: 6px;
+    padding: 12px;
+    background: #fff;
+}
+.be-schema-issues-list ul {
+    margin: 0;
+    padding-left: 16px;
+}
+.be-schema-issues-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.be-schema-issues-table th,
+.be-schema-issues-table td {
+    border-bottom: 1px solid #e5e5e5;
+    padding: 6px;
+}
+.be-schema-summary-card {
+    border: 1px solid #dfe2e6;
+    border-radius: 6px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f9fbfd, #eef2f5);
+    margin-bottom: 10px;
+}
+.be-schema-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+}
+.be-schema-pill.error { background: #fdecea; color: #8a1f11; }
+.be-schema-pill.warn { background: #fff4e5; color: #8a6d3b; }
+.be-schema-pill.info { background: #eef2f5; color: #2c3e50; }
+.be-schema-settings-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+.be-schema-settings-menu {
+    border: 1px solid #dfe2e6;
+    border-radius: 6px;
+    background: #f7f9fb;
+    padding: 10px;
+}
+.be-schema-settings-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 6px;
+}
+.be-schema-settings-panel {
+    border: 1px solid #dfe2e6;
+    border-radius: 6px;
+    padding: 12px;
+    background: #fff;
+}
+.be-schema-website-list {
+    margin-top: 8px;
+}
+.be-schema-website-list li {
+    margin-bottom: 6px;
+}
+.be-schema-analyser-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 12px;
+}
