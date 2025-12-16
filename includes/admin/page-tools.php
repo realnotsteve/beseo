@@ -40,6 +40,19 @@ function be_schema_engine_handle_validator_run() {
         );
     }
 
+    $page_start = microtime( true );
+    $request = wp_remote_get(
+        $url,
+        array(
+            'timeout'     => 12,
+            'redirection' => 5,
+            /* translators: %s: site url */
+            'user-agent'  => sprintf( 'BESEO Validator/2.0 (%s)', home_url() ),
+        )
+    );
+    $page_end = microtime( true );
+    $page_duration_ms = (int) round( ( $page_end - $page_start ) * 1000 );
+
     $result = array(
         'fetch'      => array(
             'status'    => 0,
@@ -65,19 +78,6 @@ function be_schema_engine_handle_validator_run() {
             'image_ms' => 0,
         ),
     );
-
-    $page_start = microtime( true );
-    $request = wp_remote_get(
-        $url,
-        array(
-            'timeout'     => 12,
-            'redirection' => 5,
-            /* translators: %s: site url */
-            'user-agent'  => sprintf( 'BESEO Validator/2.0 (%s)', home_url() ),
-        )
-    );
-    $page_end = microtime( true );
-    $page_duration_ms = (int) round( ( $page_end - $page_start ) * 1000 );
 
     if ( is_wp_error( $request ) ) {
         $result['fetch']['message'] = $request->get_error_message();
@@ -647,6 +647,10 @@ function be_schema_engine_render_tools_page() {
             .be-schema-validator-actions button {
                 min-width: 130px;
             }
+            .be-schema-validator-service {
+                min-width: 200px;
+                width: 100%;
+            }
             .be-schema-mini-badges {
                 display: flex;
                 flex-wrap: wrap;
@@ -676,6 +680,11 @@ function be_schema_engine_render_tools_page() {
                 gap: 10px 16px;
                 align-items: center;
                 width: auto;
+            }
+            .be-schema-engine-box.stacked {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
             }
             .be-schema-engine-box .be-schema-validator-platforms {
                 margin: 0;
@@ -986,10 +995,10 @@ function be_schema_engine_render_tools_page() {
                 </div>
                 <div class="be-schema-header-grid">
                     <div class="be-schema-header-section">
-                        <div class="be-schema-validator-rowline">
-                            <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                            <label><input type="radio" name="be_schema_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Site Page', 'beseo' ); ?></label>
-                            <label style="margin-left:-10px;"><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
+                       <div class="be-schema-validator-rowline">
+                           <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                           <label><input type="radio" name="be_schema_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Site Page', 'beseo' ); ?></label>
+                            <label><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
                         </div>
                         <div class="be-schema-validator-select-wrap">
                             <select id="be-schema-validator-select" class="regular-text"></select>
@@ -1014,14 +1023,14 @@ function be_schema_engine_render_tools_page() {
                                 </div>
                                 <label><input type="checkbox" id="be-schema-validator-crops" /> <?php esc_html_e( 'Possible Crops', 'beseo' ); ?></label>
                             </div>
-                                <div class="be-schema-engine-col">
-                                    <div class="be-schema-validator-rowline">
-                                        <label><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
-                                    </div>
-                                    <div class="be-schema-engine-box" style="flex-direction: column; align-items: flex-start;">
+                            <div class="be-schema-engine-col">
+                                <div class="be-schema-validator-rowline">
+                                    <label><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
+                                </div>
+                                <div class="be-schema-engine-box stacked">
                                     <label><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy Source URL to Clipboard', 'beseo' ); ?></label>
                                     <label><input type="checkbox" id="be-schema-validator-open-new" disabled checked /> <?php esc_html_e( 'Open and Switch to New Tab', 'beseo' ); ?></label>
-                                    <select id="be-schema-validator-service" style="min-width:200px; margin-top:8px;" disabled>
+                                    <select id="be-schema-validator-service" class="be-schema-validator-service" disabled>
                                         <option value=""><?php esc_html_e( 'Choose a service', 'beseo' ); ?></option>
                                         <option value="twitter" data-url="https://cards-dev.twitter.com/validator"><?php esc_html_e( 'Twitter Card Validator', 'beseo' ); ?></option>
                                         <option value="facebook" data-url="https://developers.facebook.com/tools/debug/"><?php esc_html_e( 'Facebook Sharing Debugger', 'beseo' ); ?></option>
@@ -1046,13 +1055,13 @@ function be_schema_engine_render_tools_page() {
                     </div>
                     <div class="be-schema-header-section">
                         <div class="be-schema-validator-context" id="be-schema-validator-context">
-                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Result', 'beseo' ); ?>:</span> <span id="be-schema-context-result">—</span></span>
-                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
-                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
-                            <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
-                            <div class="be-schema-mini-badges" id="be-schema-mini-badges"></div>
-                        </div>
-                        <p class="description" id="be-schema-validator-note" style="margin-top:6px;"></p>
+                    <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Result', 'beseo' ); ?>:</span> <span id="be-schema-context-result" aria-live="polite">—</span></span>
+                    <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
+                    <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
+                    <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
+                    <div class="be-schema-mini-badges" id="be-schema-mini-badges"></div>
+                </div>
+                        <p class="description" id="be-schema-validator-note" style="margin-top:6px;" aria-live="polite"></p>
                         <details class="be-schema-fetch-log" id="be-schema-fetch-log" style="display:none;">
                             <summary><?php esc_html_e( 'Fetch log', 'beseo' ); ?></summary>
                             <table>
@@ -1147,6 +1156,7 @@ function be_schema_engine_render_tools_page() {
             var validatorNonce = '<?php echo wp_create_nonce( 'be_schema_validator' ); ?>';
 
             var validatorStorageKey = 'be-schema-validator-state';
+            var lastData = null;
 
             document.addEventListener('DOMContentLoaded', function () {
                 var tabs = document.querySelectorAll('.nav-tab-wrapper a[data-tools-tab]');
@@ -1548,6 +1558,7 @@ function be_schema_engine_render_tools_page() {
                     if (!warningList) {
                         return;
                     }
+                    warnings = warnings || [];
                     if (data && data.fetch && typeof data.fetch.redirects !== 'undefined' && data.fetch.redirects > 1) {
                         var redirWarn = {
                             status: 'warn',
@@ -1558,7 +1569,7 @@ function be_schema_engine_render_tools_page() {
                     }
                     if (miniBadges) {
                         miniBadges.innerHTML = '';
-                        (warnings || []).forEach(function (item) {
+                        warnings.forEach(function (item) {
                             if (item.status && item.status === 'error') {
                                 var badge = document.createElement('span');
                                 badge.className = 'be-schema-mini-badge';
@@ -1626,6 +1637,7 @@ function be_schema_engine_render_tools_page() {
                         return;
                     }
                     window.__beSchemaLastData = data;
+                    lastData = data;
                     if (contextUrl) {
                         contextUrl.textContent = data.fetch && data.fetch.final_url ? data.fetch.final_url : currentUrl();
                     }
@@ -1682,6 +1694,7 @@ function be_schema_engine_render_tools_page() {
                     applyPreview(previewOg, data.resolved ? data.resolved.og : null, (ogCheckbox && ogCheckbox.checked) && (toggleOg ? toggleOg.checked : true));
                     renderWarnings(data.warnings, data);
                     renderFetchLog(data);
+                    lastData = data;
 
                     if (validatorNote) {
                         var fetchNote = '';
@@ -1712,6 +1725,15 @@ function be_schema_engine_render_tools_page() {
                     if (type === 'external') {
                         var svc = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex] : null;
                         var svcUrl = svc && svc.getAttribute('data-url');
+                        if (svc && svc.disabled) {
+                            if (validatorNote) {
+                                validatorNote.textContent = '<?php echo esc_js( __( 'Select an external service to continue.', 'beseo' ) ); ?>';
+                            }
+                            if (contextResult) {
+                                contextResult.textContent = '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
+                            }
+                            return;
+                        }
                         if (copyCheckbox && copyCheckbox.checked && navigator.clipboard) {
                             navigator.clipboard.writeText(url);
                         }
@@ -1791,6 +1813,9 @@ function be_schema_engine_render_tools_page() {
                         if (contextResult) {
                             contextResult.textContent = '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
                             contextResult.dataset.state = 'result';
+                        }
+                        if (copySummaryBtn) {
+                            copySummaryBtn.disabled = false;
                         }
                     });
                 }
@@ -1881,8 +1906,8 @@ function be_schema_engine_render_tools_page() {
                         summary.push('URL: ' + (contextUrl ? contextUrl.textContent : ''));
                         summary.push('Platforms: ' + (contextPlatforms ? contextPlatforms.textContent : ''));
                         summary.push('Last run: ' + (contextTime ? contextTime.textContent : ''));
-                        var resolvedTwitter = (window.__beSchemaLastData && window.__beSchemaLastData.resolved) ? window.__beSchemaLastData.resolved.twitter : null;
-                        var resolvedOg = (window.__beSchemaLastData && window.__beSchemaLastData.resolved) ? window.__beSchemaLastData.resolved.og : null;
+                        var resolvedTwitter = (lastData && lastData.resolved) ? lastData.resolved.twitter : null;
+                        var resolvedOg = (lastData && lastData.resolved) ? lastData.resolved.og : null;
                         if (resolvedTwitter) {
                             summary.push('Twitter title: ' + (resolvedTwitter.title && resolvedTwitter.title.value ? resolvedTwitter.title.value : ''));
                             summary.push('Twitter desc: ' + (resolvedTwitter.description && resolvedTwitter.description.value ? resolvedTwitter.description.value : ''));
@@ -1893,10 +1918,14 @@ function be_schema_engine_render_tools_page() {
                             summary.push('OG desc: ' + (resolvedOg.description && resolvedOg.description.value ? resolvedOg.description.value : ''));
                             summary.push('OG image: ' + (resolvedOg.image && resolvedOg.image.value ? resolvedOg.image.value : ''));
                         }
-                        if (window.__beSchemaLastData && window.__beSchemaLastData.warnings) {
-                            summary.push('Warnings: ' + window.__beSchemaLastData.warnings.map(function(w){ return w.status.toUpperCase() + ': ' + w.message; }).join(' | '));
+                        if (lastData && lastData.warnings) {
+                            summary.push('Warnings: ' + lastData.warnings.map(function(w){ return w.status.toUpperCase() + ': ' + w.message; }).join(' | '));
                         }
-                        navigator.clipboard.writeText(summary.join('\n'));
+                        navigator.clipboard.writeText(summary.join('\n')).catch(function() {
+                            if (validatorNote) {
+                                validatorNote.textContent = '<?php echo esc_js( __( 'Copy failed. Please try again.', 'beseo' ) ); ?>';
+                            }
+                        });
                     });
                 }
 

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.1] - 2025-12-15
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/page-tools.php
+
+
 ## [2.0.24] - 2025-12-15
 Summary: Devnotes.
 
@@ -28,11 +41,26 @@ Summary: Remove Tools Settings tab.
 - beseo-devnotes.json
 - includes/admin/page-tools.php
 
+## [2.1.0] - 2025-12-15
+Summary: Minor bump for Validator and Tools updates.
+
+### Changed
+- Incremented version to 2.1.0.
+- Added Tools Analysis tab placeholder and ongoing Validator UX refinements.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+
 ## [2.0.23] - 2025-12-15
 Summary: Add Tools Analysis tab (placeholder).
 
 ### Added
 - Added an Analysis tab under Tools (placeholder content).
+
+### Changed
+- Incremented version to 2.0.23.
 
 ### Files
 - beseo.php
