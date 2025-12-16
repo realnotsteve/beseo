@@ -7,6 +7,7 @@ add_action( 'wp_ajax_be_schema_analyser_run', 'be_schema_engine_handle_analyser_
 add_action( 'wp_ajax_be_schema_analyser_start', 'be_schema_engine_handle_analyser_start' );
 add_action( 'wp_ajax_be_schema_analyser_step', 'be_schema_engine_handle_analyser_step' );
 add_action( 'wp_ajax_be_schema_analyser_stop', 'be_schema_engine_handle_analyser_stop' );
+add_action( 'wp_ajax_be_schema_analyser_history', 'be_schema_engine_handle_analyser_history' );
 
 /**
  * Simple per-user analyser state storage.
@@ -14,6 +15,11 @@ add_action( 'wp_ajax_be_schema_analyser_stop', 'be_schema_engine_handle_analyser
 function be_schema_engine_analyser_state_key() {
     $user_id = get_current_user_id();
     return 'be_schema_analyser_state_' . ( $user_id ? $user_id : 'guest' );
+}
+
+function be_schema_engine_analyser_history_key() {
+    $user_id = get_current_user_id();
+    return 'be_schema_analyser_history_' . ( $user_id ? $user_id : 'guest' );
 }
 
 function be_schema_engine_analyser_state_get() {
@@ -32,6 +38,23 @@ function be_schema_engine_analyser_state_set( $state ) {
 
 function be_schema_engine_analyser_state_clear() {
     delete_transient( be_schema_engine_analyser_state_key() );
+}
+
+function be_schema_engine_analyser_history_get() {
+    $key     = be_schema_engine_analyser_history_key();
+    $history = get_transient( $key );
+    if ( ! is_array( $history ) ) {
+        return array();
+    }
+    return $history;
+}
+
+function be_schema_engine_analyser_history_push( $entry ) {
+    $key     = be_schema_engine_analyser_history_key();
+    $history = be_schema_engine_analyser_history_get();
+    array_unshift( $history, $entry );
+    $history = array_slice( $history, 0, 10 );
+    set_transient( $key, $history, DAY_IN_SECONDS * 14 );
 }
 
 /**
@@ -132,6 +155,24 @@ function be_schema_engine_handle_analyser_step() {
     $state['processed']      += 1;
     $state['results'][ $url ] = $analysis['issues'];
 
+    // Build summary counts.
+    $summary = array();
+    foreach ( $state['results'] as $page_url => $page_issues ) {
+        foreach ( (array) $page_issues as $issue ) {
+            $key = ( isset( $issue['severity'] ) ? $issue['severity'] : 'info' ) . '|' . ( isset( $issue['type'] ) ? $issue['type'] : 'generic' );
+            if ( ! isset( $summary[ $key ] ) ) {
+                $summary[ $key ] = array(
+                    'severity' => isset( $issue['severity'] ) ? $issue['severity'] : 'info',
+                    'type'     => isset( $issue['type'] ) ? $issue['type'] : 'generic',
+                    'count'    => 0,
+                    'pages'    => array(),
+                );
+            }
+            $summary[ $key ]['count']++;
+            $summary[ $key ]['pages'][] = $page_url;
+        }
+    }
+
     if ( ! empty( $analysis['internal'] ) && isset( $state['host'] ) ) {
         foreach ( $analysis['internal'] as $link ) {
             if ( count( $state['visited'] ) + count( $state['queue'] ) >= $state['max'] ) {
@@ -145,7 +186,22 @@ function be_schema_engine_handle_analyser_step() {
     }
 
     $done = ( $state['processed'] >= $state['max'] ) || empty( $state['queue'] );
-    be_schema_engine_analyser_state_set( $state );
+    if ( $done ) {
+        be_schema_engine_analyser_history_push(
+            array(
+                'timestamp' => time(),
+                'summary'   => array_values( $summary ),
+                'pages'     => $state['results'],
+                'stats'     => array(
+                    'processed' => $state['processed'],
+                    'max'       => $state['max'],
+                ),
+            )
+        );
+        be_schema_engine_analyser_state_clear();
+    } else {
+        be_schema_engine_analyser_state_set( $state );
+    }
 
     wp_send_json_success(
         array(
@@ -161,6 +217,8 @@ function be_schema_engine_handle_analyser_step() {
                 'queued'    => count( $state['queue'] ),
                 'max'       => $state['max'],
             ),
+            'summary'   => array_values( $summary ),
+            'pages'     => $state['results'],
         )
     );
 }
@@ -175,6 +233,18 @@ function be_schema_engine_handle_analyser_stop() {
     check_ajax_referer( 'be_schema_analyser', 'nonce' );
     be_schema_engine_analyser_state_clear();
     wp_send_json_success( array( 'message' => __( 'Crawl stopped.', 'beseo' ) ) );
+}
+
+/**
+ * Return analyser history.
+ */
+function be_schema_engine_handle_analyser_history() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Not allowed.', 'beseo' ) ), 403 );
+    }
+    check_ajax_referer( 'be_schema_analyser', 'nonce' );
+    $history = be_schema_engine_analyser_history_get();
+    wp_send_json_success( array( 'history' => $history ) );
 }
 
 /**
@@ -245,6 +315,15 @@ function be_schema_engine_render_analyser_page() {
                 margin: 0;
                 padding-left: 16px;
             }
+            .be-schema-issues-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .be-schema-issues-table th,
+            .be-schema-issues-table td {
+                border-bottom: 1px solid #e5e5e5;
+                padding: 6px;
+            }
             .be-schema-summary-card {
                 border: 1px solid #dfe2e6;
                 border-radius: 6px;
@@ -309,11 +388,11 @@ function be_schema_engine_render_analyser_page() {
             <p class="description"><?php esc_html_e( 'The analyser performs a lightweight fetch and inspects metadata, headings, canonicals, robots, and link counts. It will expand to multi-page crawls in the future.', 'beseo' ); ?></p>
             <div class="be-schema-analyser-controls">
                 <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
-                <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url">
+                <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url" style="display:inline-block;">
                     <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
                 </select>
-                <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="https://example.com/" />
+                <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="https://example.com/" style="display:none;" />
                 <input type="number" id="be-schema-analyser-limit" class="small-text" value="10" min="1" max="100" style="width:70px;" />
                 <button class="button button-primary" id="be-schema-analyser-run"><?php esc_html_e( 'Run analysis', 'beseo' ); ?></button>
                 <button class="button" id="be-schema-analyser-stop" disabled><?php esc_html_e( 'Stop', 'beseo' ); ?></button>
@@ -340,11 +419,20 @@ function be_schema_engine_render_analyser_page() {
         </div>
 
         <div id="be-schema-analyser-pages" class="be-schema-analyser-panel<?php echo ( 'pages' === $default_tab ) ? ' active' : ''; ?>">
-            <p class="description"><?php esc_html_e( 'Per-page details and filters will appear here. Use this tab to inspect specific URLs.', 'beseo' ); ?></p>
+            <p class="description"><?php esc_html_e( 'Per-page findings from the last crawl.', 'beseo' ); ?></p>
+            <div id="be-schema-pages-list" class="be-schema-issues-list">
+                <p class="description"><?php esc_html_e( 'No crawl has run yet.', 'beseo' ); ?></p>
+            </div>
         </div>
 
         <div id="be-schema-analyser-history" class="be-schema-analyser-panel<?php echo ( 'history' === $default_tab ) ? ' active' : ''; ?>">
-            <p class="description"><?php esc_html_e( 'History of scans and issue trends will appear here.', 'beseo' ); ?></p>
+            <p class="description"><?php esc_html_e( 'Recent crawl snapshots with issue counts.', 'beseo' ); ?></p>
+            <div id="be-schema-history-list" class="be-schema-issues-list">
+                <p class="description"><?php esc_html_e( 'No history yet.', 'beseo' ); ?></p>
+            </div>
+            <div id="be-schema-history-delta" class="be-schema-issues-list" style="margin-top:12px;">
+                <p class="description"><?php esc_html_e( 'Run two crawls to see deltas.', 'beseo' ); ?></p>
+            </div>
         </div>
 
         <div id="be-schema-analyser-settings" class="be-schema-analyser-panel<?php echo ( 'settings' === $default_tab ) ? ' active' : ''; ?>">
@@ -386,6 +474,8 @@ function be_schema_engine_render_analyser_page() {
                 var sitesAdd = document.getElementById('be-schema-sites-add');
                 var sitesLabel = document.getElementById('be-schema-sites-label');
                 var sitesUrl = document.getElementById('be-schema-sites-url');
+                var historyList = document.getElementById('be-schema-history-list');
+                var historyDelta = document.getElementById('be-schema-history-delta');
 
                 var sitesStoreKey = 'be-schema-analyser-sites';
                 var sites = [];
@@ -413,37 +503,78 @@ function be_schema_engine_render_analyser_page() {
                         return;
                     }
                     issuesList.innerHTML = '';
-                    if (!data || !data.issues || !data.issues.length) {
+                    if (!data || !data.summary || !data.summary.length) {
                         var p = document.createElement('p');
                         p.className = 'description';
-                        p.textContent = '<?php echo esc_js( __( 'No issues detected for this page.', 'beseo' ) ); ?>';
+                        p.textContent = '<?php echo esc_js( __( 'No issues detected for this crawl.', 'beseo' ) ); ?>';
                         issuesList.appendChild(p);
                         return;
                     }
                     var table = document.createElement('table');
                     table.className = 'be-schema-issues-table';
                     var thead = document.createElement('thead');
-                    thead.innerHTML = '<tr><th><?php echo esc_js( __( 'Severity', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Type', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Message', 'beseo' ) ); ?></th></tr>';
+                    thead.innerHTML = '<tr><th><?php echo esc_js( __( 'Severity', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Type', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Count', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Example Page', 'beseo' ) ); ?></th></tr>';
                     table.appendChild(thead);
                     var tbody = document.createElement('tbody');
-                    data.issues.forEach(function(issue) {
+                    data.summary.forEach(function(item) {
                         var tr = document.createElement('tr');
                         var sev = document.createElement('td');
                         var pill = document.createElement('span');
-                        pill.className = 'be-schema-pill ' + (issue.severity || 'info');
-                        pill.textContent = issue.severity || '';
+                        pill.className = 'be-schema-pill ' + (item.severity || 'info');
+                        pill.textContent = item.severity || '';
                         sev.appendChild(pill);
                         var type = document.createElement('td');
-                        type.textContent = issue.type || '';
-                        var msg = document.createElement('td');
-                        msg.textContent = issue.message || '';
+                        type.textContent = item.type || '';
+                        var count = document.createElement('td');
+                        count.textContent = item.count || 0;
+                        var page = document.createElement('td');
+                        page.textContent = (item.pages && item.pages.length) ? item.pages[0] : '';
                         tr.appendChild(sev);
                         tr.appendChild(type);
-                        tr.appendChild(msg);
+                        tr.appendChild(count);
+                        tr.appendChild(page);
                         tbody.appendChild(tr);
                     });
                     table.appendChild(tbody);
                     issuesList.appendChild(table);
+                }
+
+                function renderPages(pagesData) {
+                    var pagesNode = document.getElementById('be-schema-pages-list');
+                    if (!pagesNode) {
+                        return;
+                    }
+                    pagesNode.innerHTML = '';
+                    if (!pagesData || !Object.keys(pagesData).length) {
+                        var p = document.createElement('p');
+                        p.className = 'description';
+                        p.textContent = '<?php echo esc_js( __( 'No pages processed yet.', 'beseo' ) ); ?>';
+                        pagesNode.appendChild(p);
+                        return;
+                    }
+                    Object.keys(pagesData).forEach(function(url) {
+                        var issues = pagesData[url] || [];
+                        var card = document.createElement('div');
+                        card.className = 'be-schema-issues-list';
+                        var title = document.createElement('strong');
+                        title.textContent = url;
+                        card.appendChild(title);
+                        if (!issues.length) {
+                            var none = document.createElement('p');
+                            none.className = 'description';
+                            none.textContent = '<?php echo esc_js( __( 'No issues.', 'beseo' ) ); ?>';
+                            card.appendChild(none);
+                        } else {
+                            var list = document.createElement('ul');
+                            issues.forEach(function(issue) {
+                                var li = document.createElement('li');
+                                li.textContent = '[' + (issue.severity || '').toUpperCase() + '] ' + (issue.type || '') + ': ' + (issue.message || '');
+                                list.appendChild(li);
+                            });
+                            card.appendChild(list);
+                        }
+                        pagesNode.appendChild(card);
+                    });
                 }
 
                 function setStatus(text) {
@@ -453,6 +584,119 @@ function be_schema_engine_render_analyser_page() {
                 }
 
                 var crawlTimer = null;
+
+                function loadHistory() {
+                    var form = new FormData();
+                    form.append('action', 'be_schema_analyser_history');
+                    form.append('nonce', nonce);
+                    fetch(ajaxurl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: form
+                    }).then(function(resp){ return resp.json(); }).then(function(payload) {
+                        if (!payload || !payload.success) {
+                            return;
+                        }
+                        renderHistory(payload.data.history || []);
+                    }).catch(function() {});
+                }
+
+                function renderHistory(history) {
+                    if (!historyList) {
+                        return;
+                    }
+                    historyList.innerHTML = '';
+                    if (!history || !history.length) {
+                        var p = document.createElement('p');
+                        p.className = 'description';
+                        p.textContent = '<?php echo esc_js( __( 'No history yet.', 'beseo' ) ); ?>';
+                        historyList.appendChild(p);
+                        return;
+                    }
+                    history.forEach(function(entry, idx) {
+                        var card = document.createElement('div');
+                        card.className = 'be-schema-issues-list';
+                        var heading = document.createElement('strong');
+                        var date = new Date(entry.timestamp * 1000);
+                        heading.textContent = date.toLocaleString();
+                        card.appendChild(heading);
+                        var info = document.createElement('p');
+                        info.className = 'description';
+                        info.textContent = '<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + (entry.stats ? entry.stats.processed : 0);
+                        card.appendChild(info);
+                        if (entry.summary && entry.summary.length) {
+                            var table = document.createElement('table');
+                            table.className = 'be-schema-issues-table';
+                            var thead = document.createElement('thead');
+                            thead.innerHTML = '<tr><th><?php echo esc_js( __( 'Severity', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Type', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Count', 'beseo' ) ); ?></th></tr>';
+                            table.appendChild(thead);
+                            var tbody = document.createElement('tbody');
+                            entry.summary.forEach(function(item) {
+                                var tr = document.createElement('tr');
+                        var sev = document.createElement('td');
+                        var pill = document.createElement('span');
+                        pill.className = 'be-schema-pill ' + (item.severity || 'info');
+                        pill.textContent = item.severity || '';
+                        sev.appendChild(pill);
+                        var type = document.createElement('td');
+                                type.textContent = item.type || '';
+                                var count = document.createElement('td');
+                                count.textContent = item.count || 0;
+                                tr.appendChild(sev);
+                                tr.appendChild(type);
+                                tr.appendChild(count);
+                                tbody.appendChild(tr);
+                            });
+                            table.appendChild(tbody);
+                            card.appendChild(table);
+                        }
+                        historyList.appendChild(card);
+                    });
+                    if (historyDelta) {
+                        if (history.length < 2) {
+                            historyDelta.innerHTML = '<p class="description"><?php echo esc_js( __( 'Run two crawls to see deltas.', 'beseo' ) ); ?></p>';
+                        } else {
+                            var latest = history[0].summary || [];
+                            var prev   = history[1].summary || [];
+                            var diff   = {};
+                            prev.forEach(function(item) {
+                                var key = (item.severity || '') + '|' + (item.type || '');
+                                diff[key] = -1 * (item.count || 0);
+                            });
+                            latest.forEach(function(item) {
+                                var key = (item.severity || '') + '|' + (item.type || '');
+                                diff[key] = (diff[key] || 0) + (item.count || 0);
+                            });
+                            var table = document.createElement('table');
+                            table.className = 'be-schema-issues-table';
+                            var thead = document.createElement('thead');
+                            thead.innerHTML = '<tr><th><?php echo esc_js( __( 'Severity', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Type', 'beseo' ) ); ?></th><th><?php echo esc_js( __( 'Delta', 'beseo' ) ); ?></th></tr>';
+                            table.appendChild(thead);
+                            var tbody = document.createElement('tbody');
+                            Object.keys(diff).forEach(function(key) {
+                                var parts = key.split('|');
+                                var delta = diff[key];
+                                var tr = document.createElement('tr');
+                                var sev = document.createElement('td');
+                                var pill = document.createElement('span');
+                                pill.className = 'be-schema-pill ' + (parts[0] || 'info');
+                                pill.textContent = parts[0] || '';
+                                sev.appendChild(pill);
+                                var type = document.createElement('td');
+                                type.textContent = parts[1] || '';
+                                var val = document.createElement('td');
+                                val.textContent = delta;
+                                tr.appendChild(sev);
+                                tr.appendChild(type);
+                                tr.appendChild(val);
+                                tbody.appendChild(tr);
+                            });
+                            table.appendChild(tbody);
+                            historyDelta.innerHTML = '';
+                            historyDelta.appendChild(table);
+                        }
+                    }
+                }
 
                 function loadSites() {
                     try {
@@ -534,8 +778,11 @@ function be_schema_engine_render_analyser_page() {
                             if (stopBtn) { stopBtn.disabled = true; }
                             return;
                         }
-                        if (payload.data && payload.data.last && payload.data.last.issues) {
-                            renderIssues({ issues: payload.data.last.issues });
+                        if (payload.data) {
+                            renderIssues(payload.data);
+                            if (payload.data.pages) {
+                                renderPages(payload.data.pages);
+                            }
                         }
                         var state = payload.data.state || {};
                         setStatus('<?php echo esc_js( __( 'Processed', 'beseo' ) ); ?> ' + (state.processed || 0) + ' / ' + (state.max || '') + ' · ' + (state.queued || 0) + ' <?php echo esc_js( __( 'queued', 'beseo' ) ); ?>');
@@ -586,6 +833,7 @@ function be_schema_engine_render_analyser_page() {
                             runBtn.disabled = true;
                             if (stopBtn) { stopBtn.disabled = false; }
                             pollStep();
+                            loadHistory();
                         }).catch(function() {
                             runBtn.disabled = false;
                             setStatus('<?php echo esc_js( __( 'Analysis failed.', 'beseo' ) ); ?>');
@@ -611,6 +859,7 @@ function be_schema_engine_render_analyser_page() {
                             setStatus('<?php echo esc_js( __( 'Crawl stopped.', 'beseo' ) ); ?>');
                             if (runBtn) { runBtn.disabled = false; }
                             stopBtn.disabled = true;
+                            loadHistory();
                         });
                     });
                 }
@@ -639,18 +888,21 @@ function be_schema_engine_render_analyser_page() {
                 targetRadios.forEach(function(radio) {
                     radio.addEventListener('change', function() {
                         var mode = radio.value;
-                        if (mode === 'manual') {
-                            if (urlInput) { urlInput.disabled = false; }
-                            if (siteSelect) { siteSelect.disabled = true; }
-                        } else {
-                            if (urlInput) { urlInput.disabled = true; }
-                            if (siteSelect) { siteSelect.disabled = false; }
+                        var useManual = (mode === 'manual');
+                        if (urlInput) {
+                            urlInput.style.display = useManual ? 'inline-block' : 'none';
+                            urlInput.disabled = !useManual;
+                        }
+                        if (siteSelect) {
+                            siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                            siteSelect.disabled = useManual;
                         }
                     });
                 });
 
                 loadSites();
                 renderSites();
+                loadHistory();
             });
         })();
     </script>

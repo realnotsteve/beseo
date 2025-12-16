@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.6] - 2025-12-15
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/page-analyser.php
+
+
 ## [2.1.5] - 2025-12-15
 Summary: Devnotes.
 
@@ -13,6 +26,19 @@ Summary: Devnotes.
 ### Files
 - CHANGELOG.md
 - beseo-devnotes.json
+
+## [2.1.5.2] - 2025-12-15
+Summary: Analyser multi-page aggregate + targets.
+
+### Added
+- Saved Websites list in Analyser settings and toggle between saved sites and manual URL for crawls.
+- Aggregated issue summary across crawl (severity/type counts) and per-page issue listing.
+- Crawl controls now show progress and issue table updates during multi-page runs.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-analyser.php
 - beseo.php
 
 
