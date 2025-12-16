@@ -4,6 +4,57 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.0.24] - 2025-12-15
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/page-tools.php
+
+
+## [2.0.22] - 2025-12-15
+Summary: Remove Tools Settings tab.
+
+### Changed
+- Removed the Settings tab from Tools; Tools now focuses on Dashboard, Validator, Images, and Help (when applicable).
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+
+## [2.0.23] - 2025-12-15
+Summary: Add Tools Analysis tab (placeholder).
+
+### Added
+- Added an Analysis tab under Tools (placeholder content).
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+
+## [2.0.21] - 2025-12-15
+Summary: Validator persistence, metrics, and UI controls.
+
+### Added
+- Fetch timing/redirect badges, fetch log drawer, and image/type/dimension metrics in Validator results.
+- Copy summary action, per-platform preview visibility toggles, and session persistence for validator inputs.
+- External validators now include LinkedIn Post Inspector and Metatags, plus a new-tab toggle.
+
+### Changed
+- Refined header spacing/layout; external open defaults to new tab.
+
+### Files
+- beseo.php
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+
 ## [2.0.20] - 2025-12-15
 Summary: Update.
 

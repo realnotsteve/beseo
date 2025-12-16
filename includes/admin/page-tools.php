@@ -46,6 +46,7 @@ function be_schema_engine_handle_validator_run() {
             'message'   => '',
             'redirects' => 0,
             'final_url' => $url,
+            'duration_ms' => $page_duration_ms,
         ),
         'platforms'  => array(
             'twitter' => $enable_twitter,
@@ -59,8 +60,13 @@ function be_schema_engine_handle_validator_run() {
             'yellow' => __( 'Fallback used', 'beseo' ),
             'red'    => __( 'Missing/invalid', 'beseo' ),
         ),
+        'metrics'    => array(
+            'page_ms'  => $page_duration_ms,
+            'image_ms' => 0,
+        ),
     );
 
+    $page_start = microtime( true );
     $request = wp_remote_get(
         $url,
         array(
@@ -70,6 +76,8 @@ function be_schema_engine_handle_validator_run() {
             'user-agent'  => sprintf( 'BESEO Validator/2.0 (%s)', home_url() ),
         )
     );
+    $page_end = microtime( true );
+    $page_duration_ms = (int) round( ( $page_end - $page_start ) * 1000 );
 
     if ( is_wp_error( $request ) ) {
         $result['fetch']['message'] = $request->get_error_message();
@@ -281,6 +289,7 @@ function be_schema_engine_handle_validator_run() {
         'ratioLabel'   => '',
         'url'          => $image_url,
         'redirects'    => 0,
+        'duration_ms'  => 0,
     );
 
     if ( '' === $image_url ) {
@@ -290,6 +299,7 @@ function be_schema_engine_handle_validator_run() {
             'platforms' => array( 'Open Graph', 'X' ),
         );
     } else {
+        $image_start = microtime( true );
         $image_request = wp_remote_get(
             $image_url,
             array(
@@ -299,6 +309,9 @@ function be_schema_engine_handle_validator_run() {
                 'user-agent'  => sprintf( 'BESEO Validator/2.0 (%s)', home_url() ),
             )
         );
+        $image_end = microtime( true );
+        $result['metrics']['image_ms'] = (int) round( ( $image_end - $image_start ) * 1000 );
+        $image_info['duration_ms']      = $result['metrics']['image_ms'];
 
         if ( is_wp_error( $image_request ) ) {
             $result['warnings'][] = array(
@@ -522,12 +535,10 @@ function be_schema_engine_render_tools_page() {
         // Default to Help tab if explicitly requested or after a save postback.
         if ( ( $requested_tab && 'help' === $requested_tab ) || ! empty( $_POST['be_schema_help_overrides_nonce'] ) ) {
             $tools_default_tab = 'help';
-        } elseif ( $requested_tab && 'validator' === $requested_tab ) {
-            $tools_default_tab = 'validator';
         } else {
-            $tools_default_tab = 'settings';
+            $tools_default_tab = 'validator';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'settings', 'validator', 'images' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'validator', 'images', 'analysis' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
@@ -636,6 +647,22 @@ function be_schema_engine_render_tools_page() {
             .be-schema-validator-actions button {
                 min-width: 130px;
             }
+            .be-schema-mini-badges {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-top: 6px;
+            }
+            .be-schema-mini-badge {
+                background: #eef2f5;
+                border-radius: 999px;
+                padding: 3px 8px;
+                font-size: 11px;
+                color: #2c3e50;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
             .be-schema-validator-platforms label {
                 margin-right: 8px;
                 margin-bottom: 2px;
@@ -684,6 +711,23 @@ function be_schema_engine_render_tools_page() {
                 grid-template-columns: 1fr 1fr;
                 gap: 16px;
                 margin-top: 12px;
+            }
+            .be-schema-fetch-log {
+                margin-top: 8px;
+                font-size: 12px;
+            }
+            .be-schema-fetch-log summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .be-schema-fetch-log table {
+                margin-top: 4px;
+                border-collapse: collapse;
+                width: 100%;
+            }
+            .be-schema-fetch-log td {
+                padding: 2px 4px;
+                border-bottom: 1px solid #e5e5e5;
             }
             .be-schema-validator-right {
                 display: flex;
@@ -885,8 +929,8 @@ function be_schema_engine_render_tools_page() {
             <?php if ( ! $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-dashboard" class="nav-tab<?php echo ( 'dashboard' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="dashboard"><?php esc_html_e( 'Dashboard', 'beseo' ); ?></a>
             <?php endif; ?>
-            <a href="#be-schema-tools-settings" class="nav-tab<?php echo ( 'settings' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="settings"><?php esc_html_e( 'Settings', 'beseo' ); ?></a>
             <a href="#be-schema-tools-validator" class="nav-tab<?php echo ( 'validator' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="validator"><?php esc_html_e( 'Validator', 'beseo' ); ?></a>
+            <a href="#be-schema-tools-analysis" class="nav-tab<?php echo ( 'analysis' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="analysis"><?php esc_html_e( 'Analysis', 'beseo' ); ?></a>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
             <?php endif; ?>
@@ -911,15 +955,6 @@ function be_schema_engine_render_tools_page() {
             </div>
         <?php endif; ?>
 
-        <div id="be-schema-tools-settings" class="be-schema-tools-panel<?php echo ( 'settings' === $tools_default_tab ) ? ' active' : ''; ?>">
-            <p class="description">
-                <?php esc_html_e(
-                    'Quick access to core toggles lives here. Use Schema → Settings and Social → Dashboard/Platforms for full control.',
-                    'beseo'
-                ); ?>
-            </p>
-        </div>
-
         <?php if ( $is_settings_submenu ) : ?>
             <div id="be-schema-tools-help" class="be-schema-tools-panel<?php echo ( 'help' === $tools_default_tab ) ? ' active' : ''; ?>">
                 <?php
@@ -931,6 +966,12 @@ function be_schema_engine_render_tools_page() {
                 ?>
             </div>
         <?php endif; ?>
+
+        <div id="be-schema-tools-analysis" class="be-schema-tools-panel<?php echo ( 'analysis' === $tools_default_tab ) ? ' active' : ''; ?>">
+            <p class="description">
+                <?php esc_html_e( 'Analysis tools coming soon.', 'beseo' ); ?>
+            </p>
+        </div>
 
         <div id="be-schema-tools-validator" class="be-schema-tools-panel<?php echo ( 'validator' === $tools_default_tab ) ? ' active' : ''; ?>">
             <p class="description">
@@ -978,8 +1019,8 @@ function be_schema_engine_render_tools_page() {
                                         <label><input type="radio" name="be_schema_validator_type" value="external" /> <?php esc_html_e( 'External Service', 'beseo' ); ?></label>
                                     </div>
                                     <div class="be-schema-engine-box" style="flex-direction: column; align-items: flex-start;">
-                                        <label><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy Source URL to Clipboard', 'beseo' ); ?></label>
-                                        <label><input type="checkbox" id="be-schema-validator-open-new" disabled /> <?php esc_html_e( 'Open and Switch to New Tab', 'beseo' ); ?></label>
+                                    <label><input type="checkbox" id="be-schema-validator-copy" disabled /> <?php esc_html_e( 'Copy Source URL to Clipboard', 'beseo' ); ?></label>
+                                    <label><input type="checkbox" id="be-schema-validator-open-new" disabled checked /> <?php esc_html_e( 'Open and Switch to New Tab', 'beseo' ); ?></label>
                                     <select id="be-schema-validator-service" style="min-width:200px; margin-top:8px;" disabled>
                                         <option value=""><?php esc_html_e( 'Choose a service', 'beseo' ); ?></option>
                                         <option value="twitter" data-url="https://cards-dev.twitter.com/validator"><?php esc_html_e( 'Twitter Card Validator', 'beseo' ); ?></option>
@@ -996,6 +1037,11 @@ function be_schema_engine_render_tools_page() {
                         <div class="be-schema-validator-actions">
                             <button type="button" class="button button-primary" id="be-schema-validator-run" disabled><?php esc_html_e( 'Validate', 'beseo' ); ?></button>
                             <button type="button" class="button" id="be-schema-validator-rerun" disabled><?php esc_html_e( 'Re-run', 'beseo' ); ?></button>
+                            <button type="button" class="button" id="be-schema-validator-copy-summary" disabled><?php esc_html_e( 'Copy summary', 'beseo' ); ?></button>
+                            <div class="be-schema-validator-rowline" style="flex-wrap: nowrap;">
+                                <label><input type="checkbox" id="be-schema-toggle-twitter" checked /> <?php esc_html_e( 'Show Twitter preview', 'beseo' ); ?></label>
+                                <label><input type="checkbox" id="be-schema-toggle-og" checked /> <?php esc_html_e( 'Show OG preview', 'beseo' ); ?></label>
+                            </div>
                         </div>
                     </div>
                     <div class="be-schema-header-section">
@@ -1004,8 +1050,23 @@ function be_schema_engine_render_tools_page() {
                             <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'URL', 'beseo' ); ?>:</span> <span id="be-schema-context-url">—</span></span>
                             <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Last run', 'beseo' ); ?>:</span> <span id="be-schema-context-time">—</span></span>
                             <span class="be-schema-context-line"><span class="label"><?php esc_html_e( 'Platforms', 'beseo' ); ?>:</span> <span id="be-schema-context-platforms">—</span></span>
+                            <div class="be-schema-mini-badges" id="be-schema-mini-badges"></div>
                         </div>
                         <p class="description" id="be-schema-validator-note" style="margin-top:6px;"></p>
+                        <details class="be-schema-fetch-log" id="be-schema-fetch-log" style="display:none;">
+                            <summary><?php esc_html_e( 'Fetch log', 'beseo' ); ?></summary>
+                            <table>
+                                <tbody>
+                                    <tr><td><?php esc_html_e( 'Page status', 'beseo' ); ?></td><td id="be-schema-log-page-status">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Page time (ms)', 'beseo' ); ?></td><td id="be-schema-log-page-time">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Redirects', 'beseo' ); ?></td><td id="be-schema-log-redirects">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Image status', 'beseo' ); ?></td><td id="be-schema-log-image-status">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Image time (ms)', 'beseo' ); ?></td><td id="be-schema-log-image-time">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Image type', 'beseo' ); ?></td><td id="be-schema-log-image-type">—</td></tr>
+                                    <tr><td><?php esc_html_e( 'Image size', 'beseo' ); ?></td><td id="be-schema-log-image-size">—</td></tr>
+                                </tbody>
+                            </table>
+                        </details>
                     </div>
                 </div>
             </div>
@@ -1085,38 +1146,54 @@ function be_schema_engine_render_tools_page() {
             var validatorAjax = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
             var validatorNonce = '<?php echo wp_create_nonce( 'be_schema_validator' ); ?>';
 
+            var validatorStorageKey = 'be-schema-validator-state';
+
             document.addEventListener('DOMContentLoaded', function () {
                 var tabs = document.querySelectorAll('.nav-tab-wrapper a[data-tools-tab]');
                 var panels = document.querySelectorAll('.be-schema-tools-panel');
                 var defaultTab = '<?php echo esc_js( $tools_default_tab ); ?>';
 
-                    var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
-                    var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
-                    var validatorSelect = document.getElementById('be-schema-validator-select');
-                    var validatorManual = document.getElementById('be-schema-validator-manual');
-                    var searchWrap = document.querySelector('.be-schema-validator-search');
-                    var searchInput = document.getElementById('be-schema-validator-search');
-                    var includePosts = document.getElementById('be-schema-validator-include-posts');
-                    var ogCheckbox = document.getElementById('be-schema-validator-og');
-                    var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
-                    var cropsCheckbox = document.getElementById('be-schema-validator-crops');
-                    var serviceSelect = document.getElementById('be-schema-validator-service');
-                    var copyCheckbox = document.getElementById('be-schema-validator-copy');
-                    var openNewCheckbox = document.getElementById('be-schema-validator-open-new');
-                    var validateBtn = document.getElementById('be-schema-validator-run');
-                    var reRunBtn = document.getElementById('be-schema-validator-rerun');
-                    var validatorNote = document.getElementById('be-schema-validator-note');
-                    var warningList = document.getElementById('be-schema-warning-list');
-                    var sourceMap = document.getElementById('be-schema-source-map');
-                    var contextUrl = document.getElementById('be-schema-context-url');
-                    var contextPlatforms = document.getElementById('be-schema-context-platforms');
-                    var contextTime = document.getElementById('be-schema-context-time');
-                    var contextResult = document.getElementById('be-schema-context-result');
+                var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
+                var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
+                var validatorSelect = document.getElementById('be-schema-validator-select');
+                var validatorManual = document.getElementById('be-schema-validator-manual');
+                var searchWrap = document.querySelector('.be-schema-validator-search');
+                var searchInput = document.getElementById('be-schema-validator-search');
+                var includePosts = document.getElementById('be-schema-validator-include-posts');
+                var ogCheckbox = document.getElementById('be-schema-validator-og');
+                var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
+                var cropsCheckbox = document.getElementById('be-schema-validator-crops');
+                var serviceSelect = document.getElementById('be-schema-validator-service');
+                var copyCheckbox = document.getElementById('be-schema-validator-copy');
+                var openNewCheckbox = document.getElementById('be-schema-validator-open-new');
+                var validateBtn = document.getElementById('be-schema-validator-run');
+                var reRunBtn = document.getElementById('be-schema-validator-rerun');
+                var copySummaryBtn = document.getElementById('be-schema-validator-copy-summary');
+                var toggleTwitter = document.getElementById('be-schema-toggle-twitter');
+                var toggleOg = document.getElementById('be-schema-toggle-og');
+                var validatorNote = document.getElementById('be-schema-validator-note');
+                var warningList = document.getElementById('be-schema-warning-list');
+                var sourceMap = document.getElementById('be-schema-source-map');
+                var contextUrl = document.getElementById('be-schema-context-url');
+                var contextPlatforms = document.getElementById('be-schema-context-platforms');
+                var contextTime = document.getElementById('be-schema-context-time');
+                var contextResult = document.getElementById('be-schema-context-result');
+                var miniBadges = document.getElementById('be-schema-mini-badges');
+                var fetchLog = {
+                    container: document.getElementById('be-schema-fetch-log'),
+                    pageStatus: document.getElementById('be-schema-log-page-status'),
+                    pageTime: document.getElementById('be-schema-log-page-time'),
+                    redirects: document.getElementById('be-schema-log-redirects'),
+                    imageStatus: document.getElementById('be-schema-log-image-status'),
+                    imageTime: document.getElementById('be-schema-log-image-time'),
+                    imageType: document.getElementById('be-schema-log-image-type'),
+                    imageSize: document.getElementById('be-schema-log-image-size')
+                };
 
-                    var previewTwitter = {
-                        wrap: document.getElementById('be-schema-preview-twitter'),
-                        img: document.getElementById('be-schema-preview-twitter-img'),
-                        title: document.getElementById('be-schema-preview-twitter-title'),
+                var previewTwitter = {
+                    wrap: document.getElementById('be-schema-preview-twitter'),
+                    img: document.getElementById('be-schema-preview-twitter-img'),
+                    title: document.getElementById('be-schema-preview-twitter-title'),
                         desc: document.getElementById('be-schema-preview-twitter-desc'),
                         domain: document.getElementById('be-schema-preview-twitter-domain'),
                         card: document.getElementById('be-schema-preview-twitter-card')
@@ -1165,15 +1242,70 @@ function be_schema_engine_render_tools_page() {
                         return mode;
                     }
 
-                    function currentValidationType() {
-                        var type = 'native';
-                        validatorType.forEach(function (radio) {
-                            if (radio.checked) {
-                                type = radio.value;
+                function currentValidationType() {
+                    var type = 'native';
+                    validatorType.forEach(function (radio) {
+                        if (radio.checked) {
+                            type = radio.value;
                             }
                         });
-                        return type;
+                    return type;
+                }
+
+                function persistState() {
+                    var state = {
+                        mode: currentMode(),
+                        type: currentValidationType(),
+                        includePosts: includePosts ? includePosts.checked : false,
+                        og: ogCheckbox ? ogCheckbox.checked : false,
+                        twitter: twitterCheckbox ? twitterCheckbox.checked : false,
+                        crops: cropsCheckbox ? cropsCheckbox.checked : false,
+                        copy: copyCheckbox ? copyCheckbox.checked : false,
+                        openNew: openNewCheckbox ? openNewCheckbox.checked : false,
+                        url: currentUrl(),
+                        selectValue: validatorSelect ? validatorSelect.value : '',
+                        manualValue: validatorManual ? validatorManual.value : '',
+                        search: searchInput ? searchInput.value : '',
+                        showTwitter: toggleTwitter ? toggleTwitter.checked : true,
+                        showOg: toggleOg ? toggleOg.checked : true,
+                        service: serviceSelect ? serviceSelect.value : ''
+                    };
+                    try {
+                        localStorage.setItem(validatorStorageKey, JSON.stringify(state));
+                    } catch (e) {
+                        // ignore
                     }
+                }
+
+                function restoreState() {
+                    try {
+                        var raw = localStorage.getItem(validatorStorageKey);
+                        if (!raw) { return; }
+                        var state = JSON.parse(raw);
+                        if (state.mode && validatorMode) {
+                            validatorMode.forEach(function(r){ r.checked = (r.value === state.mode); });
+                        }
+                        if (state.type && validatorType) {
+                            validatorType.forEach(function(r){ r.checked = (r.value === state.type); });
+                        }
+                        if (includePosts && typeof state.includePosts !== 'undefined') {
+                            includePosts.checked = state.includePosts;
+                        }
+                        if (ogCheckbox && typeof state.og !== 'undefined') { ogCheckbox.checked = state.og; }
+                        if (twitterCheckbox && typeof state.twitter !== 'undefined') { twitterCheckbox.checked = state.twitter; }
+                        if (cropsCheckbox && typeof state.crops !== 'undefined') { cropsCheckbox.checked = state.crops; }
+                        if (copyCheckbox && typeof state.copy !== 'undefined') { copyCheckbox.checked = state.copy; }
+                        if (openNewCheckbox && typeof state.openNew !== 'undefined') { openNewCheckbox.checked = state.openNew; }
+                        if (toggleTwitter && typeof state.showTwitter !== 'undefined') { toggleTwitter.checked = state.showTwitter; }
+                        if (toggleOg && typeof state.showOg !== 'undefined') { toggleOg.checked = state.showOg; }
+                        if (serviceSelect && typeof state.service !== 'undefined') { serviceSelect.value = state.service; }
+                        if (validatorSelect && state.selectValue) { validatorSelect.value = state.selectValue; }
+                        if (validatorManual && typeof state.manualValue !== 'undefined') { validatorManual.value = state.manualValue; }
+                        if (searchInput && typeof state.search !== 'undefined') { searchInput.value = state.search; }
+                    } catch (e) {
+                        // ignore
+                    }
+                }
 
                 function isValidHttpUrl(value) {
                     if (!value) {
@@ -1249,6 +1381,7 @@ function be_schema_engine_render_tools_page() {
                     if (includePosts) {
                         includePosts.disabled = (mode !== 'dropdown');
                     }
+                    persistState();
                     updateButtonState();
                 }
 
@@ -1261,6 +1394,7 @@ function be_schema_engine_render_tools_page() {
                     if (serviceSelect) { serviceSelect.disabled = isNative; }
                     if (copyCheckbox) { copyCheckbox.disabled = isNative; }
                     if (openNewCheckbox) { openNewCheckbox.disabled = isNative; }
+                    persistState();
                     updateButtonState();
                 }
 
@@ -1292,6 +1426,7 @@ function be_schema_engine_render_tools_page() {
                         contextResult.textContent = guidance;
                         contextResult.dataset.state = 'guidance';
                     }
+                    persistState();
                 }
 
                 function toggleCrops() {
@@ -1299,6 +1434,15 @@ function be_schema_engine_render_tools_page() {
                     document.querySelectorAll('.be-schema-preview-img').forEach(function (el) {
                         el.classList.toggle('crops-on', on);
                     });
+                }
+
+                function applyPreviewToggles() {
+                    if (previewTwitter.wrap && toggleTwitter) {
+                        previewTwitter.wrap.style.display = toggleTwitter.checked ? 'block' : 'none';
+                    }
+                    if (previewOg.wrap && toggleOg) {
+                        previewOg.wrap.style.display = toggleOg.checked ? 'block' : 'none';
+                    }
                 }
 
                 function renderSourceRow(field, value, source, confidence) {
@@ -1400,17 +1544,28 @@ function be_schema_engine_render_tools_page() {
                     }
                 }
 
-                function renderWarnings(warnings) {
+                function renderWarnings(warnings, data) {
                     if (!warningList) {
                         return;
                     }
-                    if (data.fetch && typeof data.fetch.redirects !== 'undefined' && data.fetch.redirects > 1) {
+                    if (data && data.fetch && typeof data.fetch.redirects !== 'undefined' && data.fetch.redirects > 1) {
                         var redirWarn = {
                             status: 'warn',
                             message: '<?php echo esc_js( __( 'Page had multiple redirects; some platforms may stop after one.', 'beseo' ) ); ?>',
                             platforms: ['Open Graph', 'X']
                         };
                         warnings.push(redirWarn);
+                    }
+                    if (miniBadges) {
+                        miniBadges.innerHTML = '';
+                        (warnings || []).forEach(function (item) {
+                            if (item.status && item.status === 'error') {
+                                var badge = document.createElement('span');
+                                badge.className = 'be-schema-mini-badge';
+                                badge.textContent = item.message || '';
+                                miniBadges.appendChild(badge);
+                            }
+                        });
                     }
                     warningList.innerHTML = '';
                     if (!warnings || !warnings.length) {
@@ -1446,10 +1601,31 @@ function be_schema_engine_render_tools_page() {
                     });
                 }
 
+                function renderFetchLog(data) {
+                    if (!fetchLog || !fetchLog.container) {
+                        return;
+                    }
+                    if (!data || !data.fetch) {
+                        fetchLog.container.style.display = 'none';
+                        return;
+                    }
+                    fetchLog.container.style.display = 'block';
+                    fetchLog.pageStatus.textContent = (data.fetch.status || '') + (data.fetch.message ? (' ' + data.fetch.message) : '');
+                    fetchLog.pageTime.textContent = typeof data.fetch.duration_ms !== 'undefined' ? data.fetch.duration_ms + ' ms' : '—';
+                    fetchLog.redirects.textContent = typeof data.fetch.redirects !== 'undefined' ? data.fetch.redirects : '—';
+                    fetchLog.imageStatus.textContent = data.image ? (data.image.httpStatus || '') : '—';
+                    fetchLog.imageTime.textContent = data.image && typeof data.image.duration_ms !== 'undefined' ? data.image.duration_ms + ' ms' : '—';
+                    fetchLog.imageType.textContent = data.image ? (data.image.contentType || '') : '—';
+                    fetchLog.imageSize.textContent = (data.image && data.image.width && data.image.height)
+                        ? (data.image.width + '×' + data.image.height)
+                        : '—';
+                }
+
                 function renderResponse(data) {
                     if (!data) {
                         return;
                     }
+                    window.__beSchemaLastData = data;
                     if (contextUrl) {
                         contextUrl.textContent = data.fetch && data.fetch.final_url ? data.fetch.final_url : currentUrl();
                     }
@@ -1470,14 +1646,42 @@ function be_schema_engine_render_tools_page() {
                             : '<?php echo esc_js( __( 'Validation failed', 'beseo' ) ); ?>';
                         contextResult.dataset.state = 'result';
                     }
+                    if (miniBadges) {
+                        miniBadges.innerHTML = '';
+                        var badgeItems = [];
+                        if (data.fetch) {
+                            badgeItems.push('HTTP ' + (data.fetch.status || '?'));
+                            if (typeof data.fetch.duration_ms !== 'undefined') {
+                                badgeItems.push((data.fetch.duration_ms || 0) + ' ms');
+                            }
+                            if (typeof data.fetch.redirects !== 'undefined') {
+                                badgeItems.push('redir ' + data.fetch.redirects);
+                            }
+                        }
+                        if (data.image) {
+                            if (data.image.contentType) { badgeItems.push(data.image.contentType); }
+                            if (data.image.width && data.image.height) { badgeItems.push(data.image.width + '×' + data.image.height); }
+                            if (typeof data.image.duration_ms !== 'undefined') { badgeItems.push('img ' + data.image.duration_ms + ' ms'); }
+                        }
+                        badgeItems.forEach(function(label) {
+                            var badge = document.createElement('span');
+                            badge.className = 'be-schema-mini-badge';
+                            badge.textContent = label;
+                            miniBadges.appendChild(badge);
+                        });
+                    }
                     if (reRunBtn) {
                         reRunBtn.disabled = false;
                     }
+                    if (copySummaryBtn) {
+                        copySummaryBtn.disabled = false;
+                    }
                     var resolved = data.resolved ? data.resolved.primary : null;
                     renderSourceMap(resolved);
-                    applyPreview(previewTwitter, data.resolved ? data.resolved.twitter : null, twitterCheckbox && twitterCheckbox.checked);
-                    applyPreview(previewOg, data.resolved ? data.resolved.og : null, ogCheckbox && ogCheckbox.checked);
-                    renderWarnings(data.warnings);
+                    applyPreview(previewTwitter, data.resolved ? data.resolved.twitter : null, (twitterCheckbox && twitterCheckbox.checked) && (toggleTwitter ? toggleTwitter.checked : true));
+                    applyPreview(previewOg, data.resolved ? data.resolved.og : null, (ogCheckbox && ogCheckbox.checked) && (toggleOg ? toggleOg.checked : true));
+                    renderWarnings(data.warnings, data);
+                    renderFetchLog(data);
 
                     if (validatorNote) {
                         var fetchNote = '';
@@ -1500,6 +1704,7 @@ function be_schema_engine_render_tools_page() {
                 function runValidation() {
                     var url = currentUrl();
                     var type = currentValidationType();
+                    persistState();
                     if (!isValidHttpUrl(url) || !validateBtn) {
                         updateButtonState();
                         return;
@@ -1530,6 +1735,9 @@ function be_schema_engine_render_tools_page() {
                     validateBtn.textContent = '<?php echo esc_js( __( 'Validating…', 'beseo' ) ); ?>';
                     if (reRunBtn) {
                         reRunBtn.disabled = true;
+                    }
+                    if (copySummaryBtn) {
+                        copySummaryBtn.disabled = true;
                     }
                     if (contextResult) {
                         contextResult.textContent = '<?php echo esc_js( __( 'Validating…', 'beseo' ) ); ?>';
@@ -1594,26 +1802,47 @@ function be_schema_engine_render_tools_page() {
                     radio.addEventListener('change', syncValidationType);
                 });
                 if (validatorSelect) {
-                    validatorSelect.addEventListener('change', updateButtonState);
+                    validatorSelect.addEventListener('change', function() {
+                        persistState();
+                        updateButtonState();
+                    });
                 }
                 if (validatorManual) {
-                    validatorManual.addEventListener('input', updateButtonState);
+                    validatorManual.addEventListener('input', function() {
+                        persistState();
+                        updateButtonState();
+                    });
                 }
                 if (searchInput) {
-                    searchInput.addEventListener('input', renderSelectOptions);
+                    searchInput.addEventListener('input', function() {
+                        renderSelectOptions();
+                        persistState();
+                    });
                 }
                 if (includePosts) {
                     includePosts.addEventListener('change', renderSelectOptions);
-                    includePosts.addEventListener('change', updateButtonState);
+                    includePosts.addEventListener('change', function() {
+                        updateButtonState();
+                        persistState();
+                    });
                 }
                 if (ogCheckbox) {
-                    ogCheckbox.addEventListener('change', updateButtonState);
+                    ogCheckbox.addEventListener('change', function() {
+                        updateButtonState();
+                        persistState();
+                    });
                 }
                 if (twitterCheckbox) {
-                    twitterCheckbox.addEventListener('change', updateButtonState);
+                    twitterCheckbox.addEventListener('change', function() {
+                        updateButtonState();
+                        persistState();
+                    });
                 }
                 if (cropsCheckbox) {
-                    cropsCheckbox.addEventListener('change', toggleCrops);
+                    cropsCheckbox.addEventListener('change', function() {
+                        toggleCrops();
+                        persistState();
+                    });
                 }
                 if (validateBtn) {
                     validateBtn.addEventListener('click', runValidation);
@@ -1621,12 +1850,63 @@ function be_schema_engine_render_tools_page() {
                 if (reRunBtn) {
                     reRunBtn.addEventListener('click', runValidation);
                 }
+                if (copyCheckbox) {
+                    copyCheckbox.addEventListener('change', persistState);
+                }
+                if (openNewCheckbox) {
+                    openNewCheckbox.addEventListener('change', persistState);
+                }
+                if (serviceSelect) {
+                    serviceSelect.addEventListener('change', function() {
+                        updateButtonState();
+                        persistState();
+                    });
+                }
+                if (toggleTwitter) {
+                    toggleTwitter.addEventListener('change', function() {
+                        applyPreviewToggles();
+                        persistState();
+                    });
+                }
+                if (toggleOg) {
+                    toggleOg.addEventListener('change', function() {
+                        applyPreviewToggles();
+                        persistState();
+                    });
+                }
+                if (copySummaryBtn) {
+                    copySummaryBtn.addEventListener('click', function() {
+                        var summary = [];
+                        summary.push('Result: ' + (contextResult ? contextResult.textContent : ''));
+                        summary.push('URL: ' + (contextUrl ? contextUrl.textContent : ''));
+                        summary.push('Platforms: ' + (contextPlatforms ? contextPlatforms.textContent : ''));
+                        summary.push('Last run: ' + (contextTime ? contextTime.textContent : ''));
+                        var resolvedTwitter = (window.__beSchemaLastData && window.__beSchemaLastData.resolved) ? window.__beSchemaLastData.resolved.twitter : null;
+                        var resolvedOg = (window.__beSchemaLastData && window.__beSchemaLastData.resolved) ? window.__beSchemaLastData.resolved.og : null;
+                        if (resolvedTwitter) {
+                            summary.push('Twitter title: ' + (resolvedTwitter.title && resolvedTwitter.title.value ? resolvedTwitter.title.value : ''));
+                            summary.push('Twitter desc: ' + (resolvedTwitter.description && resolvedTwitter.description.value ? resolvedTwitter.description.value : ''));
+                            summary.push('Twitter image: ' + (resolvedTwitter.image && resolvedTwitter.image.value ? resolvedTwitter.image.value : ''));
+                        }
+                        if (resolvedOg) {
+                            summary.push('OG title: ' + (resolvedOg.title && resolvedOg.title.value ? resolvedOg.title.value : ''));
+                            summary.push('OG desc: ' + (resolvedOg.description && resolvedOg.description.value ? resolvedOg.description.value : ''));
+                            summary.push('OG image: ' + (resolvedOg.image && resolvedOg.image.value ? resolvedOg.image.value : ''));
+                        }
+                        if (window.__beSchemaLastData && window.__beSchemaLastData.warnings) {
+                            summary.push('Warnings: ' + window.__beSchemaLastData.warnings.map(function(w){ return w.status.toUpperCase() + ': ' + w.message; }).join(' | '));
+                        }
+                        navigator.clipboard.writeText(summary.join('\n'));
+                    });
+                }
 
+                restoreState();
                 renderSelectOptions();
                 syncValidatorMode();
                 syncValidationType();
                 updateButtonState();
                 toggleCrops();
+                applyPreviewToggles();
             });
         })();
     </script>
