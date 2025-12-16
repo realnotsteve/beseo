@@ -252,6 +252,45 @@ function be_schema_engine_render_analyser_page() {
                 background: linear-gradient(135deg, #f9fbfd, #eef2f5);
                 margin-bottom: 10px;
             }
+            .be-schema-pill {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 11px;
+            }
+            .be-schema-pill.error { background: #fdecea; color: #8a1f11; }
+            .be-schema-pill.warn { background: #fff4e5; color: #8a6d3b; }
+            .be-schema-pill.info { background: #eef2f5; color: #2c3e50; }
+            .be-schema-settings-layout {
+                display: grid;
+                grid-template-columns: 240px 1fr;
+                gap: 16px;
+                align-items: start;
+            }
+            .be-schema-settings-menu {
+                border: 1px solid #dfe2e6;
+                border-radius: 6px;
+                background: #f7f9fb;
+                padding: 10px;
+            }
+            .be-schema-settings-menu button {
+                display: block;
+                width: 100%;
+                text-align: left;
+                margin-bottom: 6px;
+            }
+            .be-schema-settings-panel {
+                border: 1px solid #dfe2e6;
+                border-radius: 6px;
+                padding: 12px;
+                background: #fff;
+            }
+            .be-schema-website-list {
+                margin-top: 8px;
+            }
+            .be-schema-website-list li {
+                margin-bottom: 6px;
+            }
         </style>
 
         <div class="be-schema-analyser-tabs">
@@ -269,6 +308,11 @@ function be_schema_engine_render_analyser_page() {
             </div>
             <p class="description"><?php esc_html_e( 'The analyser performs a lightweight fetch and inspects metadata, headings, canonicals, robots, and link counts. It will expand to multi-page crawls in the future.', 'beseo' ); ?></p>
             <div class="be-schema-analyser-controls">
+                <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url">
+                    <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
+                </select>
+                <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
                 <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="https://example.com/" />
                 <input type="number" id="be-schema-analyser-limit" class="small-text" value="10" min="1" max="100" style="width:70px;" />
                 <button class="button button-primary" id="be-schema-analyser-run"><?php esc_html_e( 'Run analysis', 'beseo' ); ?></button>
@@ -304,7 +348,23 @@ function be_schema_engine_render_analyser_page() {
         </div>
 
         <div id="be-schema-analyser-settings" class="be-schema-analyser-panel<?php echo ( 'settings' === $default_tab ) ? ' active' : ''; ?>">
-            <p class="description"><?php esc_html_e( 'Configure analyser scope, rate limits, and modules. (Coming soon.)', 'beseo' ); ?></p>
+            <div class="be-schema-settings-layout">
+                <div class="be-schema-settings-menu">
+                    <button class="button button-secondary" data-settings-panel="websites"><?php esc_html_e( 'Websites', 'beseo' ); ?></button>
+                </div>
+                <div class="be-schema-settings-panel">
+                    <div data-settings-panel-content="websites">
+                        <h3><?php esc_html_e( 'Websites', 'beseo' ); ?></h3>
+                        <p class="description"><?php esc_html_e( 'Manage a list of sites to analyse.', 'beseo' ); ?></p>
+                        <div>
+                            <input type="text" id="be-schema-sites-label" class="regular-text" placeholder="<?php esc_attr_e( 'Label (e.g., Main Site)', 'beseo' ); ?>" />
+                            <input type="text" id="be-schema-sites-url" class="regular-text" placeholder="https://example.com/" />
+                            <button class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
+                        </div>
+                        <ul class="be-schema-website-list" id="be-schema-sites-list"></ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script>
@@ -316,10 +376,19 @@ function be_schema_engine_render_analyser_page() {
                 var runBtn = document.getElementById('be-schema-analyser-run');
                 var stopBtn = document.getElementById('be-schema-analyser-stop');
                 var urlInput = document.getElementById('be-schema-analyser-url');
+                var siteSelect = document.getElementById('be-schema-analyser-site');
+                var targetRadios = document.querySelectorAll('input[name="be-schema-analyser-target-mode"]');
                 var limitInput = document.getElementById('be-schema-analyser-limit');
                 var statusNode = document.getElementById('be-schema-analyser-status');
                 var issuesList = document.getElementById('be-schema-issues-list');
                 var nonce = '<?php echo wp_create_nonce( 'be_schema_analyser' ); ?>';
+                var sitesList = document.getElementById('be-schema-sites-list');
+                var sitesAdd = document.getElementById('be-schema-sites-add');
+                var sitesLabel = document.getElementById('be-schema-sites-label');
+                var sitesUrl = document.getElementById('be-schema-sites-url');
+
+                var sitesStoreKey = 'be-schema-analyser-sites';
+                var sites = [];
 
                 function activate(key) {
                     tabs.forEach(function(tab) {
@@ -385,6 +454,71 @@ function be_schema_engine_render_analyser_page() {
 
                 var crawlTimer = null;
 
+                function loadSites() {
+                    try {
+                        var raw = localStorage.getItem(sitesStoreKey);
+                        sites = raw ? JSON.parse(raw) : [];
+                        if (!Array.isArray(sites)) {
+                            sites = [];
+                        }
+                    } catch (e) {
+                        sites = [];
+                    }
+                }
+
+                function saveSites() {
+                    try {
+                        localStorage.setItem(sitesStoreKey, JSON.stringify(sites));
+                    } catch (e) {}
+                }
+
+                function renderSites() {
+                    if (!sitesList || !siteSelect) {
+                        return;
+                    }
+                    sitesList.innerHTML = '';
+                    siteSelect.innerHTML = '';
+                    if (!sites.length) {
+                        var li = document.createElement('li');
+                        li.textContent = '<?php echo esc_js( __( 'No saved websites yet.', 'beseo' ) ); ?>';
+                        sitesList.appendChild(li);
+                    }
+                    sites.forEach(function(site, idx) {
+                        var li = document.createElement('li');
+                        li.textContent = site.label + ' — ' + site.url;
+                        var btn = document.createElement('button');
+                        btn.className = 'button-link delete';
+                        btn.textContent = '<?php echo esc_js( __( 'Remove', 'beseo' ) ); ?>';
+                        btn.addEventListener('click', function() {
+                            sites.splice(idx, 1);
+                            saveSites();
+                            renderSites();
+                        });
+                        li.appendChild(btn);
+                        sitesList.appendChild(li);
+
+                        var opt = document.createElement('option');
+                        opt.value = site.url;
+                        opt.textContent = site.label + ' (' + site.url + ')';
+                        siteSelect.appendChild(opt);
+                    });
+                    if (!sites.length) {
+                        var optHome = document.createElement('option');
+                        optHome.value = '<?php echo esc_js( $home_url ); ?>';
+                        optHome.textContent = '<?php echo esc_js( $home_url ); ?>';
+                        siteSelect.appendChild(optHome);
+                    }
+                }
+
+                function currentTargetUrl() {
+                    var mode = 'site';
+                    targetRadios.forEach(function(r) { if (r.checked) { mode = r.value; } });
+                    if (mode === 'manual') {
+                        return urlInput ? urlInput.value.trim() : '';
+                    }
+                    return siteSelect ? siteSelect.value.trim() : '';
+                }
+
                 function pollStep() {
                     var form = new FormData();
                     form.append('action', 'be_schema_analyser_step');
@@ -423,7 +557,7 @@ function be_schema_engine_render_analyser_page() {
 
                 if (runBtn && urlInput) {
                     runBtn.addEventListener('click', function() {
-                        var url = urlInput.value.trim();
+                        var url = currentTargetUrl();
                         var limit = limitInput ? parseInt(limitInput.value, 10) : 10;
                         if (!url) {
                             setStatus('<?php echo esc_js( __( 'Enter a URL to analyse.', 'beseo' ) ); ?>');
@@ -480,6 +614,43 @@ function be_schema_engine_render_analyser_page() {
                         });
                     });
                 }
+
+                if (sitesAdd && sitesLabel && sitesUrl) {
+                    sitesAdd.addEventListener('click', function() {
+                        var label = sitesLabel.value.trim();
+                        var url = sitesUrl.value.trim();
+                        if (!label || !url) {
+                            setStatus('<?php echo esc_js( __( 'Enter a label and URL.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (!/^https?:\/\//i.test(url)) {
+                            setStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        sites.push({ label: label, url: url });
+                        saveSites();
+                        renderSites();
+                        sitesLabel.value = '';
+                        sitesUrl.value = '';
+                        setStatus('<?php echo esc_js( __( 'Website saved.', 'beseo' ) ); ?>');
+                    });
+                }
+
+                targetRadios.forEach(function(radio) {
+                    radio.addEventListener('change', function() {
+                        var mode = radio.value;
+                        if (mode === 'manual') {
+                            if (urlInput) { urlInput.disabled = false; }
+                            if (siteSelect) { siteSelect.disabled = true; }
+                        } else {
+                            if (urlInput) { urlInput.disabled = true; }
+                            if (siteSelect) { siteSelect.disabled = false; }
+                        }
+                    });
+                });
+
+                loadSites();
+                renderSites();
             });
         })();
     </script>

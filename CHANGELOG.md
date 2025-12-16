@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.4] - 2025-12-15
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- includes/admin/page-analyser.php
+
+
 ## [2.1.3] - 2025-12-15
 Summary: Devnotes.
 
