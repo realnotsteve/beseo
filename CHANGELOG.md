@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.5] - 2025-12-15
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+
+
 ## [2.1.4] - 2025-12-15
 Summary: Update.
 
@@ -94,17 +106,15 @@ Summary: Analyser submenu scaffold.
 - includes/admin/page-analyser.php
 - includes/admin/page-tools.php
 
-## [2.1.2] - 2025-12-15
-Summary: Analyser single-page checks.
+## [2.1.4.1] - 2025-12-15
+Summary: Introduce build version segment.
 
-### Added
-- Analyser now runs a single-URL analysis via AJAX, checking HTTP status, title/description length, H1 count, canonical, robots meta, and link count with issue listings.
-- Overview tab includes URL input, run button, status, and issues table output.
+### Changed
+- Incremented version to 2.1.4.1 (adds build segment to versioning).
 
 ### Files
 - beseo.php
 - beseo-devnotes.json
-- includes/admin/page-analyser.php
 
 ## [2.0.23] - 2025-12-15
 Summary: Add Tools Analysis tab (placeholder).
