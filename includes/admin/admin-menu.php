@@ -7,7 +7,6 @@
  *  - Home         (default landing)
  *  - Schema       (main configuration page)
  *  - Social Media (Open Graph & Twitter Cards)
- *  - Platforms    (placeholder for additional networks)
  *  - Tools        (placeholder for future utilities / validators)
  */
 
@@ -80,16 +79,6 @@ function be_schema_engine_register_admin_menu() {
         __( 'Social Media', 'beseo' ),
         $capability,
         'beseo-social-media',
-        'be_schema_engine_render_social_media_page'
-    );
-
-    // "Platforms" submenu (placeholder between Open Graph and Tools).
-    add_submenu_page(
-        $top_level_slug,
-        __( 'Platforms', 'beseo' ),
-        __( 'Platforms', 'beseo' ),
-        $capability,
-        'beseo-platforms',
         'be_schema_engine_render_social_media_page'
     );
 
