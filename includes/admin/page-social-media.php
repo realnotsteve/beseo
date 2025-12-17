@@ -396,6 +396,38 @@ function be_schema_engine_render_social_media_page() {
     }
     $twitter_optional_serialized = implode( ',', $twitter_optional_props );
 
+    // Data for Validator tab (shared with Tools validator).
+    $validator_pages = get_pages(
+        array(
+            'post_status' => 'publish',
+        )
+    );
+    $validator_posts = get_posts(
+        array(
+            'post_type'   => 'post',
+            'numberposts' => -1,
+            'post_status' => 'publish',
+        )
+    );
+    $validator_page_data = array();
+    foreach ( (array) $validator_pages as $page ) {
+        $validator_page_data[] = array(
+            'id'    => $page->ID,
+            'title' => get_the_title( $page ),
+            'url'   => get_permalink( $page ),
+            'type'  => 'page',
+        );
+    }
+    $validator_post_data = array();
+    foreach ( (array) $validator_posts as $post_item ) {
+        $validator_post_data[] = array(
+            'id'    => $post_item->ID,
+            'title' => get_the_title( $post_item ),
+            'url'   => get_permalink( $post_item ),
+            'type'  => 'post',
+        );
+    }
+
     ?>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -723,6 +755,13 @@ function be_schema_engine_render_social_media_page() {
                                class="be-schema-social-tab-link"
                                data-social-tab="content">
                                 <?php esc_html_e( 'Open Graph', 'beseo' ); ?>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#be-schema-social-tab-validator"
+                               class="be-schema-social-tab-link"
+                               data-social-tab="validator">
+                                <?php esc_html_e( 'Validator', 'beseo' ); ?>
                             </a>
                         </li>
                         <li>
@@ -1120,6 +1159,26 @@ function be_schema_engine_render_social_media_page() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+                <div id="be-schema-social-tab-validator" class="be-schema-social-tab-panel">
+                    <h2><?php esc_html_e( 'Validator', 'beseo' ); ?></h2>
+                    <?php
+                    $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
+                    $validator_panel  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-panel.php';
+                    $validator_script = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-script.php';
+
+                    if ( file_exists( $validator_styles ) ) {
+                        include $validator_styles;
+                    }
+                    if ( file_exists( $validator_panel ) ) {
+                        include $validator_panel;
+                    } else {
+                        echo '<p class="description">' . esc_html__( 'Validator unavailable.', 'beseo' ) . '</p>';
+                    }
+                    if ( file_exists( $validator_script ) ) {
+                        include $validator_script;
+                    }
+                    ?>
                 </div>
                 <div id="be-schema-social-tab-platforms" class="be-schema-social-tab-panel">
                     <h2><?php esc_html_e( 'Platforms', 'beseo' ); ?></h2>

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.15] - 2025-12-16
+Summary: Social admin.
+
+### Changed
+- Touched areas: social admin.
+
+### Files
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+- includes/admin/partials/validator-panel.php
+- includes/admin/partials/validator-script.php
+- includes/admin/partials/validator-styles.php
+
+
 ## [2.1.14] - 2025-12-16
 Summary: Social admin.
 
