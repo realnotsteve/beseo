@@ -1404,12 +1404,13 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                                         <div class="be-schema-optional-controls"
                                                              data-optional-scope="org"
                                                              data-optional-hidden="be_schema_org_optional"
-                                                             data-optional-singleton="legal_name,org_url">
+                                                             data-optional-singleton="legal_name,org_url,org_sameas">
                                                             <label class="screen-reader-text" for="be-schema-org-optional"><?php esc_html_e( 'Add optional Organisation property', 'beseo' ); ?></label>
                                                             <select id="be-schema-org-optional" aria-label="<?php esc_attr_e( 'Add optional Organisation property', 'beseo' ); ?>">
                                                                 <option value=""><?php esc_html_e( 'Select an optional property…', 'beseo' ); ?></option>
                                                                 <option value="legal_name"><?php esc_html_e( 'Legal Name', 'beseo' ); ?></option>
                                                                 <option value="org_url"><?php esc_html_e( 'Organisation URL', 'beseo' ); ?></option>
+                                                                <option value="org_sameas"><?php esc_html_e( 'sameAs URLs', 'beseo' ); ?></option>
                                                             </select>
                                                             <button type="button"
                                                                     class="button be-schema-optional-add"
@@ -1450,6 +1451,21 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                                                         'If empty, the site URL is used.',
                                                                         'beseo'
                                                                     ); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="be-schema-optional-field<?php echo in_array( 'org_sameas', $organization_optional_props, true ) ? '' : ' is-hidden'; ?>" data-optional-prop="org_sameas">
+                                                                <button type="button" class="button be-schema-optional-remove" data-optional-remove="org_sameas">−</button>
+                                                                <label for="be_schema_org_sameas_raw">
+                                                                    <?php esc_html_e( 'sameAs (one URL per line)', 'beseo' ); ?>
+                                                                </label>
+                                                                <textarea name="be_schema_org_sameas_raw"
+                                                                          id="be_schema_org_sameas_raw"
+                                                                          rows="4"
+                                                                          class="large-text code"
+                                                                          placeholder="https://twitter.com/yourbrand&#10;https://www.linkedin.com/company/yourbrand"><?php echo esc_textarea( $org_sameas_raw ); ?></textarea>
+                                                                <p class="description be-schema-description">
+                                                                    <?php esc_html_e( 'List official brand/profile URLs to attach as Organisation sameAs.', 'beseo' ); ?>
                                                                 </p>
                                                             </div>
                                                         </div>

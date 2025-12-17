@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.16] - 2025-12-17
+Summary: Engine.
+
+### Changed
+- Touched areas: engine.
+
+### Files
+- beseo.php
+- includes/admin/admin-menu.php
+- includes/admin/page-sitemap.php
+- includes/admin/schema-view-website.php
+- includes/admin/schema-view.php
+- includes/engine/core-elementor.php
+- includes/engine/core-posts.php
+- includes/engine/core-site-entities.php
+- includes/engine/core-sitemap.php
+- includes/engine/core-special-pages.php
+
+
 ## [2.1.15] - 2025-12-16
 Summary: Social admin.
 

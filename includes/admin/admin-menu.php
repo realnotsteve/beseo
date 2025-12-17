@@ -7,6 +7,7 @@
  *  - Home         (default landing)
  *  - Schema       (main configuration page)
  *  - Social Media (Open Graph & Twitter Cards)
+ *  - Sitemap      (placeholder for XML/HTML sitemap tools)
  *  - Tools        (placeholder for future utilities / validators)
  */
 
@@ -25,6 +26,7 @@ if ( defined( 'BE_SCHEMA_ENGINE_PLUGIN_DIR' ) ) {
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-overview.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-schema.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-social-media.php';
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-sitemap.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-tools.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-analyser.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-help-text.php';
@@ -80,6 +82,16 @@ function be_schema_engine_register_admin_menu() {
         $capability,
         'beseo-social-media',
         'be_schema_engine_render_social_media_page'
+    );
+
+    // "Sitemap" submenu.
+    add_submenu_page(
+        $top_level_slug,
+        __( 'Sitemap', 'beseo' ),
+        __( 'Sitemap', 'beseo' ),
+        $capability,
+        'beseo-sitemap',
+        'be_schema_engine_render_sitemap_page'
     );
 
     // "Settings" submenu (shortcut into Tools for quick toggles).

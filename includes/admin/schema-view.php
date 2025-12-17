@@ -298,6 +298,10 @@ function be_schema_engine_save_settings() {
         ? sanitize_text_field( wp_unslash( $_POST['be_schema_org_optional'] ) )
         : '';
 
+    $settings['org_sameas_raw'] = isset( $_POST['be_schema_org_sameas_raw'] )
+        ? wp_kses_post( wp_unslash( $_POST['be_schema_org_sameas_raw'] ) )
+        : '';
+
     $settings['org_url'] = be_schema_engine_validate_url_field(
         isset( $_POST['be_schema_org_url'] ) ? wp_unslash( $_POST['be_schema_org_url'] ) : '',
         __( 'Organisation URL', 'beseo' ),
@@ -650,6 +654,7 @@ function be_schema_engine_render_schema_page() {
     $org_name             = isset( $settings['org_name'] ) ? $settings['org_name'] : '';
     $org_legal_name       = isset( $settings['org_legal_name'] ) ? $settings['org_legal_name'] : '';
     $org_url              = isset( $settings['org_url'] ) ? $settings['org_url'] : '';
+    $org_sameas_raw       = isset( $settings['org_sameas_raw'] ) ? $settings['org_sameas_raw'] : '';
     $org_logo_enabled     = isset( $settings['org_logo_enabled'] ) ? '1' === $settings['org_logo_enabled'] : false;
     $org_logo             = isset( $settings['org_logo'] ) ? $settings['org_logo'] : '';
     $org_logo_optional_raw = isset( $settings['org_logo_optional'] ) ? $settings['org_logo_optional'] : '';
@@ -679,6 +684,9 @@ function be_schema_engine_render_schema_page() {
     }
     if ( ! empty( $org_url ) && ! in_array( 'org_url', $organization_optional_props, true ) ) {
         $organization_optional_props[] = 'org_url';
+    }
+    if ( ! empty( $org_sameas_raw ) && ! in_array( 'org_sameas', $organization_optional_props, true ) ) {
+        $organization_optional_props[] = 'org_sameas';
     }
 
     $organization_optional_serialized = implode( ',', $organization_optional_props );

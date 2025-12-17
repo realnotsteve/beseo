@@ -64,6 +64,7 @@ function be_schema_get_post_image_url( $post_id ) {
 function be_schema_build_post_webpage_node( $post ) {
 	$post_id = (int) $post->ID;
 	$url     = get_permalink( $post_id );
+	$language = get_bloginfo( 'language' );
 
 	$name = get_the_title( $post );
 	if ( '' === $name ) {
@@ -87,6 +88,10 @@ function be_schema_build_post_webpage_node( $post ) {
 		'url'   => $url,
 		'name'  => $name,
 	);
+
+	if ( $language ) {
+		$node['inLanguage'] = $language;
+	}
 
 	if ( $description ) {
 		$node['description'] = $description;
@@ -164,10 +169,19 @@ function be_schema_get_publisher_reference() {
 function be_schema_build_blogposting_node( $post ) {
 	$post_id = (int) $post->ID;
 	$url     = get_permalink( $post_id );
+	$language = get_bloginfo( 'language' );
 
 	$headline = get_the_title( $post );
 	if ( '' === $headline ) {
 		$headline = get_bloginfo( 'name', 'display' );
+	}
+	// Keep headline within common validator limits (~110 chars).
+	if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
+		if ( mb_strlen( $headline ) > 110 ) {
+			$headline = mb_substr( $headline, 0, 107 ) . '…';
+		}
+	} elseif ( strlen( $headline ) > 110 ) {
+		$headline = substr( $headline, 0, 107 ) . '…';
 	}
 
 	$max_length  = 320;
@@ -182,10 +196,170 @@ function be_schema_build_blogposting_node( $post ) {
 	$date_published = get_the_date( DATE_W3C, $post );
 	$date_modified  = get_the_modified_date( DATE_W3C, $post );
 
-	$image_url = be_schema_get_post_image_url( $post_id );
+	$image_objects = array();
+	$image_url     = '';
+	if ( has_post_thumbnail( $post_id ) ) {
+		$thumb_id   = get_post_thumbnail_id( $post_id );
+		$image_obj  = be_schema_engine_build_image_object( $thumb_id );
+		if ( $image_obj ) {
+			$image_objects[] = $image_obj;
+			$image_url       = isset( $image_obj['contentUrl'] ) ? $image_obj['contentUrl'] : '';
+		}
+	}
+
+	if ( ! $image_url ) {
+		$image_url = be_schema_get_post_image_url( $post_id );
+		if ( $image_url ) {
+			$image_objects[] = array(
+				'@type'      => 'ImageObject',
+				'url'        => $image_url,
+				'contentUrl' => $image_url,
+			);
+		}
+	}
 
 	// Stable @id for the article node.
 	$article_id = be_schema_id( 'article-' . $post_id );
+
+	// Author (per-post) with URL/image when available.
+	$author_id   = (int) $post->post_author;
+	$author_name = get_the_author_meta( 'display_name', $author_id );
+	$author_url  = get_author_posts_url( $author_id );
+	$author_img  = get_avatar_url( $author_id, array( 'size' => 256 ) );
+	$author_node = array(
+		'@type' => 'Person',
+		'name'  => $author_name ? $author_name : get_bloginfo( 'name', 'display' ),
+	);
+	if ( $author_url ) {
+		$author_node['@id'] = $author_url . '#author';
+		$author_node['url'] = $author_url;
+	} else {
+		$author_node['@id'] = be_schema_id( 'person' );
+	}
+	if ( $author_img ) {
+		$author_node['image'] = array(
+			'@type' => 'ImageObject',
+			'url'   => $author_img,
+		);
+	}
+
+	// Editor (last editor) if available.
+	$editor_id = (int) get_post_meta( $post_id, '_edit_last', true );
+	$editor_node = null;
+	if ( $editor_id ) {
+		$editor_name = get_the_author_meta( 'display_name', $editor_id );
+		$editor_url  = get_author_posts_url( $editor_id );
+		$editor_img  = get_avatar_url( $editor_id, array( 'size' => 256 ) );
+		$editor_node = array(
+			'@type' => 'Person',
+			'name'  => $editor_name ? $editor_name : '',
+		);
+		if ( $editor_url ) {
+			$editor_node['@id'] = $editor_url . '#editor';
+			$editor_node['url'] = $editor_url;
+		}
+		if ( $editor_img ) {
+			$editor_node['image'] = array(
+				'@type' => 'ImageObject',
+				'url'   => $editor_img,
+			);
+		}
+	}
+
+	// Categories → articleSection.
+	$article_section = '';
+	$categories      = get_the_category( $post_id );
+	if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
+		$article_section = $categories[0]->name;
+	}
+
+	// Tags → keywords.
+	$tag_terms = get_the_tags( $post_id );
+	$keywords  = array();
+	if ( ! empty( $tag_terms ) && ! is_wp_error( $tag_terms ) ) {
+		foreach ( $tag_terms as $tag_term ) {
+			$keywords[] = $tag_term->name;
+		}
+	}
+
+	// VideoObject attachments.
+	$video_objects = array();
+	$video_children = get_children(
+		array(
+			'post_type'      => 'attachment',
+			'post_parent'    => $post_id,
+			'post_mime_type' => 'video',
+			'numberposts'    => 5,
+			'fields'         => 'ids',
+		)
+	);
+	if ( $video_children ) {
+		$thumb_fallback = $image_url ? $image_url : be_schema_get_post_image_url( $post_id );
+		$org_id         = be_schema_id( 'organisation' );
+		foreach ( $video_children as $vid_id ) {
+			$vid_url = wp_get_attachment_url( $vid_id );
+			if ( ! $vid_url ) {
+				continue;
+			}
+			$vid_post   = get_post( $vid_id );
+			$vid_meta   = wp_get_attachment_metadata( $vid_id );
+			$uploadDate = $vid_post ? $vid_post->post_date_gmt : '';
+			if ( ! $uploadDate && $vid_post ) {
+				$uploadDate = $vid_post->post_date;
+			}
+			$uploadDate = $uploadDate ? gmdate( DATE_W3C, strtotime( $uploadDate ) ) : '';
+
+			$duration_iso = '';
+			if ( is_array( $vid_meta ) ) {
+				if ( isset( $vid_meta['length'] ) && is_numeric( $vid_meta['length'] ) ) {
+					$seconds      = (int) $vid_meta['length'];
+					$duration_iso = 'PT' . $seconds . 'S';
+				} elseif ( isset( $vid_meta['length_formatted'] ) ) {
+					// Convert mm:ss or hh:mm:ss to PT#M#S form.
+					$parts = array_map( 'intval', explode( ':', $vid_meta['length_formatted'] ) );
+					if ( count( $parts ) === 3 ) {
+						list( $hours, $minutes, $seconds_part ) = $parts;
+						$duration_iso = 'PT' . $hours . 'H' . $minutes . 'M' . $seconds_part . 'S';
+					} elseif ( count( $parts ) === 2 ) {
+						list( $minutes, $seconds_part ) = $parts;
+						$duration_iso = 'PT' . $minutes . 'M' . $seconds_part . 'S';
+					}
+				}
+			}
+
+			$views_meta = (int) get_post_meta( $vid_id, 'post_views_count', true );
+
+			$video_obj = array(
+				'@type'         => 'VideoObject',
+				'name'          => $vid_post ? get_the_title( $vid_post ) : $headline,
+				'description'   => $vid_post ? be_schema_normalize_text( $vid_post->post_content, 320 ) : $description,
+				'contentUrl'    => $vid_url,
+				'embedUrl'      => $vid_url,
+				'uploadDate'    => $uploadDate,
+				'isFamilyFriendly' => true,
+			);
+			if ( $thumb_fallback ) {
+				$video_obj['thumbnailUrl'] = $thumb_fallback;
+			}
+			if ( $duration_iso ) {
+				$video_obj['duration'] = $duration_iso;
+			}
+			if ( $views_meta > 0 ) {
+				$video_obj['interactionStatistic'] = array(
+					'@type'                => 'InteractionCounter',
+					'interactionType'      => array( '@type' => 'WatchAction' ),
+					'userInteractionCount' => $views_meta,
+				);
+			}
+			if ( $org_id ) {
+				$video_obj['publisher'] = array(
+					'@type' => 'Organization',
+					'@id'   => $org_id,
+				);
+			}
+			$video_objects[] = $video_obj;
+		}
+	}
 
 	$node = array(
 		'@type'            => 'BlogPosting',
@@ -198,6 +372,10 @@ function be_schema_build_blogposting_node( $post ) {
 		'url'              => $url,
 	);
 
+	if ( $language ) {
+		$node['inLanguage'] = $language;
+	}
+
 	if ( $description ) {
 		$node['description'] = $description;
 	}
@@ -209,10 +387,11 @@ function be_schema_build_blogposting_node( $post ) {
 		$node['dateModified'] = $date_modified;
 	}
 
-	// Author is the site Person node, referenced by @id.
-	$node['author'] = array(
-		'@id' => be_schema_id( 'person' ),
-	);
+	$node['author'] = $author_node;
+
+	if ( $editor_node ) {
+		$node['editor'] = $editor_node;
+	}
 
 	// Publisher: resolved via helper.
 	$publisher_ref = be_schema_get_publisher_reference();
@@ -220,12 +399,31 @@ function be_schema_build_blogposting_node( $post ) {
 		$node['publisher'] = $publisher_ref;
 	}
 
-	if ( $image_url ) {
-		$node['image'] = array(
-			'@type'  => 'ImageObject',
-			'url'    => $image_url,
-		);
+	if ( $image_objects ) {
+		$node['image'] = $image_objects;
 	}
+
+	if ( $video_objects ) {
+		$node['video'] = $video_objects;
+	}
+
+	if ( $article_section ) {
+		$node['articleSection'] = $article_section;
+	}
+
+	if ( $keywords ) {
+		$node['keywords'] = $keywords;
+	}
+
+	$node['speakable'] = array(
+		'@type'       => 'SpeakableSpecification',
+		'cssSelector' => array(
+			'header h1',
+			'article h1',
+			'article h2',
+			'title',
+		),
+	);
 
 	return $node;
 }

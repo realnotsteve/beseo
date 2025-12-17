@@ -33,6 +33,9 @@ class BE_Elementor_Schema_Plugin {
      */
     public static function register_document_controls( $document ) {
         // We only care about post/page-like documents.
+        if ( ! method_exists( $document, 'get_post_type' ) ) {
+            return;
+        }
         $type = $document->get_post_type();
         if ( ! in_array( $type, array( 'post', 'page' ), true ) ) {
             return;

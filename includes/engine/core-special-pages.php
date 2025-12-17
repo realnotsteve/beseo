@@ -150,6 +150,8 @@ function be_schema_build_webpage_node( $post_id, $schema_type, array $args = arr
 		$description = be_schema_normalize_text( get_bloginfo( 'description', 'display' ), 320 );
 	}
 
+	$language = get_bloginfo( 'language' );
+
 	$image_url = '';
 	if ( $post_id > 0 ) {
 		$image_url = be_schema_get_page_primary_image_url( $post_id );
@@ -176,6 +178,10 @@ function be_schema_build_webpage_node( $post_id, $schema_type, array $args = arr
 		$webpage['description'] = $description;
 	}
 
+	if ( $language ) {
+		$webpage['inLanguage'] = $language;
+	}
+
 	// Link homepage/special pages back to the site WebSite node, using a stable @id.
 	$webpage['isPartOf'] = array(
 		'@id' => be_schema_id( 'website' ),
@@ -191,6 +197,19 @@ function be_schema_build_webpage_node( $post_id, $schema_type, array $args = arr
 		$webpage['primaryImageOfPage'] = array(
 			'@type' => 'ImageObject',
 			'url'   => $image_url,
+		);
+	}
+
+	// Add SearchAction (Sitelinks search box) on homepage context.
+	if ( ! empty( $args['use_home_url'] ) ) {
+		$search_target = add_query_arg( 's', '{search_term_string}', home_url( '/' ) );
+		$search_target = str_replace( '%7Bsearch_term_string%7D', '{search_term_string}', $search_target );
+		$webpage['potentialAction'] = array(
+			array(
+				'@type'       => 'SearchAction',
+				'target'      => $search_target,
+				'query-input' => 'required name=search_term_string',
+			),
 		);
 	}
 

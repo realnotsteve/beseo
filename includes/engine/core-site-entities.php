@@ -49,6 +49,9 @@ if ( ! function_exists( 'be_schema_engine_normalize_url_list' ) ) {
  *     'width'      => int|null,
  *     'height'     => int|null,
  *     'description'=> string|null,
+ *     'caption'    => string|null,
+ *     'creator'    => Person|null,
+ *     'license'    => string|null,
  *   )
  *
  * @param int|string $image Media attachment ID or URL.
@@ -95,7 +98,7 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
             $node['height'] = $height;
         }
 
-        // Optional description from attachment caption or alt text.
+        // Optional description/caption/creator/license from attachment meta.
         if ( is_numeric( $image ) ) {
             $attachment_id = (int) $image;
             if ( $attachment_id > 0 ) {
@@ -115,6 +118,36 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                     $candidate = trim( $candidate );
                     if ( '' !== $candidate ) {
                         $node['description'] = $candidate;
+                    }
+                }
+
+                if ( $caption ) {
+                    $node['caption'] = wp_strip_all_tags( (string) $caption );
+                }
+
+                $meta = wp_get_attachment_metadata( $attachment_id );
+                if ( is_array( $meta ) && ! empty( $meta['image_meta'] ) && is_array( $meta['image_meta'] ) ) {
+                    $image_meta = $meta['image_meta'];
+                    if ( ! empty( $image_meta['copyright'] ) ) {
+                        $node['license'] = $image_meta['copyright'];
+                    }
+                    if ( ! empty( $image_meta['credit'] ) ) {
+                        $node['creator'] = array(
+                            '@type' => 'Person',
+                            'name'  => $image_meta['credit'],
+                        );
+                    }
+                }
+
+                // Fallback creator to attachment author.
+                if ( empty( $node['creator'] ) ) {
+                    $author_id   = get_post_field( 'post_author', $attachment_id );
+                    $author_name = $author_id ? get_the_author_meta( 'display_name', $author_id ) : '';
+                    if ( $author_name ) {
+                        $node['creator'] = array(
+                            '@type' => 'Person',
+                            'name'  => $author_name,
+                        );
                     }
                 }
             }
@@ -152,6 +185,7 @@ function be_schema_get_site_entities() {
     $site_tagline    = get_bloginfo( 'description', 'display' );
     $site_desc_clean = trim( wp_strip_all_tags( (string) $site_tagline ) );
     $site_desc_clean = ( $site_desc_clean !== '' ) ? $site_desc_clean : null;
+    $site_language   = get_bloginfo( 'language' );
 
     /**
      * ---------------------------------------------------------------------
@@ -280,14 +314,22 @@ function be_schema_get_site_entities() {
         }
 
         /**
-         * Organisation sameAs URLs can be provided by filters.
+         * Organisation sameAs URLs from settings and filters.
          *
          * This keeps the admin UI simpler and lets other plugins contribute.
          */
-        $org_sameas = apply_filters( 'be_schema_sameas_urls', array() );
-        $org_sameas = be_schema_engine_normalize_url_list( $org_sameas );
-        if ( ! empty( $org_sameas ) ) {
-            $organization_node['sameAs'] = $org_sameas;
+        $org_sameas = array();
+        if ( ! empty( $settings['org_sameas_raw'] ) ) {
+            $lines      = preg_split( '/\r\n|\r|\n/', (string) $settings['org_sameas_raw'] );
+            $org_sameas = be_schema_engine_normalize_url_list( $lines );
+        }
+
+        $org_sameas_filtered = apply_filters( 'be_schema_sameas_urls', array() );
+        $org_sameas_filtered = be_schema_engine_normalize_url_list( $org_sameas_filtered );
+
+        $org_sameas_all = array_unique( array_filter( array_merge( $org_sameas, $org_sameas_filtered ) ) );
+        if ( ! empty( $org_sameas_all ) ) {
+            $organization_node['sameAs'] = $org_sameas_all;
         }
     }
 
@@ -377,8 +419,16 @@ function be_schema_get_site_entities() {
         'name'  => $site_name,
     );
 
+    if ( $site_language ) {
+        $website_node['inLanguage'] = $site_language;
+    }
+
     if ( $site_desc_clean ) {
         $website_node['description'] = $site_desc_clean;
+    }
+
+    if ( $site_desc_clean ) {
+        $website_node['alternateName'] = $site_desc_clean;
     }
 
     if ( $logo_node ) {
@@ -418,6 +468,23 @@ function be_schema_get_site_entities() {
         $website_node['about'] = $primary_entity;
         $website_node['publisher'] = $primary_entity;
     }
+
+    if ( $organization_node ) {
+        $website_node['isPartOf'] = array(
+            '@id' => $organization_node['@id'],
+        );
+    }
+
+    // Add SearchAction potentialAction for site search.
+    $search_target = add_query_arg( 's', '{search_term_string}', home_url( '/' ) );
+    $search_target = str_replace( '%7Bsearch_term_string%7D', '{search_term_string}', $search_target );
+    $website_node['potentialAction'] = array(
+        array(
+            '@type'       => 'SearchAction',
+            'target'      => $search_target,
+            'query-input' => 'required name=search_term_string',
+        ),
+    );
 
     /**
      * Final assembled model.
