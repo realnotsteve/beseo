@@ -218,13 +218,18 @@ class BE_Elementor_Schema_Plugin {
         $element->add_control(
             'be_schema_widget_preview',
             array(
-                'label' => __( 'Preview JSON', 'beseo' ),
+                'label' => '',
                 'type'  => Controls_Manager::RAW_HTML,
                 'raw'   => '<div class="be-schema-widget-preview">' .
-                           '<button type="button" class="button be-schema-preview-btn" disabled>' . esc_html__( 'Preview JSON', 'beseo' ) . '</button>' .
+                           '<button type="button" class="elementor-button elementor-button-default be-schema-preview-btn" disabled>' . esc_html__( 'Preview JSON', 'beseo' ) . '</button>' .
                            '<textarea class="large-text code be-schema-preview-json" rows="6" readonly style="margin-top:8px;"></textarea>' .
+                           '<div class="be-schema-image-status" style="margin-top:6px; color:#2271b1; display:none;"></div>' .
                            '</div>',
                 'content_classes' => 'be-schema-preview-control',
+                'show_label'      => false,
+                'condition'       => array(
+                    'be_schema_enable_widget' => 'yes',
+                ),
             )
         );
 
@@ -541,13 +546,14 @@ add_action(
  * Enqueue editor-only assets for Elementor panel preview.
  */
 function be_schema_elementor_enqueue_editor_assets() {
-    wp_enqueue_script(
+    wp_register_script(
         'be-schema-elementor-preview',
-        '',
+        false,
         array( 'jquery', 'elementor-editor' ),
         BE_SCHEMA_ENGINE_VERSION,
         true
     );
+    wp_enqueue_script( 'be-schema-elementor-preview' );
 
     wp_add_inline_script(
         'be-schema-elementor-preview',
@@ -556,18 +562,27 @@ function be_schema_elementor_enqueue_editor_assets() {
             'ajaxurl: ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ',' .
             'nonce: ' . wp_json_encode( wp_create_nonce( 'be_schema_preview_elementor' ) ) .
         '};' .
-        'elementor.hooks.addAction("panel/open_editor/widget", function(panel, model){' .
-            'var type = model.get("widgetType");' .
-            'if(type !== "image" && type !== "video-playlist" && type !== "video_playlist"){return;}' .
+        'function bindPreview(panel, model, type){' .
             'var $panel = panel.$el;' .
             'var $btn = $panel.find(".be-schema-preview-btn");' .
             'var $textarea = $panel.find(".be-schema-preview-json");' .
-            'var toggleSelector = \'input[data-setting="be_schema_enable_widget"]\';' .
-            'function sync(){ var enabled = $panel.find(toggleSelector).is(":checked"); $btn.prop("disabled", !enabled); if(!enabled){$textarea.val("");}}' .
-            'sync();' .
-            '$panel.on("change", toggleSelector, sync);' .
-            '$btn.off("click.beSchemaPreview").on("click.beSchemaPreview", function(e){ e.preventDefault(); if($btn.is(":disabled")) return; var settings = model.get("settings"); if(!settings){$textarea.val("No settings."); return;} var attrs = settings.attributes || {}; $.post(data.ajaxurl, {action:"be_schema_preview_elementor", nonce:data.nonce, widget_type:type, settings:attrs}, function(resp){ if(resp && resp.success && resp.data && resp.data.json){ $textarea.val(resp.data.json); } else { var msg = resp && resp.data && resp.data.message ? resp.data.message : "Preview unavailable."; $textarea.val(msg); } }).fail(function(){ $textarea.val("Preview failed."); }); });' .
-        '});' .
+            'var $status = $panel.find(".be-schema-image-status");' .
+            'if(!$btn.length || !$textarea.length){return;}' .
+            'var settingsModel = model.get("settings");' .
+            'function getImage(){ if(!settingsModel){ return null; } if(settingsModel.get){ return settingsModel.get("image"); } if(settingsModel.attributes){ return settingsModel.attributes.image; } return null; }' .
+            'function hasImage(){ var img = getImage() || {}; var idOk = img.id && parseInt(img.id,10) > 0; var urlOk = img.url && img.url !== "" && !/placeholder|dummy|transparent/i.test(img.url); return idOk || urlOk; }' .
+            'function sync(){ var enabled = hasImage(); if($status.length){ $status.text(enabled ? "Image detected" : "No image selected").css("display","block"); } if(!enabled){$textarea.val("");} $btn.prop("disabled", !enabled); }' .
+            'setTimeout(sync, 50);' .
+            '$panel.on("input change", "[data-setting=\'be_schema_enable_widget\'], [data-setting=\'image\'], input, select, textarea", sync);' .
+            'if(settingsModel && settingsModel.on){ settingsModel.on("change:image", sync); settingsModel.on("change", sync); }' .
+            'model.on("change:image", sync);' .
+            'model.on("change", sync);' .
+            '$panel.find(".elementor-panel-navigation-tab[data-tab=\'advanced\']").on("click", function(){ setTimeout(sync, 50); });' .
+            '$btn.off("click.beSchemaPreview").on("click.beSchemaPreview", function(e){ e.preventDefault(); if($btn.is(":disabled")) return; if(!hasImage()){ $textarea.val("Select an image to preview."); return; } if(!settingsModel){ $textarea.val("No settings."); return; } var attrs = settingsModel.attributes || {}; $.post(data.ajaxurl, {action:"be_schema_preview_elementor", nonce:data.nonce, widget_type:type, settings:attrs}, function(resp){ if(resp && resp.success && resp.data && resp.data.json){ $textarea.val(resp.data.json); } else { var msg = resp && resp.data && resp.data.message ? resp.data.message : "Preview unavailable."; $textarea.val(msg); } }).fail(function(){ $textarea.val("Preview failed."); }); });' .
+        '}' .
+        'elementor.hooks.addAction("panel/open_editor/widget/image", function(panel, model){ if(window.console){ console.log("Editor Opened"); } bindPreview(panel, model, "image"); var settings = model.get("settings"); if(settings && settings.on){ settings.on("change:image", function(changedModel){ var value = changedModel.get("image"); if(window.console){ console.log("New image selected:", value); } }); } });' .
+        'elementor.hooks.addAction("panel/open_editor/widget/video-playlist", function(panel, model){ bindPreview(panel, model, "video-playlist"); });' .
+        'elementor.hooks.addAction("panel/open_editor/widget/video_playlist", function(panel, model){ bindPreview(panel, model, "video_playlist"); });' .
         '})(jQuery);'
     );
 }
