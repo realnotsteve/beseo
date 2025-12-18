@@ -202,13 +202,14 @@ function be_schema_build_webpage_node( $post_id, $schema_type, array $args = arr
 
 	// Add SearchAction (Sitelinks search box) on homepage context.
 	if ( ! empty( $args['use_home_url'] ) ) {
-		$search_target = add_query_arg( 's', '{search_term_string}', home_url( '/' ) );
-		$search_target = str_replace( '%7Bsearch_term_string%7D', '{search_term_string}', $search_target );
-		$webpage['potentialAction'] = array(
-			array(
-				'@type'       => 'SearchAction',
-				'target'      => $search_target,
-				'query-input' => 'required name=search_term_string',
+        $search_target = add_query_arg( 's', '{search_term_string}', home_url( '/' ) );
+        $search_target = str_replace( '%7Bsearch_term_string%7D', '{search_term_string}', $search_target );
+        $search_target = apply_filters( 'be_schema_search_action_target', $search_target, 'homepage' );
+        $webpage['potentialAction'] = array(
+            array(
+                '@type'       => 'SearchAction',
+                'target'      => $search_target,
+                'query-input' => 'required name=search_term_string',
 			),
 		);
 	}

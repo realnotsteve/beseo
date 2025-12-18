@@ -478,6 +478,7 @@ function be_schema_get_site_entities() {
     // Add SearchAction potentialAction for site search.
     $search_target = add_query_arg( 's', '{search_term_string}', home_url( '/' ) );
     $search_target = str_replace( '%7Bsearch_term_string%7D', '{search_term_string}', $search_target );
+    $search_target = apply_filters( 'be_schema_search_action_target', $search_target, 'website' );
     $website_node['potentialAction'] = array(
         array(
             '@type'       => 'SearchAction',

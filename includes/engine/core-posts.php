@@ -160,6 +160,218 @@ function be_schema_get_publisher_reference() {
 }
 
 /**
+ * Build FAQPage schema from Elementor widgets (Accordion/Toggle/FAQ).
+ *
+ * @param WP_Post $post Post object.
+ * @return array Array of FAQPage nodes (0 or 1).
+ */
+function be_schema_build_faq_schema( $post ) {
+	$data_raw = get_post_meta( $post->ID, '_elementor_data', true );
+	if ( empty( $data_raw ) ) {
+		return array();
+	}
+	$data = json_decode( $data_raw, true );
+	if ( ! is_array( $data ) ) {
+		return array();
+	}
+
+	$faq_items = array();
+	$walker    = function( $nodes ) use ( &$walker, &$faq_items ) {
+		if ( empty( $nodes ) || ! is_array( $nodes ) ) {
+			return;
+		}
+		foreach ( $nodes as $node ) {
+			if ( isset( $node['elements'] ) && is_array( $node['elements'] ) ) {
+				$walker( $node['elements'] );
+			}
+			if ( ! isset( $node['elType'] ) || 'widget' !== $node['elType'] ) {
+				continue;
+			}
+			$type = isset( $node['widgetType'] ) ? strtolower( (string) $node['widgetType'] ) : '';
+			$faq_widgets = array(
+				'accordion',
+				'toggle',
+				'faq',
+				'faq-widget',
+				'faq_schema',
+				'bdt-accordion',
+				'eael-accordion',
+				'eael-advanced-accordion',
+				'elementor-faq',
+			);
+			if ( ! in_array( $type, $faq_widgets, true ) ) {
+				continue;
+			}
+			$settings = isset( $node['settings'] ) && is_array( $node['settings'] ) ? $node['settings'] : array();
+			$list     = array();
+			foreach ( array( 'accordion', 'tabs', 'items', 'faq_list', 'faq_items' ) as $key ) {
+				if ( ! empty( $settings[ $key ] ) && is_array( $settings[ $key ] ) ) {
+					$list = $settings[ $key ];
+					break;
+				}
+			}
+			if ( empty( $list ) ) {
+				continue;
+			}
+			foreach ( $list as $entry ) {
+				$q = '';
+				foreach ( array( 'question', 'tab_title', 'title' ) as $qk ) {
+					if ( ! empty( $entry[ $qk ] ) ) {
+						$q = $entry[ $qk ];
+						break;
+					}
+				}
+				$a = '';
+				foreach ( array( 'answer', 'tab_content', 'content', 'text' ) as $ak ) {
+					if ( ! empty( $entry[ $ak ] ) ) {
+						$a = $entry[ $ak ];
+						break;
+					}
+				}
+				$q = wp_strip_all_tags( (string) $q );
+				$a = wp_strip_all_tags( (string) $a );
+				if ( $q && $a ) {
+					$faq_items[] = array(
+						'@type'          => 'Question',
+						'name'           => $q,
+						'acceptedAnswer' => array(
+							'@type' => 'Answer',
+							'text'  => $a,
+						),
+					);
+				}
+			}
+		}
+	};
+	$walker( $data );
+
+	if ( empty( $faq_items ) ) {
+		return array();
+	}
+
+	return array(
+		array(
+			'@type'      => 'FAQPage',
+			'@id'        => be_schema_id( 'faq-' . $post->ID ),
+			'mainEntity' => $faq_items,
+		),
+	);
+}
+
+/**
+ * Build HowTo schema from Elementor widgets (Steps/Process-like).
+ *
+ * @param WP_Post $post Post object.
+ * @return array Array of HowTo nodes (0 or 1).
+ */
+function be_schema_build_howto_schema( $post ) {
+	$data_raw = get_post_meta( $post->ID, '_elementor_data', true );
+	if ( empty( $data_raw ) ) {
+		return array();
+	}
+	$data = json_decode( $data_raw, true );
+	if ( ! is_array( $data ) ) {
+		return array();
+	}
+
+	$howto_steps = array();
+	$walker      = function( $nodes ) use ( &$walker, &$howto_steps ) {
+		if ( empty( $nodes ) || ! is_array( $nodes ) ) {
+			return;
+		}
+		foreach ( $nodes as $node ) {
+			if ( isset( $node['elements'] ) && is_array( $node['elements'] ) ) {
+				$walker( $node['elements'] );
+			}
+			if ( ! isset( $node['elType'] ) || 'widget' !== $node['elType'] ) {
+				continue;
+			}
+			$type = isset( $node['widgetType'] ) ? strtolower( (string) $node['widgetType'] ) : '';
+			$howto_widgets = array(
+				'steps',
+				'process',
+				'howto',
+				'how_to',
+				'timeline',
+			);
+			if ( ! in_array( $type, $howto_widgets, true ) ) {
+				continue;
+			}
+			$settings = isset( $node['settings'] ) && is_array( $node['settings'] ) ? $node['settings'] : array();
+			$list     = array();
+			foreach ( array( 'steps', 'items', 'process', 'tabs' ) as $key ) {
+				if ( ! empty( $settings[ $key ] ) && is_array( $settings[ $key ] ) ) {
+					$list = $settings[ $key ];
+					break;
+				}
+			}
+			if ( empty( $list ) ) {
+				continue;
+			}
+			foreach ( $list as $idx => $entry ) {
+				$name = '';
+				foreach ( array( 'title', 'tab_title', 'heading' ) as $nk ) {
+					if ( ! empty( $entry[ $nk ] ) ) {
+						$name = $entry[ $nk ];
+						break;
+					}
+				}
+				$text = '';
+				foreach ( array( 'text', 'description', 'content', 'tab_content' ) as $tk ) {
+					if ( ! empty( $entry[ $tk ] ) ) {
+						$text = $entry[ $tk ];
+						break;
+					}
+				}
+				$step_item = array(
+					'@type'    => 'HowToStep',
+					'position' => $idx + 1,
+					'name'     => wp_strip_all_tags( $name ? $name : sprintf( __( 'Step %d', 'beseo' ), $idx + 1 ) ),
+					'text'     => wp_strip_all_tags( $text ),
+				);
+
+				// Attempt to resolve an image for the step.
+				$image_source = null;
+				if ( isset( $entry['image'] ) ) {
+					$image_source = $entry['image'];
+				} elseif ( isset( $entry['media'] ) ) {
+					$image_source = $entry['media'];
+				}
+				if ( $image_source ) {
+					if ( is_array( $image_source ) && isset( $image_source['id'] ) ) {
+						$img_obj = be_schema_engine_build_image_object( $image_source['id'] );
+						if ( $img_obj ) {
+							$step_item['image'] = $img_obj;
+						}
+					} else {
+						$img_obj = be_schema_engine_build_image_object( $image_source );
+						if ( $img_obj ) {
+							$step_item['image'] = $img_obj;
+						}
+					}
+				}
+
+				$howto_steps[] = $step_item;
+			}
+		}
+	};
+	$walker( $data );
+
+	if ( empty( $howto_steps ) ) {
+		return array();
+	}
+
+	return array(
+		array(
+			'@type' => 'HowTo',
+			'@id'   => be_schema_id( 'howto-' . $post->ID ),
+			'name'  => get_the_title( $post ),
+			'step'  => $howto_steps,
+		),
+	);
+}
+
+/**
  * Build a BlogPosting node for the current post.
  *
  * @param WP_Post $post The post object.
@@ -169,6 +381,10 @@ function be_schema_get_publisher_reference() {
 function be_schema_build_blogposting_node( $post ) {
 	$post_id = (int) $post->ID;
 	$url     = get_permalink( $post_id );
+	$canonical = function_exists( 'wp_get_canonical_url' ) ? wp_get_canonical_url( $post_id ) : '';
+	if ( $canonical ) {
+		$url = $canonical;
+	}
 	$language = get_bloginfo( 'language' );
 
 	$headline = get_the_title( $post );
@@ -226,6 +442,9 @@ function be_schema_build_blogposting_node( $post ) {
 	$author_name = get_the_author_meta( 'display_name', $author_id );
 	$author_url  = get_author_posts_url( $author_id );
 	$author_img  = get_avatar_url( $author_id, array( 'size' => 256 ) );
+	$author_job  = get_the_author_meta( 'job_title', $author_id );
+	$author_knows = get_the_author_meta( 'knows_about', $author_id );
+	$author_sameas_raw = get_the_author_meta( 'be_schema_sameas', $author_id );
 	$author_node = array(
 		'@type' => 'Person',
 		'name'  => $author_name ? $author_name : get_bloginfo( 'name', 'display' ),
@@ -241,6 +460,18 @@ function be_schema_build_blogposting_node( $post ) {
 			'@type' => 'ImageObject',
 			'url'   => $author_img,
 		);
+	}
+	if ( $author_job ) {
+		$author_node['jobTitle'] = $author_job;
+	}
+	if ( $author_knows ) {
+		$author_node['knowsAbout'] = array_map( 'trim', explode( ',', $author_knows ) );
+	}
+	if ( $author_sameas_raw ) {
+		$urls = be_schema_engine_normalize_url_list( preg_split( '/\r\n|\r|\n|,/', (string) $author_sameas_raw ) );
+		if ( $urls ) {
+			$author_node['sameAs'] = $urls;
+		}
 	}
 
 	// Editor (last editor) if available.
@@ -370,6 +601,9 @@ function be_schema_build_blogposting_node( $post ) {
 		),
 		'headline'         => $headline,
 		'url'              => $url,
+		'mainEntity'       => array(
+			'@id' => $url,
+		),
 	);
 
 	if ( $language ) {
@@ -418,12 +652,26 @@ function be_schema_build_blogposting_node( $post ) {
 	$node['speakable'] = array(
 		'@type'       => 'SpeakableSpecification',
 		'cssSelector' => array(
+			'article .entry-title',
+			'.entry-title',
 			'header h1',
 			'article h1',
-			'article h2',
 			'title',
+			'main .lead',
 		),
 	);
+
+	// Article body (sanitized, truncated).
+	$article_body = be_schema_normalize_text( wp_strip_all_tags( $post->post_content ), 5000 );
+	if ( $article_body ) {
+		$node['articleBody'] = $article_body;
+	}
+
+	// Comment count if comments are open/available.
+	$comment_count = get_comments_number( $post_id );
+	if ( $comment_count > 0 ) {
+		$node['commentCount'] = (int) $comment_count;
+	}
 
 	return $node;
 }
@@ -523,11 +771,19 @@ function be_schema_output_post_schema() {
 
 	$webpage    = be_schema_build_post_webpage_node( $post );
 	$blogposting = be_schema_build_blogposting_node( $post );
+	$faq_nodes   = be_schema_build_faq_schema( $post );
+	$howto_nodes = be_schema_build_howto_schema( $post );
 
 	$graph = array(
 		$webpage,
 		$blogposting,
 	);
+	if ( $faq_nodes ) {
+		$graph = array_merge( $graph, $faq_nodes );
+	}
+	if ( $howto_nodes ) {
+		$graph = array_merge( $graph, $howto_nodes );
+	}
 
 	$payload = array(
 		'@context' => 'https://schema.org',
