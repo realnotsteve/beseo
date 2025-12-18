@@ -24,6 +24,13 @@ class BE_Elementor_Schema_Plugin {
 
         // Widget-level controls (Image, Video Playlist).
         add_action( 'elementor/element/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        // Targeted hooks for reliability across Elementor versions/sections.
+        add_action( 'elementor/element/image/section_advanced/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        add_action( 'elementor/element/image/section_advanced/before_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        add_action( 'elementor/element/image/section_style/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        add_action( 'elementor/element/image/section_content/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        add_action( 'elementor/element/video-playlist/section_advanced/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
+        add_action( 'elementor/element/video_playlist/section_advanced/after_section_end', array( __CLASS__, 'register_widget_controls' ), 10, 3 );
     }
 
     /**
@@ -139,14 +146,18 @@ class BE_Elementor_Schema_Plugin {
      * @param array                   $args
      */
     public static function register_widget_controls( $element, $section_id, $args ) {
-        if ( 'section_advanced' !== $section_id ) {
-            return;
-        }
+        // Allow all sections (we guard by widget and duplicate control below).
 
         $widget_name = $element->get_name();
 
         // Only support core Image + Video Playlist widgets.
         if ( ! in_array( $widget_name, array( 'image', 'video-playlist', 'video_playlist' ), true ) ) {
+            return;
+        }
+
+        // Avoid double registration if multiple hooks fire.
+        $controls = $element->get_controls();
+        if ( isset( $controls['be_schema_enable_widget'] ) ) {
             return;
         }
 
