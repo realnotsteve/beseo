@@ -52,17 +52,26 @@ if ( ! function_exists( 'be_schema_engine_normalize_url_list' ) ) {
  *     'caption'    => string|null,
  *     'creator'    => Person|null,
  *     'license'    => string|null,
+ *     'name'       => string|null,
+ *     'isLogo'     => bool|null,
+ *     'about'      => array|null,
  *   )
  *
  * @param int|string $image Media attachment ID or URL.
  * @param string     $id_suffix Optional suffix for @id.
+ * @param array      $flags Optional flags: force_logo, force_entity.
  * @return array|null
  */
 if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
-    function be_schema_engine_build_image_object( $image, $id_suffix = '#image' ) {
+    function be_schema_engine_build_image_object( $image, $id_suffix = '#image', $flags = array() ) {
         $url    = '';
         $width  = null;
         $height = null;
+        $has_alt = false;
+        $force_logo   = ! empty( $flags['force_logo'] );
+        $force_entity = ! empty( $flags['force_entity'] );
+        $is_logo      = false;
+        $is_entity    = false;
 
         // Attachment ID.
         if ( is_numeric( $image ) ) {
@@ -74,9 +83,16 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                     $width  = isset( $src[1] ) ? (int) $src[1] : null;
                     $height = isset( $src[2] ) ? (int) $src[2] : null;
                 }
+
+                $logo_flag   = get_post_meta( $attachment_id, '_be_schema_media_logo', true );
+                $entity_flag = get_post_meta( $attachment_id, '_be_schema_media_entity', true );
+                $is_logo     = $force_logo || ( '' !== $logo_flag && false !== $logo_flag && '0' !== $logo_flag );
+                $is_entity   = $force_entity || ( '' !== $entity_flag && false !== $entity_flag && '0' !== $entity_flag );
             }
         } elseif ( is_string( $image ) ) {
             $url = esc_url_raw( $image );
+            $is_logo   = $force_logo;
+            $is_entity = $force_entity;
         }
 
         if ( ! $url ) {
@@ -104,25 +120,33 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
             if ( $attachment_id > 0 ) {
                 $alt        = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
                 $caption    = wp_get_attachment_caption( $attachment_id );
+                $title      = get_the_title( $attachment_id );
+                $desc_post  = get_post( $attachment_id );
+                $desc_field = ( $desc_post && ! empty( $desc_post->post_content ) ) ? $desc_post->post_content : '';
                 $candidate  = '';
+                $has_alt    = ( '' !== trim( (string) $alt ) );
 
-                if ( ! empty( $alt ) ) {
-                    $candidate = $alt;
-                } elseif ( ! empty( $caption ) ) {
-                    $candidate = $caption;
-                }
-
-                if ( $candidate ) {
-                    $candidate = wp_strip_all_tags( (string) $candidate );
+                // Description precedence: caption, description field, alt.
+                $desc_sources = array( $caption, $desc_field, $alt );
+                foreach ( $desc_sources as $desc_source ) {
+                    if ( empty( $desc_source ) ) {
+                        continue;
+                    }
+                    $candidate = wp_strip_all_tags( (string) $desc_source );
                     $candidate = preg_replace( '/\s+/', ' ', $candidate );
                     $candidate = trim( $candidate );
                     if ( '' !== $candidate ) {
                         $node['description'] = $candidate;
+                        break;
                     }
                 }
 
                 if ( $caption ) {
                     $node['caption'] = wp_strip_all_tags( (string) $caption );
+                }
+
+                if ( $title ) {
+                    $node['name'] = wp_strip_all_tags( (string) $title );
                 }
 
                 $meta = wp_get_attachment_metadata( $attachment_id );
@@ -150,6 +174,26 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                         );
                     }
                 }
+            }
+        }
+
+        // Require an alt/description-like value; otherwise skip emitting.
+        if ( empty( $node['description'] ) && empty( $node['caption'] ) && empty( $has_alt ) ) {
+            return null;
+        }
+
+        if ( $is_logo ) {
+            $node['@id']    = $url . '#logo';
+        }
+
+        if ( $is_entity ) {
+            $org_id    = be_schema_id( 'organisation' );
+            $person_id = be_schema_id( 'person' );
+            $about_ref = $org_id ? $org_id : $person_id;
+            if ( $about_ref ) {
+                $node['about'] = array(
+                    array( '@id' => $about_ref ),
+                );
             }
         }
 
