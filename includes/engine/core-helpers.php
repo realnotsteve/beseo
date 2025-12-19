@@ -24,10 +24,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Merges saved options over those defaults.
  * - Caches the result for the duration of the request.
  *
+ * @param bool $force_refresh Force refresh of cached settings.
  * @return array
  */
-function be_schema_engine_get_settings() {
+function be_schema_engine_get_settings( $force_refresh = false ) {
 	static $cached = null;
+
+	if ( $force_refresh ) {
+		$cached = null;
+	}
 
 	if ( null !== $cached ) {
 		return $cached;

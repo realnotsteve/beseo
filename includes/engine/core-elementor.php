@@ -40,10 +40,25 @@ class BE_Elementor_Schema_Plugin {
      */
     public static function register_document_controls( $document ) {
         // We only care about post/page-like documents.
-        if ( ! method_exists( $document, 'get_post_type' ) ) {
-            return;
+        $type    = '';
+        $post_id = 0;
+
+        if ( method_exists( $document, 'get_post_type' ) ) {
+            $type = $document->get_post_type();
         }
-        $type = $document->get_post_type();
+
+        if ( ! $type ) {
+            if ( method_exists( $document, 'get_main_id' ) ) {
+                $post_id = (int) $document->get_main_id();
+            }
+            if ( ! $post_id && method_exists( $document, 'get_id' ) ) {
+                $post_id = (int) $document->get_id();
+            }
+            if ( $post_id ) {
+                $type = get_post_type( $post_id );
+            }
+        }
+
         if ( ! in_array( $type, array( 'post', 'page' ), true ) ) {
             return;
         }
@@ -51,7 +66,7 @@ class BE_Elementor_Schema_Plugin {
         $document->start_controls_section(
             'be_schema_section_page',
             array(
-                'label' => __( 'Schema', 'beseo' ),
+                'label' => __( 'BE SEO Scheme', 'beseo' ),
                 'tab'   => Controls_Manager::TAB_SETTINGS,
             )
         );
@@ -164,7 +179,7 @@ class BE_Elementor_Schema_Plugin {
         $element->start_controls_section(
             'be_schema_section_widget',
             array(
-                'label' => __( 'Schema', 'beseo' ),
+                'label' => __( 'BE SEO Scheme', 'beseo' ),
                 'tab'   => Controls_Manager::TAB_ADVANCED,
             )
         );

@@ -477,6 +477,9 @@ function be_schema_engine_save_settings() {
         : '';
 
     update_option( 'be_schema_engine_settings', $settings );
+    if ( function_exists( 'be_schema_engine_get_settings' ) ) {
+        be_schema_engine_get_settings( true );
+    }
 
     foreach ( $validation_errors as $message ) {
         add_settings_error( 'be_schema_engine', 'be_schema_engine_validation', $message, 'error' );

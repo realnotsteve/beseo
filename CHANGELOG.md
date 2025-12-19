@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.29] - 2025-12-19
+Summary: Engine.
+
+### Changed
+- Touched areas: engine.
+
+### Files
+- data/elementor-widget-schema-settings.json
+- includes/admin/schema-service.php
+- includes/admin/schema-view.php
+- includes/engine/core-elementor.php
+- includes/engine/core-helpers.php
+
+
 ## [2.1.28] - 2025-12-19
 Summary: Schema admin + engine.
 
