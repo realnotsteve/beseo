@@ -619,6 +619,7 @@ function be_schema_elementor_enqueue_editor_assets() {
         'var beSchemaRevisionTries = 0;' .
         'var beSchemaRevisionDetected = false;' .
         'var beSchemaObserver = null;' .
+        'var beSchemaOpenPanelTries = 0;' .
         'function beSchemaGetDocConfig(){' .
             'if(window.elementor){' .
                 'if(elementor.config && elementor.config.initial_document){ return elementor.config.initial_document; }' .
@@ -654,6 +655,34 @@ function be_schema_elementor_enqueue_editor_assets() {
             'if($page.length){ return $page; }' .
             'var $wrapper = $("#elementor-panel-content-wrapper");' .
             'return $wrapper.length ? $wrapper : $();' .
+        '}' .
+        'function beSchemaGetQueryParam(name){' .
+            'var match = new RegExp("[?&]" + name + "=([^&]*)").exec(window.location.search);' .
+            'return match ? decodeURIComponent(match[1].replace(/\\+/g, " ")) : "";' .
+        '}' .
+        'function beSchemaShouldOpenPageSettings(){' .
+            'return beSchemaGetQueryParam("be_schema_panel") === "page_settings";' .
+        '}' .
+        'function beSchemaOpenPageSettings(){' .
+            'if(!beSchemaShouldOpenPageSettings()){ return; }' .
+            'if(!window.elementor || !elementor.getPanelView){' .
+                'if(beSchemaOpenPanelTries < 20){ beSchemaOpenPanelTries++; setTimeout(beSchemaOpenPageSettings, 250); }' .
+                'return;' .
+            '}' .
+            'try {' .
+                'var panel = elementor.getPanelView();' .
+                'if(!panel || !panel.setPage){ throw new Error("panel"); }' .
+                'var pageView = panel.setPage("page_settings");' .
+                'if(pageView && pageView.activateTab){ pageView.activateTab("settings"); }' .
+                'if(window.URL && window.history && window.history.replaceState){' .
+                    'var url = new URL(window.location.href);' .
+                    'url.searchParams.delete("be_schema_panel");' .
+                    'window.history.replaceState({}, document.title, url.toString());' .
+                '}' .
+                'setTimeout(beSchemaTryInsertNotice, 200);' .
+            '} catch(e) {' .
+                'if(beSchemaOpenPanelTries < 20){ beSchemaOpenPanelTries++; setTimeout(beSchemaOpenPageSettings, 250); }' .
+            '}' .
         '}' .
         'function beSchemaTryInsertNotice(){' .
             'if(!beSchemaIsRevisionDoc()){' .
@@ -703,8 +732,8 @@ function be_schema_elementor_enqueue_editor_assets() {
                 '$btn.data("loading", false).prop("disabled", false).text("Delete revisions & reload");' .
             '});' .
         '});' .
-        '$(window).on("elementor:init", function(){ beSchemaObservePanel(); setTimeout(beSchemaTryInsertNotice, 200); });' .
-        '$(function(){ beSchemaObservePanel(); setTimeout(beSchemaTryInsertNotice, 200); });' .
+        '$(window).on("elementor:init", function(){ beSchemaObservePanel(); beSchemaOpenPageSettings(); setTimeout(beSchemaTryInsertNotice, 200); });' .
+        '$(function(){ beSchemaObservePanel(); beSchemaOpenPageSettings(); setTimeout(beSchemaTryInsertNotice, 200); });' .
         '})(jQuery);'
     );
 }
@@ -784,11 +813,20 @@ function be_schema_elementor_delete_revisions() {
         }
     }
 
+    $redirect_url = add_query_arg(
+        array(
+            'post'            => $post_id,
+            'action'          => 'elementor',
+            'be_schema_panel' => 'page_settings',
+        ),
+        admin_url( 'post.php' )
+    );
+
     wp_send_json_success(
         array(
             'deleted'      => $deleted,
             'post_id'      => $post_id,
-            'redirect_url' => admin_url( 'post.php?post=' . $post_id . '&action=elementor' ),
+            'redirect_url' => $redirect_url,
         )
     );
 }
