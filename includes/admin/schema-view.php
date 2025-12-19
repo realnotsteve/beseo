@@ -959,6 +959,13 @@ function be_schema_engine_render_schema_page() {
                             <?php esc_html_e( 'Website', 'beseo' ); ?>
                         </a>
                     </li>
+                    <li>
+                        <a href="#be-schema-tab-settings-author"
+                           class="be-schema-tab-link"
+                           data-schema-tab="settings-author">
+                            <?php esc_html_e( 'Settings', 'beseo' ); ?>
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- DASHBOARD TAB -->
@@ -1290,6 +1297,64 @@ function be_schema_engine_render_schema_page() {
                     </div>
                 </div>
 
+                <!-- SETTINGS TAB -->
+                <div id="be-schema-tab-settings-author" class="be-schema-tab-panel">
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Global Author', 'beseo' ); ?></h4>
+                        <p class="description be-schema-description">
+                            <?php esc_html_e( 'Default author details applied when content needs an author and none is provided.', 'beseo' ); ?>
+                        </p>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Mode', 'beseo' ); ?></th>
+                                <td>
+                                    <?php
+                                    $global_author_mode = isset( $settings['global_author_mode'] ) ? $settings['global_author_mode'] : 'website';
+                                    $use_override       = ( 'override' === $global_author_mode );
+                                    ?>
+                                    <label style="margin-right:12px;">
+                                        <input type="radio" name="be_schema_global_author_mode" value="website" <?php checked( ! $use_override ); ?> />
+                                        <?php esc_html_e( 'Website Entity', 'beseo' ); ?>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="be_schema_global_author_mode" value="override" <?php checked( $use_override ); ?> />
+                                        <?php esc_html_e( 'Global Override', 'beseo' ); ?>
+                                    </label>
+                                    <p class="description"><?php esc_html_e( 'Use Website Entity for author by default, or choose Global Override to edit fields below.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Author type', 'beseo' ); ?></th>
+                                <td>
+                                    <?php
+                                    $global_author_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
+                                    $global_author_type = in_array( $global_author_type, array( 'Person', 'Organisation' ), true ) ? $global_author_type : 'Person';
+                                    ?>
+                                    <select name="be_schema_global_author_type" <?php disabled( ! $use_override ); ?>>
+                                        <option value="Person" <?php selected( 'Person', $global_author_type ); ?>><?php esc_html_e( 'Person', 'beseo' ); ?></option>
+                                        <option value="Organisation" <?php selected( 'Organisation', $global_author_type ); ?>><?php esc_html_e( 'Organisation', 'beseo' ); ?></option>
+                                    </select>
+                                    <p class="description"><?php esc_html_e( 'Choose whether the default author is a person or an organisation.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Author name', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="text" name="be_schema_global_author_name" class="regular-text" value="<?php echo isset( $settings['global_author_name'] ) ? esc_attr( $settings['global_author_name'] ) : ''; ?>" <?php disabled( ! $use_override ); ?> />
+                                    <p class="description"><?php esc_html_e( 'Name used as the default author when missing.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Author URL', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="url" name="be_schema_global_author_url" class="regular-text code" value="<?php echo isset( $settings['global_author_url'] ) ? esc_attr( $settings['global_author_url'] ) : ''; ?>" <?php disabled( ! $use_override ); ?> />
+                                    <p class="description"><?php esc_html_e( 'Optional URL for the author profile or organisation site.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
                 <?php include BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-website.php'; ?>
 <?php submit_button( __( 'Save Schema Settings', 'beseo' ) ); ?>
         </form>
@@ -1302,6 +1367,17 @@ function be_schema_engine_render_schema_page() {
         if(!$btn.length){ return; }
         var $input = $('input[name="be_schema_global_creator_name"]');
         var $status = $('#be-schema-populate-creator-status');
+        var $authorMode = $('input[name="be_schema_global_author_mode"]');
+        var $authorFields = $('select[name="be_schema_global_author_type"], input[name="be_schema_global_author_name"], input[name="be_schema_global_author_url"]');
+
+        function syncAuthorFields(){
+            var useOverride = $authorMode.filter(':checked').val() === 'override';
+            $authorFields.prop('disabled', !useOverride);
+        }
+        if($authorMode.length){
+            syncAuthorFields();
+            $authorMode.on('change', syncAuthorFields);
+        }
 
         $btn.on('click', function(e){
             e.preventDefault();

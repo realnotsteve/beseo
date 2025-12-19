@@ -132,6 +132,14 @@ function be_schema_engine_save_settings() {
         $type = sanitize_text_field( wp_unslash( $_POST['be_schema_global_creator_type'] ) );
         $settings['global_creator_type'] = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
     }
+    // Global author.
+    $settings['global_author_mode'] = isset( $_POST['be_schema_global_author_mode'] ) && 'override' === $_POST['be_schema_global_author_mode'] ? 'override' : 'website';
+    $settings['global_author_name'] = isset( $_POST['be_schema_global_author_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_global_author_name'] ) ) : '';
+    $settings['global_author_url']  = isset( $_POST['be_schema_global_author_url'] ) ? esc_url_raw( wp_unslash( $_POST['be_schema_global_author_url'] ) ) : '';
+    if ( isset( $_POST['be_schema_global_author_type'] ) ) {
+        $a_type = sanitize_text_field( wp_unslash( $_POST['be_schema_global_author_type'] ) );
+        $settings['global_author_type'] = in_array( $a_type, array( 'Person', 'Organisation' ), true ) ? $a_type : 'Person';
+    }
 
     // Mirror debug into a dedicated debug_enabled key for engine helpers.
     $settings['debug_enabled'] = $settings['debug'];

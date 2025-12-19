@@ -115,6 +115,10 @@ function be_schema_engine_get_settings() {
 		// Global creator fallback for media.
 		'global_creator_name' => '',
 		'global_creator_type' => 'Person',
+		// Global author defaults.
+		'global_author_name' => '',
+		'global_author_url'  => '',
+		'global_author_type' => 'Person',
 
 		// Additional policy / legal metadata.
 		'copyright_year'        => '',
