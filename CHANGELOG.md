@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.21] - 2025-12-18
+Summary: Engine.
+
+### Changed
+- Touched areas: engine.
+
+### Files
+- includes/engine/core-elementor.php
+
+
 ## [2.1.20] - 2025-12-18
 Summary: Engine.
 

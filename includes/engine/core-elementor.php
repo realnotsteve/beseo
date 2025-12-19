@@ -569,9 +569,10 @@ function be_schema_elementor_enqueue_editor_assets() {
             'var $status = $panel.find(".be-schema-image-status");' .
             'if(!$btn.length || !$textarea.length){return;}' .
             'var settingsModel = model.get("settings");' .
+            'var prevEnabled = null;' .
             'function getImage(){ if(!settingsModel){ return null; } if(settingsModel.get){ return settingsModel.get("image"); } if(settingsModel.attributes){ return settingsModel.attributes.image; } return null; }' .
             'function hasImage(){ var img = getImage() || {}; var idOk = img.id && parseInt(img.id,10) > 0; var urlOk = img.url && img.url !== "" && !/placeholder|dummy|transparent/i.test(img.url); return idOk || urlOk; }' .
-            'function sync(){ var enabled = hasImage(); if($status.length){ $status.text(enabled ? "Image detected" : "No image selected").css("display","block"); } if(!enabled){$textarea.val("");} $btn.prop("disabled", !enabled); }' .
+            'function sync(){ var enabled = hasImage(); if(prevEnabled !== enabled && window.console){ console.log(enabled ? "Preview JSON should be ENABLED" : "Preview JSON should be DISABLED"); } prevEnabled = enabled; if($status.length){ $status.text(enabled ? "Image detected" : "No image selected").css("display","block"); } if(!enabled){$textarea.val("");} $btn.prop("disabled", !enabled); }' .
             'setTimeout(sync, 50);' .
             '$panel.on("input change", "[data-setting=\'be_schema_enable_widget\'], [data-setting=\'image\'], input, select, textarea", sync);' .
             'if(settingsModel && settingsModel.on){ settingsModel.on("change:image", sync); settingsModel.on("change", sync); }' .
