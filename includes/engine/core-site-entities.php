@@ -72,7 +72,6 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
         $force_entity = ! empty( $flags['force_entity'] );
         $is_logo      = false;
         $is_entity    = false;
-        $creator_disabled = false;
         $creator_type      = 'Person';
 
         // Attachment ID.
@@ -127,12 +126,17 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                 $desc_field = ( $desc_post && ! empty( $desc_post->post_content ) ) ? $desc_post->post_content : '';
                 $candidate  = '';
                 $has_alt    = ( '' !== trim( (string) $alt ) );
-                $creator_raw      = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
-                $creator_type_raw = get_post_meta( $attachment_id, '_be_schema_creator_type', true );
-                $creator_override = is_string( $creator_raw ) ? trim( $creator_raw ) : '';
-                $creator_disabled = ( '' === $creator_override );
+                $creator_raw         = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
+                $creator_type_raw    = get_post_meta( $attachment_id, '_be_schema_creator_type', true );
+                $creator_url_raw     = get_post_meta( $attachment_id, '_be_schema_creator_url', true );
+                $creator_enabled_raw = get_post_meta( $attachment_id, '_be_schema_creator_enabled', true );
+                $creator_url_enabled_raw = get_post_meta( $attachment_id, '_be_schema_creator_url_enabled', true );
+                $creator_override    = is_string( $creator_raw ) ? trim( $creator_raw ) : '';
+                $creator_url         = is_string( $creator_url_raw ) ? trim( $creator_url_raw ) : '';
+                $creator_enabled     = ( '' === $creator_enabled_raw ) ? ( '' !== $creator_override ) : ( '1' === $creator_enabled_raw );
+                $creator_url_enabled = ( '' === $creator_url_enabled_raw ) ? ( '' !== $creator_url ) : ( '1' === $creator_url_enabled_raw );
                 if ( $creator_type_raw && is_string( $creator_type_raw ) ) {
-                    $creator_type = in_array( $creator_type_raw, array( 'Person', 'Organisation' ), true ) ? $creator_type_raw : 'Person';
+                    $creator_type = in_array( $creator_type_raw, array( 'Person', 'Organisation', 'Organization' ), true ) ? $creator_type_raw : 'Person';
                 }
 
                 // Description precedence: caption, description field, alt.
@@ -164,7 +168,7 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                     if ( ! empty( $image_meta['copyright'] ) ) {
                         $node['license'] = $image_meta['copyright'];
                     }
-                    if ( ! $creator_disabled && empty( $node['creator'] ) && ! empty( $image_meta['credit'] ) ) {
+                    if ( $creator_enabled && empty( $node['creator'] ) && ! empty( $image_meta['credit'] ) ) {
                         $node['creator'] = array(
                             '@type' => 'Person',
                             'name'  => $image_meta['credit'],
@@ -173,11 +177,15 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                 }
 
                 // Local override from media bin (only if provided).
-                if ( ! $creator_disabled && empty( $node['creator'] ) && ! empty( $creator_override ) ) {
+                if ( $creator_enabled && empty( $node['creator'] ) && ! empty( $creator_override ) ) {
+                    $creator_type_schema = ( 'Organisation' === $creator_type || 'Organization' === $creator_type ) ? 'Organization' : 'Person';
                     $node['creator'] = array(
-                        '@type' => $creator_type,
+                        '@type' => $creator_type_schema,
                         'name'  => wp_strip_all_tags( (string) $creator_override ),
                     );
+                    if ( $creator_url_enabled && $creator_url ) {
+                        $node['creator']['url'] = $creator_url;
+                    }
                 }
             }
         }
@@ -202,17 +210,51 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
             }
         }
 
-        // Apply global creator type if sourced from global settings.
-        if ( ! $creator_disabled && empty( $node['creator'] ) ) {
-            $settings         = be_schema_engine_get_settings();
-            $global_creator   = isset( $settings['global_creator_name'] ) ? trim( (string) $settings['global_creator_name'] ) : '';
-            $global_type      = isset( $settings['global_creator_type'] ) ? $settings['global_creator_type'] : 'Person';
-            $global_type_safe = in_array( $global_type, array( 'Person', 'Organisation' ), true ) ? $global_type : 'Person';
-            if ( '' !== $global_creator ) {
+        // Apply global author (website entity or override) when no per-image creator is set.
+        if ( empty( $node['creator'] ) ) {
+            $settings    = be_schema_engine_get_settings();
+            $author_mode = isset( $settings['global_author_mode'] ) ? $settings['global_author_mode'] : 'website';
+
+            if ( 'override' === $author_mode && ! empty( $settings['global_author_name'] ) ) {
+                $override_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
+                $override_type = in_array( $override_type, array( 'Person', 'Organisation' ), true ) ? $override_type : 'Person';
+                $override_type = ( 'Organisation' === $override_type ) ? 'Organization' : 'Person';
                 $node['creator'] = array(
-                    '@type' => $global_type_safe,
-                    'name'  => wp_strip_all_tags( $global_creator ),
+                    '@type' => $override_type,
+                    'name'  => wp_strip_all_tags( (string) $settings['global_author_name'] ),
                 );
+                if ( ! empty( $settings['global_author_url'] ) ) {
+                    $node['creator']['url'] = $settings['global_author_url'];
+                }
+            } else {
+                $entities = be_schema_get_site_entities();
+                $identity = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+                $identity = in_array( $identity, array( 'person', 'organisation', 'publisher' ), true ) ? $identity : 'publisher';
+                $key      = ( 'organisation' === $identity ) ? 'organization' : $identity;
+                $entity   = isset( $entities[ $key ] ) ? $entities[ $key ] : null;
+
+                if ( $entity && is_array( $entity ) && empty( $entity['name'] ) ) {
+                    $entity = isset( $entities['organization'] ) ? $entities['organization'] : ( $entities['person'] ?? $entity );
+                }
+
+                if ( $entity && is_array( $entity ) ) {
+                    $creator = array();
+                    if ( ! empty( $entity['@type'] ) ) {
+                        $creator['@type'] = $entity['@type'];
+                    }
+                    if ( ! empty( $entity['name'] ) ) {
+                        $creator['name'] = $entity['name'];
+                    }
+                    if ( ! empty( $entity['url'] ) ) {
+                        $creator['url'] = $entity['url'];
+                    }
+                    if ( ! empty( $entity['@id'] ) ) {
+                        $creator['@id'] = $entity['@id'];
+                    }
+                    if ( $creator ) {
+                        $node['creator'] = $creator;
+                    }
+                }
             }
         }
 
@@ -241,20 +283,68 @@ if ( is_admin() ) {
                 return $form_fields;
             }
 
-            $value = get_post_meta( $post->ID, '_be_schema_creator_name', true );
+            $creator_name        = get_post_meta( $post->ID, '_be_schema_creator_name', true );
+            $creator_type        = get_post_meta( $post->ID, '_be_schema_creator_type', true );
+            $creator_url         = get_post_meta( $post->ID, '_be_schema_creator_url', true );
+            $creator_enabled_raw = get_post_meta( $post->ID, '_be_schema_creator_enabled', true );
+            $creator_url_enabled_raw = get_post_meta( $post->ID, '_be_schema_creator_url_enabled', true );
+            $creator_enabled     = ( '' === $creator_enabled_raw ) ? ( '' !== trim( (string) $creator_name ) ) : ( '1' === $creator_enabled_raw );
+            $creator_url_enabled = ( '' === $creator_url_enabled_raw ) ? ( '' !== trim( (string) $creator_url ) ) : ( '1' === $creator_url_enabled_raw );
+            $creator_type        = in_array( $creator_type, array( 'Person', 'Organisation' ), true ) ? $creator_type : 'Person';
 
-            // Visual separator from native fields.
-            $form_fields['be_schema_creator_separator'] = array(
-                'label' => '',
-                'input' => 'html',
-                'html'  => '<hr />',
+            $box_html  = '<tr class="be-schema-creator-box-row"><td colspan="2" style="padding-right:0; display:flex;">';
+            $box_html .= '<div class="be-schema-creator-box" style="border:1px solid #ccd0d4; padding:10px; margin:6px 0; background:#fff; width:100%; box-sizing:border-box;">';
+            $box_html .= '<div style="font-weight:600; margin-bottom:8px;">' . esc_html__( 'BE SEO', 'beseo' ) . '</div>';
+            $box_html .= '<div style="margin-bottom:8px;">';
+            $box_html .= sprintf(
+                '<label style="display:inline-flex; align-items:center; gap:6px;"><input type="checkbox" class="be-schema-creator-enabled" name="attachments[%1$d][be_schema_creator_enabled]" value="1" %2$s /> %3$s</label>',
+                (int) $post->ID,
+                $creator_enabled ? 'checked="checked"' : '',
+                esc_html__( 'Creator Override', 'beseo' )
             );
+            $box_html .= '</div><hr style="margin:8px 0;" />';
+            $box_html .= '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">';
+            $box_html .= '<label style="min-width:120px;">' . esc_html__( 'Creator Name', 'beseo' ) . '</label>';
+            $box_html .= sprintf(
+                '<input type="text" class="text be-schema-creator-name" name="attachments[%1$d][be_schema_creator_name]" value="%2$s" %3$s style="flex:1 1 320px; min-width:220px;" />',
+                (int) $post->ID,
+                esc_attr( $creator_name ),
+                $creator_enabled ? '' : 'disabled="disabled"'
+            );
+            $box_html .= '</div>';
+            $box_html .= '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">';
+            $box_html .= '<span style="min-width:120px;">' . esc_html__( 'Creator Type', 'beseo' ) . '</span>';
+            $box_html .= sprintf(
+                '<label style="margin-right:10px;"><input type="radio" class="be-schema-creator-type" name="attachments[%1$d][be_schema_creator_type]" value="Person" %2$s %4$s /> %5$s</label>' .
+                '<label><input type="radio" class="be-schema-creator-type" name="attachments[%1$d][be_schema_creator_type]" value="Organisation" %3$s %4$s /> %6$s</label>',
+                (int) $post->ID,
+                ( 'Person' === $creator_type ) ? 'checked="checked"' : '',
+                ( 'Organisation' === $creator_type ) ? 'checked="checked"' : '',
+                $creator_enabled ? '' : 'disabled="disabled"',
+                esc_html__( 'Person', 'beseo' ),
+                esc_html__( 'Organisation', 'beseo' )
+            );
+            $box_html .= '</div>';
+            $box_html .= '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+            $box_html .= '<label style="min-width:120px;">' . esc_html__( 'Creator URL', 'beseo' ) . '</label>';
+            $box_html .= sprintf(
+                '<input type="checkbox" class="be-schema-creator-url-enabled" name="attachments[%1$d][be_schema_creator_url_enabled]" value="1" %2$s %3$s aria-label="%4$s" />',
+                (int) $post->ID,
+                $creator_url_enabled ? 'checked="checked"' : '',
+                $creator_enabled ? '' : 'disabled="disabled"',
+                esc_attr__( 'Include creator URL', 'beseo' )
+            );
+            $box_html .= sprintf(
+                '<input type="url" class="text be-schema-creator-url" name="attachments[%1$d][be_schema_creator_url]" value="%2$s" %3$s style="flex:1 1 320px; min-width:220px;" />',
+                (int) $post->ID,
+                esc_attr( $creator_url ),
+                ( $creator_enabled && $creator_url_enabled ) ? '' : 'disabled="disabled"'
+            );
+            $box_html .= '</div>';
+            $box_html .= '</div></td></tr>';
 
-            $form_fields['be_schema_creator_name'] = array(
-                'label' => __( 'Schema: Creator', 'beseo' ),
-                'input' => 'text',
-                'value' => $value,
-                'helps' => __( 'Override creator for schema output. Falls back to global creator or uploader.', 'beseo' ),
+            $form_fields['be_schema_creator_box'] = array(
+                'tr' => $box_html,
             );
 
             return $form_fields;
@@ -266,6 +356,9 @@ if ( is_admin() ) {
     add_filter(
         'attachment_fields_to_save',
         static function( $post, $attachment ) {
+            $creator_enabled = isset( $attachment['be_schema_creator_enabled'] ) ? '1' : '0';
+            update_post_meta( $post['ID'], '_be_schema_creator_enabled', $creator_enabled );
+
             if ( isset( $attachment['be_schema_creator_name'] ) ) {
                 $value = sanitize_text_field( $attachment['be_schema_creator_name'] );
                 if ( '' !== $value ) {
@@ -274,10 +367,62 @@ if ( is_admin() ) {
                     delete_post_meta( $post['ID'], '_be_schema_creator_name' );
                 }
             }
+
+            if ( isset( $attachment['be_schema_creator_type'] ) ) {
+                $type = sanitize_text_field( $attachment['be_schema_creator_type'] );
+                $type = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
+                update_post_meta( $post['ID'], '_be_schema_creator_type', $type );
+            }
+
+            $creator_url_enabled = isset( $attachment['be_schema_creator_url_enabled'] ) ? '1' : '0';
+            update_post_meta( $post['ID'], '_be_schema_creator_url_enabled', $creator_url_enabled );
+
+            if ( isset( $attachment['be_schema_creator_url'] ) ) {
+                $url = esc_url_raw( $attachment['be_schema_creator_url'] );
+                if ( '' !== $url ) {
+                    update_post_meta( $post['ID'], '_be_schema_creator_url', $url );
+                } else {
+                    delete_post_meta( $post['ID'], '_be_schema_creator_url' );
+                }
+            }
             return $post;
         },
         10,
         2
+    );
+
+    add_action(
+        'admin_print_footer_scripts',
+        static function() {
+            ?>
+            <script>
+            jQuery(function($){
+                function syncCreatorFields($table){
+                    if(!$table || !$table.length){ return; }
+                    var $enabled = $table.find('.be-schema-creator-enabled');
+                    if(!$enabled.length){ return; }
+                    var enabled = $enabled.is(':checked');
+                    $table.find('.be-schema-creator-name, .be-schema-creator-type, .be-schema-creator-url-enabled').prop('disabled', !enabled);
+                    var urlEnabled = enabled && $table.find('.be-schema-creator-url-enabled').is(':checked');
+                    $table.find('.be-schema-creator-url').prop('disabled', !urlEnabled);
+                }
+
+                function syncAll(){
+                    $('.be-schema-creator-enabled').each(function(){
+                        syncCreatorFields($(this).closest('table'));
+                    });
+                }
+
+                $(document).on('change', '.be-schema-creator-enabled, .be-schema-creator-url-enabled', function(){
+                    syncCreatorFields($(this).closest('table'));
+                });
+
+                syncAll();
+                $(document).ajaxComplete(function(){ syncAll(); });
+            });
+            </script>
+            <?php
+        }
     );
 }
 

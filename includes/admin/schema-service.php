@@ -249,7 +249,7 @@ function be_schema_engine_save_settings() {
 }
 }
 
-// AJAX: Populate empty image creator meta with the global creator value.
+// AJAX: Populate empty image creator meta with the global author value.
 add_action(
     'wp_ajax_be_schema_populate_creator_empty',
     function() {
@@ -262,11 +262,46 @@ add_action(
             wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beseo' ) ), 400 );
         }
 
-        $creator = isset( $_POST['creator'] ) ? sanitize_text_field( wp_unslash( $_POST['creator'] ) ) : '';
+        $mode         = isset( $_POST['mode'] ) ? sanitize_text_field( wp_unslash( $_POST['mode'] ) ) : 'website';
+        $mode         = in_array( $mode, array( 'website', 'override' ), true ) ? $mode : 'website';
+        $creator      = isset( $_POST['creator'] ) ? sanitize_text_field( wp_unslash( $_POST['creator'] ) ) : '';
         $creator_type = isset( $_POST['creator_type'] ) ? sanitize_text_field( wp_unslash( $_POST['creator_type'] ) ) : 'Person';
         $creator_type = in_array( $creator_type, array( 'Person', 'Organisation' ), true ) ? $creator_type : 'Person';
+        $creator_url  = '';
+
+        if ( 'website' === $mode ) {
+            $settings = be_schema_engine_get_settings();
+            $entities = be_schema_get_site_entities();
+            $identity = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+            $identity = in_array( $identity, array( 'person', 'organisation', 'publisher' ), true ) ? $identity : 'publisher';
+            $key      = ( 'organisation' === $identity ) ? 'organization' : $identity;
+            $entity   = isset( $entities[ $key ] ) ? $entities[ $key ] : null;
+
+            if ( $entity && is_array( $entity ) && empty( $entity['name'] ) ) {
+                $entity = isset( $entities['organization'] ) ? $entities['organization'] : ( $entities['person'] ?? $entity );
+            }
+
+            if ( $entity && is_array( $entity ) ) {
+                $creator = isset( $entity['name'] ) ? $entity['name'] : '';
+                $type_raw = isset( $entity['@type'] ) ? $entity['@type'] : '';
+                if ( 'Organization' === $type_raw ) {
+                    $creator_type = 'Organisation';
+                } elseif ( 'Person' === $type_raw ) {
+                    $creator_type = 'Person';
+                }
+                if ( ! empty( $entity['url'] ) ) {
+                    $creator_url = $entity['url'];
+                }
+            }
+        } elseif ( 'override' === $mode ) {
+            $settings = be_schema_engine_get_settings();
+            if ( ! empty( $settings['global_author_url'] ) ) {
+                $creator_url = $settings['global_author_url'];
+            }
+        }
+
         if ( '' === $creator ) {
-            wp_send_json_error( array( 'message' => __( 'Global creator is empty.', 'beseo' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Global author is empty.', 'beseo' ) ), 400 );
         }
 
         $query = new WP_Query(
@@ -285,9 +320,22 @@ add_action(
         if ( $query->have_posts() ) {
             foreach ( $query->posts as $attachment_id ) {
                 $current = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
+                $enabled_flag = get_post_meta( $attachment_id, '_be_schema_creator_enabled', true );
+                if ( '0' === $enabled_flag ) {
+                    $skipped++;
+                    continue;
+                }
                 if ( '' === trim( (string) $current ) ) {
                     update_post_meta( $attachment_id, '_be_schema_creator_name', $creator );
                     update_post_meta( $attachment_id, '_be_schema_creator_type', $creator_type );
+                    update_post_meta( $attachment_id, '_be_schema_creator_enabled', '1' );
+                    if ( $creator_url ) {
+                        update_post_meta( $attachment_id, '_be_schema_creator_url', $creator_url );
+                        update_post_meta( $attachment_id, '_be_schema_creator_url_enabled', '1' );
+                    } else {
+                        delete_post_meta( $attachment_id, '_be_schema_creator_url' );
+                        update_post_meta( $attachment_id, '_be_schema_creator_url_enabled', '0' );
+                    }
                     $updated++;
                 } else {
                     $skipped++;

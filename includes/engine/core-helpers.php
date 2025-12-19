@@ -112,13 +112,14 @@ function be_schema_engine_get_settings() {
 		'website_image_3_4_enabled'  => '0',
 		'website_image_9_16_enabled' => '0',
 
-		// Global creator fallback for media.
+		// Global creator settings (legacy; media now uses global author).
 		'global_creator_name' => '',
 		'global_creator_type' => 'Person',
 		// Global author defaults.
 		'global_author_name' => '',
 		'global_author_url'  => '',
 		'global_author_type' => 'Person',
+		'global_author_mode' => 'website',
 
 		// Additional policy / legal metadata.
 		'copyright_year'        => '',

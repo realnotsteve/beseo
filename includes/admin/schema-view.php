@@ -1311,6 +1311,57 @@ function be_schema_engine_render_schema_page() {
                                     <?php
                                     $global_author_mode = isset( $settings['global_author_mode'] ) ? $settings['global_author_mode'] : 'website';
                                     $use_override       = ( 'override' === $global_author_mode );
+                                    $global_author_name = isset( $settings['global_author_name'] ) ? $settings['global_author_name'] : '';
+                                    $global_author_url  = isset( $settings['global_author_url'] ) ? $settings['global_author_url'] : '';
+                                    $global_author_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
+                                    $global_author_type = in_array( $global_author_type, array( 'Person', 'Organisation' ), true ) ? $global_author_type : 'Person';
+
+                                    $website_author_type = '';
+                                    $website_author_name = '';
+                                    $website_author_url  = '';
+
+                                    if ( function_exists( 'be_schema_get_site_entities' ) ) {
+                                        $site_entities = be_schema_get_site_entities();
+                                        $identity      = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+                                        $identity      = in_array( $identity, array( 'person', 'organisation', 'publisher' ), true ) ? $identity : 'publisher';
+                                        $key           = ( 'organisation' === $identity ) ? 'organization' : $identity;
+                                        $entity        = isset( $site_entities[ $key ] ) ? $site_entities[ $key ] : null;
+
+                                        if ( $entity && is_array( $entity ) && empty( $entity['name'] ) ) {
+                                            $entity = isset( $site_entities['organization'] ) ? $site_entities['organization'] : ( $site_entities['person'] ?? $entity );
+                                        }
+
+                                        if ( $entity && is_array( $entity ) ) {
+                                            $entity_type = isset( $entity['@type'] ) ? $entity['@type'] : '';
+                                            if ( 'Organization' === $entity_type || 'Organisation' === $entity_type ) {
+                                                $website_author_type = 'Organisation';
+                                            } elseif ( 'Person' === $entity_type ) {
+                                                $website_author_type = 'Person';
+                                            }
+                                            if ( ! empty( $entity['name'] ) ) {
+                                                $website_author_name = $entity['name'];
+                                            }
+                                            if ( ! empty( $entity['url'] ) ) {
+                                                $website_author_url = $entity['url'];
+                                            }
+                                        }
+                                    }
+
+                                    $website_author_type_display = $website_author_type ? $website_author_type : 'Person';
+                                    $author_display_type         = $use_override ? $global_author_type : $website_author_type_display;
+                                    $author_display_name         = $use_override ? $global_author_name : $website_author_name;
+                                    $author_display_url          = $use_override ? $global_author_url : $website_author_url;
+
+                                    $author_warnings = array();
+                                    if ( $use_override ) {
+                                        if ( '' === trim( (string) $global_author_name ) ) {
+                                            $author_warnings[] = __( 'Global Override is selected but Author name is empty. Images without a local creator will not output a creator field.', 'beseo' );
+                                        }
+                                    } else {
+                                        if ( '' === trim( (string) $website_author_name ) ) {
+                                            $author_warnings[] = __( 'Website Entity is selected but no author name is available from the current Site Identity configuration. Images without a local creator will not output a creator field.', 'beseo' );
+                                        }
+                                    }
                                     ?>
                                     <label style="margin-right:12px;">
                                         <input type="radio" name="be_schema_global_author_mode" value="website" <?php checked( ! $use_override ); ?> />
@@ -1321,18 +1372,22 @@ function be_schema_engine_render_schema_page() {
                                         <?php esc_html_e( 'Global Override', 'beseo' ); ?>
                                     </label>
                                     <p class="description"><?php esc_html_e( 'Use Website Entity for author by default, or choose Global Override to edit fields below.', 'beseo' ); ?></p>
+                                    <?php if ( ! empty( $author_warnings ) ) : ?>
+                                        <div class="notice notice-warning inline" style="margin-top:8px;">
+                                            <p><?php echo wp_kses_post( implode( '<br />', $author_warnings ) ); ?></p>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <tr>
                                 <th scope="row"><?php esc_html_e( 'Author type', 'beseo' ); ?></th>
                                 <td>
-                                    <?php
-                                    $global_author_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
-                                    $global_author_type = in_array( $global_author_type, array( 'Person', 'Organisation' ), true ) ? $global_author_type : 'Person';
-                                    ?>
-                                    <select name="be_schema_global_author_type" <?php disabled( ! $use_override ); ?>>
-                                        <option value="Person" <?php selected( 'Person', $global_author_type ); ?>><?php esc_html_e( 'Person', 'beseo' ); ?></option>
-                                        <option value="Organisation" <?php selected( 'Organisation', $global_author_type ); ?>><?php esc_html_e( 'Organisation', 'beseo' ); ?></option>
+                                    <select name="be_schema_global_author_type"
+                                            data-override-value="<?php echo esc_attr( $global_author_type ); ?>"
+                                            data-website-value="<?php echo esc_attr( $website_author_type_display ); ?>"
+                                            <?php disabled( ! $use_override ); ?>>
+                                        <option value="Person" <?php selected( 'Person', $author_display_type ); ?>><?php esc_html_e( 'Person', 'beseo' ); ?></option>
+                                        <option value="Organisation" <?php selected( 'Organisation', $author_display_type ); ?>><?php esc_html_e( 'Organisation', 'beseo' ); ?></option>
                                     </select>
                                     <p class="description"><?php esc_html_e( 'Choose whether the default author is a person or an organisation.', 'beseo' ); ?></p>
                                 </td>
@@ -1340,14 +1395,30 @@ function be_schema_engine_render_schema_page() {
                             <tr>
                                 <th scope="row"><?php esc_html_e( 'Author name', 'beseo' ); ?></th>
                                 <td>
-                                    <input type="text" name="be_schema_global_author_name" class="regular-text" value="<?php echo isset( $settings['global_author_name'] ) ? esc_attr( $settings['global_author_name'] ) : ''; ?>" <?php disabled( ! $use_override ); ?> />
-                                    <p class="description"><?php esc_html_e( 'Name used as the default author when missing.', 'beseo' ); ?></p>
+                                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                        <input type="text"
+                                               name="be_schema_global_author_name"
+                                               class="regular-text"
+                                               value="<?php echo esc_attr( $author_display_name ); ?>"
+                                               data-override-value="<?php echo esc_attr( $global_author_name ); ?>"
+                                               data-website-value="<?php echo esc_attr( $website_author_name ); ?>"
+                                               <?php disabled( ! $use_override ); ?> />
+                                        <button type="button" class="button" id="be-schema-populate-author-empty"><?php esc_html_e( 'Populate Empty', 'beseo' ); ?></button>
+                                        <span class="description" id="be-schema-populate-author-status"></span>
+                                    </div>
+                                    <p class="description"><?php esc_html_e( 'Name used as the default author when missing. “Populate Empty” writes name/type/URL to images without a Schema creator.', 'beseo' ); ?></p>
                                 </td>
                             </tr>
                             <tr>
                                 <th scope="row"><?php esc_html_e( 'Author URL', 'beseo' ); ?></th>
                                 <td>
-                                    <input type="url" name="be_schema_global_author_url" class="regular-text code" value="<?php echo isset( $settings['global_author_url'] ) ? esc_attr( $settings['global_author_url'] ) : ''; ?>" <?php disabled( ! $use_override ); ?> />
+                                    <input type="url"
+                                           name="be_schema_global_author_url"
+                                           class="regular-text code"
+                                           value="<?php echo esc_attr( $author_display_url ); ?>"
+                                           data-override-value="<?php echo esc_attr( $global_author_url ); ?>"
+                                           data-website-value="<?php echo esc_attr( $website_author_url ); ?>"
+                                           <?php disabled( ! $use_override ); ?> />
                                     <p class="description"><?php esc_html_e( 'Optional URL for the author profile or organisation site.', 'beseo' ); ?></p>
                                 </td>
                             </tr>
@@ -1363,45 +1434,73 @@ function be_schema_engine_render_schema_page() {
     </div>
     <script>
     jQuery(function($){
-        var $btn = $('#be-schema-populate-creator-empty');
-        if(!$btn.length){ return; }
-        var $input = $('input[name="be_schema_global_creator_name"]');
-        var $status = $('#be-schema-populate-creator-status');
         var $authorMode = $('input[name="be_schema_global_author_mode"]');
         var $authorFields = $('select[name="be_schema_global_author_type"], input[name="be_schema_global_author_name"], input[name="be_schema_global_author_url"]');
+
+        function applyAuthorValues(useOverride){
+            $authorFields.each(function(){
+                var $field = $(this);
+                var overrideVal = $field.data('overrideValue');
+                var websiteVal = $field.data('websiteValue');
+                var nextVal = useOverride ? overrideVal : websiteVal;
+                if (typeof nextVal !== 'undefined') {
+                    $field.val(nextVal);
+                }
+            });
+        }
 
         function syncAuthorFields(){
             var useOverride = $authorMode.filter(':checked').val() === 'override';
             $authorFields.prop('disabled', !useOverride);
+            applyAuthorValues(useOverride);
         }
         if($authorMode.length){
             syncAuthorFields();
             $authorMode.on('change', syncAuthorFields);
         }
 
-        $btn.on('click', function(e){
-            e.preventDefault();
-            var creator = $input.val().trim();
-            if(!creator){
-                alert('<?php echo esc_js( __( 'Set a Global creator first.', 'beseo' ) ); ?>');
-                return;
+        $authorFields.on('input change', function(){
+            if($authorMode.filter(':checked').val() === 'override'){
+                $(this).data('overrideValue', $(this).val());
             }
-            $btn.prop('disabled', true);
-            if($status.length){ $status.text('<?php echo esc_js( __( 'Populating…', 'beseo' ) ); ?>'); }
-            $.post(ajaxurl, {
-                action: 'be_schema_populate_creator_empty',
-                nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_populate_creator_empty' ) ); ?>',
-                creator: creator,
-                creator_type: $('select[name="be_schema_global_creator_type"]').val() || 'Person'
-            }).done(function(resp){
-                var msg = (resp && resp.data && resp.data.message) ? resp.data.message : '<?php echo esc_js( __( 'Completed.', 'beseo' ) ); ?>';
-                if($status.length){ $status.text(msg); }
-            }).fail(function(){
-                if($status.length){ $status.text('<?php echo esc_js( __( 'Populate failed.', 'beseo' ) ); ?>'); }
-            }).always(function(){
-                $btn.prop('disabled', false);
-            });
         });
+
+        var $btn = $('#be-schema-populate-author-empty');
+        var $nameInput = $('input[name="be_schema_global_author_name"]');
+        var $typeSelect = $('select[name="be_schema_global_author_type"]');
+        var $status = $('#be-schema-populate-author-status');
+
+        if($btn.length){
+            $btn.on('click', function(e){
+                e.preventDefault();
+                var mode = $authorMode.filter(':checked').val() || 'website';
+                var creator = '';
+                var creatorType = $typeSelect.val() || 'Person';
+                if(mode === 'override'){
+                    creator = $nameInput.val().trim();
+                    if(!creator){
+                        alert('<?php echo esc_js( __( 'Set a Global author name first.', 'beseo' ) ); ?>');
+                        return;
+                    }
+                }
+                $btn.prop('disabled', true);
+                if($status.length){ $status.text('<?php echo esc_js( __( 'Populating…', 'beseo' ) ); ?>'); }
+                $.post(ajaxurl, {
+                    action: 'be_schema_populate_creator_empty',
+                    nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_populate_creator_empty' ) ); ?>',
+                    creator: creator,
+                    creator_type: creatorType,
+                    mode: mode
+                }).done(function(resp){
+                    var msg = (resp && resp.data && resp.data.message) ? resp.data.message : '<?php echo esc_js( __( 'Completed.', 'beseo' ) ); ?>';
+                    if($status.length){ $status.text(msg); }
+                }).fail(function(){
+                    if($status.length){ $status.text('<?php echo esc_js( __( 'Populate failed.', 'beseo' ) ); ?>'); }
+                }).always(function(){
+                    $btn.prop('disabled', false);
+                });
+            });
+        }
     });
     </script>
     <?php

@@ -19,6 +19,90 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Per-post author override meta box.
+ */
+add_action(
+	'add_meta_boxes',
+	static function() {
+		$screens = array( 'post', 'page' );
+		foreach ( $screens as $screen ) {
+			add_meta_box(
+				'be-schema-author-meta',
+				__( 'Schema Author', 'beseo' ),
+				static function( $post ) {
+					$mode = get_post_meta( $post->ID, '_be_schema_author_mode', true );
+					$mode = $mode ? $mode : 'global';
+					$type = get_post_meta( $post->ID, '_be_schema_author_type', true );
+					$type = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
+					$name = get_post_meta( $post->ID, '_be_schema_author_name', true );
+					$url  = get_post_meta( $post->ID, '_be_schema_author_url', true );
+					wp_nonce_field( 'be_schema_author_meta', 'be_schema_author_meta_nonce' );
+					?>
+					<p>
+						<label><input type="radio" name="be_schema_author_mode" value="global" <?php checked( 'global', $mode ); ?> /> <?php esc_html_e( 'Use Global author', 'beseo' ); ?></label><br />
+						<label><input type="radio" name="be_schema_author_mode" value="override" <?php checked( 'override', $mode ); ?> /> <?php esc_html_e( 'Local Override', 'beseo' ); ?></label><br />
+						<label><input type="radio" name="be_schema_author_mode" value="active_user" <?php checked( 'active_user', $mode ); ?> /> <?php esc_html_e( 'Use Active User', 'beseo' ); ?></label>
+					</p>
+					<p>
+						<label for="be_schema_author_type"><?php esc_html_e( 'Author type', 'beseo' ); ?></label><br />
+						<select name="be_schema_author_type" id="be_schema_author_type">
+							<option value="Person" <?php selected( 'Person', $type ); ?>><?php esc_html_e( 'Person', 'beseo' ); ?></option>
+							<option value="Organisation" <?php selected( 'Organisation', $type ); ?>><?php esc_html_e( 'Organisation', 'beseo' ); ?></option>
+						</select>
+					</p>
+					<p>
+						<label for="be_schema_author_name"><?php esc_html_e( 'Author name', 'beseo' ); ?></label><br />
+						<input type="text" id="be_schema_author_name" name="be_schema_author_name" class="widefat" value="<?php echo esc_attr( $name ); ?>" />
+					</p>
+					<p>
+						<label for="be_schema_author_url"><?php esc_html_e( 'Author URL', 'beseo' ); ?></label><br />
+						<input type="url" id="be_schema_author_url" name="be_schema_author_url" class="widefat" value="<?php echo esc_attr( $url ); ?>" />
+					</p>
+					<p class="description"><?php esc_html_e( 'Fields above apply when Local Override is selected.', 'beseo' ); ?></p>
+					<?php
+				},
+				$screen,
+				'side',
+				'low'
+			);
+		}
+	}
+);
+
+add_action(
+	'save_post',
+	static function( $post_id ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! isset( $_POST['be_schema_author_meta_nonce'] ) || ! wp_verify_nonce( $_POST['be_schema_author_meta_nonce'], 'be_schema_author_meta' ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$mode = isset( $_POST['be_schema_author_mode'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_author_mode'] ) ) : 'global';
+		if ( ! in_array( $mode, array( 'global', 'override', 'active_user' ), true ) ) {
+			$mode = 'global';
+		}
+		update_post_meta( $post_id, '_be_schema_author_mode', $mode );
+
+		$type = isset( $_POST['be_schema_author_type'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_author_type'] ) ) : 'Person';
+		if ( ! in_array( $type, array( 'Person', 'Organisation' ), true ) ) {
+			$type = 'Person';
+		}
+		update_post_meta( $post_id, '_be_schema_author_type', $type );
+
+		$name = isset( $_POST['be_schema_author_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_author_name'] ) ) : '';
+		$url  = isset( $_POST['be_schema_author_url'] ) ? esc_url_raw( wp_unslash( $_POST['be_schema_author_url'] ) ) : '';
+		update_post_meta( $post_id, '_be_schema_author_name', $name );
+		update_post_meta( $post_id, '_be_schema_author_url', $url );
+	},
+	10,
+	1
+);
+
+/**
  * Resolve the primary image URL for a BlogPosting:
  *
  * Fallback chain:
@@ -437,41 +521,126 @@ function be_schema_build_blogposting_node( $post ) {
 	// Stable @id for the article node.
 	$article_id = be_schema_id( 'article-' . $post_id );
 
-	// Author (per-post) with URL/image when available.
-	$author_id   = (int) $post->post_author;
-	$author_name = get_the_author_meta( 'display_name', $author_id );
-	$author_url  = get_author_posts_url( $author_id );
-	$author_img  = get_avatar_url( $author_id, array( 'size' => 256 ) );
-	$author_job  = get_the_author_meta( 'job_title', $author_id );
-	$author_knows = get_the_author_meta( 'knows_about', $author_id );
-	$author_sameas_raw = get_the_author_meta( 'be_schema_sameas', $author_id );
-	$author_node = array(
-		'@type' => 'Person',
-		'name'  => $author_name ? $author_name : get_bloginfo( 'name', 'display' ),
-	);
-	if ( $author_url ) {
-		$author_node['@id'] = $author_url . '#author';
-		$author_node['url'] = $author_url;
-	} else {
-		$author_node['@id'] = be_schema_id( 'person' );
-	}
-	if ( $author_img ) {
-		$author_node['image'] = array(
-			'@type' => 'ImageObject',
-			'url'   => $author_img,
-		);
-	}
-	if ( $author_job ) {
-		$author_node['jobTitle'] = $author_job;
-	}
-	if ( $author_knows ) {
-		$author_node['knowsAbout'] = array_map( 'trim', explode( ',', $author_knows ) );
-	}
-	if ( $author_sameas_raw ) {
-		$urls = be_schema_engine_normalize_url_list( preg_split( '/\r\n|\r|\n|,/', (string) $author_sameas_raw ) );
-		if ( $urls ) {
-			$author_node['sameAs'] = $urls;
+	// Author resolution: per-post meta -> global author -> per-post author -> site title.
+	$settings     = be_schema_engine_get_settings();
+	$author_node  = null;
+
+	$meta_mode = get_post_meta( $post_id, '_be_schema_author_mode', true );
+	$meta_mode = $meta_mode ? $meta_mode : 'global';
+
+	if ( 'override' === $meta_mode ) {
+		$meta_type = get_post_meta( $post_id, '_be_schema_author_type', true );
+		$meta_type = in_array( $meta_type, array( 'Person', 'Organisation' ), true ) ? $meta_type : 'Person';
+		$meta_name = get_post_meta( $post_id, '_be_schema_author_name', true );
+		$meta_url  = get_post_meta( $post_id, '_be_schema_author_url', true );
+		if ( $meta_name ) {
+			$author_node = array(
+				'@type' => ( 'Organisation' === $meta_type ) ? 'Organization' : 'Person',
+				'name'  => $meta_name,
+			);
+			if ( $meta_url ) {
+				$author_node['@id'] = trailingslashit( $meta_url ) . '#author';
+				$author_node['url'] = $meta_url;
+			}
 		}
+	} elseif ( 'active_user' === $meta_mode ) {
+		$current_user = wp_get_current_user();
+		if ( $current_user && $current_user->exists() ) {
+			$author_node = array(
+				'@type' => 'Person',
+				'name'  => $current_user->display_name,
+				'@id'   => be_schema_id( 'person' ),
+			);
+			if ( ! empty( $current_user->user_url ) ) {
+				$author_node['url'] = $current_user->user_url;
+			}
+		}
+	}
+
+	if ( ! $author_node ) {
+		$author_mode_global = isset( $settings['global_author_mode'] ) ? $settings['global_author_mode'] : 'website';
+		if ( 'override' === $author_mode_global && ! empty( $settings['global_author_name'] ) ) {
+			$override_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
+			$override_type = in_array( $override_type, array( 'Person', 'Organisation' ), true ) ? $override_type : 'Person';
+			$override_type = ( 'Organisation' === $override_type ) ? 'Organization' : 'Person';
+
+			$author_node = array(
+				'@type' => $override_type,
+				'name'  => $settings['global_author_name'],
+			);
+
+			if ( ! empty( $settings['global_author_url'] ) ) {
+				$author_node['@id'] = trailingslashit( $settings['global_author_url'] ) . '#author';
+				$author_node['url'] = $settings['global_author_url'];
+			}
+		}
+	}
+
+	if ( ! $author_node ) {
+		$site_entities = be_schema_get_site_entities();
+		$mode          = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+		$mode          = in_array( $mode, array( 'person', 'organisation', 'publisher' ), true ) ? $mode : 'publisher';
+		$key           = ( 'organisation' === $mode ) ? 'organization' : $mode;
+		$entity        = isset( $site_entities[ $key ] ) ? $site_entities[ $key ] : null;
+
+		if ( $entity && is_array( $entity ) && ( empty( $entity['@type'] ) || empty( $entity['name'] ) ) ) {
+			$entity = isset( $site_entities['organization'] ) ? $site_entities['organization'] : ( $site_entities['person'] ?? $entity );
+		}
+
+		if ( $entity && is_array( $entity ) ) {
+			$author_node = $entity;
+		}
+	}
+
+	if ( ! $author_node ) {
+		// Author (per-post) with URL/image when available.
+		$author_id         = (int) $post->post_author;
+		$author_name       = get_the_author_meta( 'display_name', $author_id );
+		$author_url        = get_author_posts_url( $author_id );
+		$author_img        = get_avatar_url( $author_id, array( 'size' => 256 ) );
+		$author_job        = get_the_author_meta( 'job_title', $author_id );
+		$author_knows      = get_the_author_meta( 'knows_about', $author_id );
+		$author_sameas_raw = get_the_author_meta( 'be_schema_sameas', $author_id );
+
+		if ( $author_name ) {
+			$author_node = array(
+				'@type' => 'Person',
+				'name'  => $author_name,
+			);
+			if ( $author_url ) {
+				$author_node['@id'] = $author_url . '#author';
+				$author_node['url'] = $author_url;
+			} else {
+				$author_node['@id'] = be_schema_id( 'person' );
+			}
+			if ( $author_img ) {
+				$author_node['image'] = array(
+					'@type' => 'ImageObject',
+					'url'   => $author_img,
+				);
+			}
+			if ( $author_job ) {
+				$author_node['jobTitle'] = $author_job;
+			}
+			if ( $author_knows ) {
+				$author_node['knowsAbout'] = array_map( 'trim', explode( ',', $author_knows ) );
+			}
+			if ( $author_sameas_raw ) {
+				$urls = be_schema_engine_normalize_url_list( preg_split( '/\r\n|\r|\n|,/', (string) $author_sameas_raw ) );
+				if ( $urls ) {
+					$author_node['sameAs'] = $urls;
+				}
+			}
+		}
+	}
+
+	// Final fallback to site title.
+	if ( ! $author_node ) {
+		$author_node = array(
+			'@type' => 'Person',
+			'name'  => get_bloginfo( 'name', 'display' ),
+			'@id'   => be_schema_id( 'person' ),
+		);
 	}
 
 	// Editor (last editor) if available.
