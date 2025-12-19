@@ -127,6 +127,11 @@ function be_schema_engine_save_settings() {
     $settings['debug']             = isset( $_POST['be_schema_debug'] ) ? '1' : '0';
     $settings['dry_run']           = isset( $_POST['be_schema_dry_run'] ) ? '1' : '0';
     $settings['image_validation_enabled'] = isset( $_POST['be_schema_image_validation_enabled'] ) ? '1' : '0';
+    $settings['global_creator_name']      = isset( $_POST['be_schema_global_creator_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_global_creator_name'] ) ) : '';
+    if ( isset( $_POST['be_schema_global_creator_type'] ) ) {
+        $type = sanitize_text_field( wp_unslash( $_POST['be_schema_global_creator_type'] ) );
+        $settings['global_creator_type'] = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
+    }
 
     // Mirror debug into a dedicated debug_enabled key for engine helpers.
     $settings['debug_enabled'] = $settings['debug'];
@@ -235,3 +240,64 @@ function be_schema_engine_save_settings() {
     }
 }
 }
+
+// AJAX: Populate empty image creator meta with the global creator value.
+add_action(
+    'wp_ajax_be_schema_populate_creator_empty',
+    function() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'beseo' ) ), 403 );
+        }
+
+        $nonce = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'be_schema_populate_creator_empty' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beseo' ) ), 400 );
+        }
+
+        $creator = isset( $_POST['creator'] ) ? sanitize_text_field( wp_unslash( $_POST['creator'] ) ) : '';
+        $creator_type = isset( $_POST['creator_type'] ) ? sanitize_text_field( wp_unslash( $_POST['creator_type'] ) ) : 'Person';
+        $creator_type = in_array( $creator_type, array( 'Person', 'Organisation' ), true ) ? $creator_type : 'Person';
+        if ( '' === $creator ) {
+            wp_send_json_error( array( 'message' => __( 'Global creator is empty.', 'beseo' ) ), 400 );
+        }
+
+        $query = new WP_Query(
+            array(
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'post_mime_type' => 'image',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+            )
+        );
+
+        $updated = 0;
+        $skipped = 0;
+
+        if ( $query->have_posts() ) {
+            foreach ( $query->posts as $attachment_id ) {
+                $current = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
+                if ( '' === trim( (string) $current ) ) {
+                    update_post_meta( $attachment_id, '_be_schema_creator_name', $creator );
+                    update_post_meta( $attachment_id, '_be_schema_creator_type', $creator_type );
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            }
+        }
+
+        wp_send_json_success(
+            array(
+                'updated' => $updated,
+                'skipped' => $skipped,
+                'message' => sprintf(
+                    /* translators: 1: count updated, 2: count skipped */
+                    __( 'Updated %1$d images; skipped %2$d already set.', 'beseo' ),
+                    $updated,
+                    $skipped
+                ),
+            )
+        );
+    }
+);

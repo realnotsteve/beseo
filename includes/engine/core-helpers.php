@@ -112,6 +112,10 @@ function be_schema_engine_get_settings() {
 		'website_image_3_4_enabled'  => '0',
 		'website_image_9_16_enabled' => '0',
 
+		// Global creator fallback for media.
+		'global_creator_name' => '',
+		'global_creator_type' => 'Person',
+
 		// Additional policy / legal metadata.
 		'copyright_year'        => '',
 		'license_url'           => '',

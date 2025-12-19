@@ -567,21 +567,43 @@ function be_schema_elementor_enqueue_editor_assets() {
             'var $btn = $panel.find(".be-schema-preview-btn");' .
             'var $textarea = $panel.find(".be-schema-preview-json");' .
             'var $status = $panel.find(".be-schema-image-status");' .
-            'if(!$btn.length || !$textarea.length){return;}' .
+            'if(!$btn.length || !$textarea.length){' .
+                'var $advTab = $panel.find(".elementor-panel-navigation-tab[data-tab=\'advanced\']");' .
+                '$advTab.one("click.beSchemaBind", function(){ setTimeout(function(){ bindPreview(panel, model, type); }, 80); });' .
+                'return;' .
+            '}' .
             'var settingsModel = model.get("settings");' .
-            'var prevEnabled = null;' .
             'function getImage(){ if(!settingsModel){ return null; } if(settingsModel.get){ return settingsModel.get("image"); } if(settingsModel.attributes){ return settingsModel.attributes.image; } return null; }' .
             'function hasImage(){ var img = getImage() || {}; var idOk = img.id && parseInt(img.id,10) > 0; var urlOk = img.url && img.url !== "" && !/placeholder|dummy|transparent/i.test(img.url); return idOk || urlOk; }' .
-            'function sync(){ var enabled = hasImage(); if(prevEnabled !== enabled && window.console){ console.log(enabled ? "Preview JSON should be ENABLED" : "Preview JSON should be DISABLED"); } prevEnabled = enabled; if($status.length){ $status.text(enabled ? "Image detected" : "No image selected").css("display","block"); } if(!enabled){$textarea.val("");} $btn.prop("disabled", !enabled); }' .
+            'function sync(){ var enabled = hasImage(); if($status.length){ $status.text(enabled ? "Image detected" : "No image selected").css("display","block"); } if(!enabled){$textarea.val("");} $btn.prop("disabled", !enabled); }' .
             'setTimeout(sync, 50);' .
             '$panel.on("input change", "[data-setting=\'be_schema_enable_widget\'], [data-setting=\'image\'], input, select, textarea", sync);' .
             'if(settingsModel && settingsModel.on){ settingsModel.on("change:image", sync); settingsModel.on("change", sync); }' .
             'model.on("change:image", sync);' .
             'model.on("change", sync);' .
             '$panel.find(".elementor-panel-navigation-tab[data-tab=\'advanced\']").on("click", function(){ setTimeout(sync, 50); });' .
-            '$btn.off("click.beSchemaPreview").on("click.beSchemaPreview", function(e){ e.preventDefault(); if($btn.is(":disabled")) return; if(!hasImage()){ $textarea.val("Select an image to preview."); return; } if(!settingsModel){ $textarea.val("No settings."); return; } var attrs = settingsModel.attributes || {}; $.post(data.ajaxurl, {action:"be_schema_preview_elementor", nonce:data.nonce, widget_type:type, settings:attrs}, function(resp){ if(resp && resp.success && resp.data && resp.data.json){ $textarea.val(resp.data.json); } else { var msg = resp && resp.data && resp.data.message ? resp.data.message : "Preview unavailable."; $textarea.val(msg); } }).fail(function(){ $textarea.val("Preview failed."); }); });' .
+            '$btn.off("click.beSchemaPreview").on("click.beSchemaPreview", function(e){' .
+                'e.preventDefault();' .
+                'if($btn.is(":disabled")) return;' .
+                'if(!hasImage()){ $textarea.val("Select an image to preview."); return; }' .
+                'if(!settingsModel){ $textarea.val("No settings."); return; }' .
+                'var attrs = settingsModel.toJSON ? settingsModel.toJSON() : (settingsModel.attributes || {});' .
+                '$textarea.val("Loading preview...");' .
+                '$.post(data.ajaxurl, {action:"be_schema_preview_elementor", nonce:data.nonce, widget_type:type, settings:attrs}, function(resp){' .
+                    'if(resp && resp.success && resp.data && resp.data.json){' .
+                        '$textarea.val(resp.data.json);' .
+                    '} else {' .
+                        'var msg = (resp && resp.data && resp.data.message) ? resp.data.message : "Preview unavailable.";' .
+                        '$textarea.val(msg);' .
+                    '}' .
+                '}).fail(function(jqXHR){' .
+                    'var msg = "Preview failed.";' .
+                    'if(jqXHR && jqXHR.responseText){ msg += " " + jqXHR.responseText; }' .
+                    '$textarea.val(msg);' .
+                '});' .
+            '});' .
         '}' .
-        'elementor.hooks.addAction("panel/open_editor/widget/image", function(panel, model){ if(window.console){ console.log("Editor Opened"); } bindPreview(panel, model, "image"); var settings = model.get("settings"); if(settings && settings.on){ settings.on("change:image", function(changedModel){ var value = changedModel.get("image"); if(window.console){ console.log("New image selected:", value); } }); } });' .
+        'elementor.hooks.addAction("panel/open_editor/widget/image", function(panel, model){ bindPreview(panel, model, "image"); var settings = model.get("settings"); if(settings && settings.on){ settings.on("change:image", function(changedModel){ var value = changedModel.get("image"); if(window.console){ console.log("New image selected:", value); } }); } });' .
         'elementor.hooks.addAction("panel/open_editor/widget/video-playlist", function(panel, model){ bindPreview(panel, model, "video-playlist"); });' .
         'elementor.hooks.addAction("panel/open_editor/widget/video_playlist", function(panel, model){ bindPreview(panel, model, "video_playlist"); });' .
         '})(jQuery);'
@@ -625,3 +647,34 @@ function be_schema_preview_elementor() {
     );
 }
 add_action( 'wp_ajax_be_schema_preview_elementor', 'be_schema_preview_elementor' );
+
+/**
+ * Elementor editor: ensure auth-check markup exists and silence missing-wrap errors.
+ */
+add_action(
+    'admin_print_footer_scripts',
+    static function() {
+        $is_elementor = ( isset( $_GET['elementor-preview'] ) || ( isset( $_GET['action'] ) && 'elementor' === $_GET['action'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( ! $is_elementor ) {
+            return;
+        }
+
+        if ( function_exists( 'wp_auth_check_html' ) ) {
+            wp_auth_check_html();
+        }
+        ?>
+        <script>
+        jQuery(function($){
+            if(!$('#wp-auth-check-wrap').length){
+                $('body').append('<div id="wp-auth-check-wrap" class="hidden"><button class="wp-auth-check-close" type="button" aria-label="Close"></button></div>');
+            }
+            // Detach the core handler that expects h.hasClass when markup is absent.
+            $(document).off('heartbeat-tick.wp-auth-check');
+            // Optional safe stub; keeps things quiet without changing behavior.
+            $(document).on('heartbeat-tick.wp-auth-check', function(){ /* no-op */ });
+        });
+        </script>
+        <?php
+    },
+    30
+);

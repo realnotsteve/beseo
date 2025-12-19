@@ -1296,5 +1296,37 @@ function be_schema_engine_render_schema_page() {
 
         
     </div>
+    <script>
+    jQuery(function($){
+        var $btn = $('#be-schema-populate-creator-empty');
+        if(!$btn.length){ return; }
+        var $input = $('input[name="be_schema_global_creator_name"]');
+        var $status = $('#be-schema-populate-creator-status');
+
+        $btn.on('click', function(e){
+            e.preventDefault();
+            var creator = $input.val().trim();
+            if(!creator){
+                alert('<?php echo esc_js( __( 'Set a Global creator first.', 'beseo' ) ); ?>');
+                return;
+            }
+            $btn.prop('disabled', true);
+            if($status.length){ $status.text('<?php echo esc_js( __( 'Populating…', 'beseo' ) ); ?>'); }
+            $.post(ajaxurl, {
+                action: 'be_schema_populate_creator_empty',
+                nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_populate_creator_empty' ) ); ?>',
+                creator: creator,
+                creator_type: $('select[name="be_schema_global_creator_type"]').val() || 'Person'
+            }).done(function(resp){
+                var msg = (resp && resp.data && resp.data.message) ? resp.data.message : '<?php echo esc_js( __( 'Completed.', 'beseo' ) ); ?>';
+                if($status.length){ $status.text(msg); }
+            }).fail(function(){
+                if($status.length){ $status.text('<?php echo esc_js( __( 'Populate failed.', 'beseo' ) ); ?>'); }
+            }).always(function(){
+                $btn.prop('disabled', false);
+            });
+        });
+    });
+    </script>
     <?php
 }

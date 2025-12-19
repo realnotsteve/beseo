@@ -72,6 +72,8 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
         $force_entity = ! empty( $flags['force_entity'] );
         $is_logo      = false;
         $is_entity    = false;
+        $creator_disabled = false;
+        $creator_type      = 'Person';
 
         // Attachment ID.
         if ( is_numeric( $image ) ) {
@@ -125,6 +127,13 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                 $desc_field = ( $desc_post && ! empty( $desc_post->post_content ) ) ? $desc_post->post_content : '';
                 $candidate  = '';
                 $has_alt    = ( '' !== trim( (string) $alt ) );
+                $creator_raw      = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
+                $creator_type_raw = get_post_meta( $attachment_id, '_be_schema_creator_type', true );
+                $creator_override = is_string( $creator_raw ) ? trim( $creator_raw ) : '';
+                $creator_disabled = ( '' === $creator_override );
+                if ( $creator_type_raw && is_string( $creator_type_raw ) ) {
+                    $creator_type = in_array( $creator_type_raw, array( 'Person', 'Organisation' ), true ) ? $creator_type_raw : 'Person';
+                }
 
                 // Description precedence: caption, description field, alt.
                 $desc_sources = array( $caption, $desc_field, $alt );
@@ -155,7 +164,7 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                     if ( ! empty( $image_meta['copyright'] ) ) {
                         $node['license'] = $image_meta['copyright'];
                     }
-                    if ( ! empty( $image_meta['credit'] ) ) {
+                    if ( ! $creator_disabled && empty( $node['creator'] ) && ! empty( $image_meta['credit'] ) ) {
                         $node['creator'] = array(
                             '@type' => 'Person',
                             'name'  => $image_meta['credit'],
@@ -163,16 +172,12 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
                     }
                 }
 
-                // Fallback creator to attachment author.
-                if ( empty( $node['creator'] ) ) {
-                    $author_id   = get_post_field( 'post_author', $attachment_id );
-                    $author_name = $author_id ? get_the_author_meta( 'display_name', $author_id ) : '';
-                    if ( $author_name ) {
-                        $node['creator'] = array(
-                            '@type' => 'Person',
-                            'name'  => $author_name,
-                        );
-                    }
+                // Local override from media bin (only if provided).
+                if ( ! $creator_disabled && empty( $node['creator'] ) && ! empty( $creator_override ) ) {
+                    $node['creator'] = array(
+                        '@type' => $creator_type,
+                        'name'  => wp_strip_all_tags( (string) $creator_override ),
+                    );
                 }
             }
         }
@@ -197,8 +202,83 @@ if ( ! function_exists( 'be_schema_engine_build_image_object' ) ) {
             }
         }
 
+        // Apply global creator type if sourced from global settings.
+        if ( ! $creator_disabled && empty( $node['creator'] ) ) {
+            $settings         = be_schema_engine_get_settings();
+            $global_creator   = isset( $settings['global_creator_name'] ) ? trim( (string) $settings['global_creator_name'] ) : '';
+            $global_type      = isset( $settings['global_creator_type'] ) ? $settings['global_creator_type'] : 'Person';
+            $global_type_safe = in_array( $global_type, array( 'Person', 'Organisation' ), true ) ? $global_type : 'Person';
+            if ( '' !== $global_creator ) {
+                $node['creator'] = array(
+                    '@type' => $global_type_safe,
+                    'name'  => wp_strip_all_tags( $global_creator ),
+                );
+            }
+        }
+
+        // Fallback creator to attachment author.
+        if ( empty( $node['creator'] ) ) {
+            $author_id   = is_numeric( $image ) ? get_post_field( 'post_author', (int) $image ) : 0;
+            $author_name = $author_id ? get_the_author_meta( 'display_name', $author_id ) : '';
+            if ( $author_name ) {
+                $node['creator'] = array(
+                    '@type' => 'Person',
+                    'name'  => $author_name,
+                );
+            }
+        }
+
         return $node;
     }
+}
+
+// Media library: add a per-image creator override field.
+if ( is_admin() ) {
+    add_filter(
+        'attachment_fields_to_edit',
+        static function( $form_fields, $post ) {
+            if ( empty( $post ) || ! isset( $post->ID ) ) {
+                return $form_fields;
+            }
+
+            $value = get_post_meta( $post->ID, '_be_schema_creator_name', true );
+
+            // Visual separator from native fields.
+            $form_fields['be_schema_creator_separator'] = array(
+                'label' => '',
+                'input' => 'html',
+                'html'  => '<hr />',
+            );
+
+            $form_fields['be_schema_creator_name'] = array(
+                'label' => __( 'Schema: Creator', 'beseo' ),
+                'input' => 'text',
+                'value' => $value,
+                'helps' => __( 'Override creator for schema output. Falls back to global creator or uploader.', 'beseo' ),
+            );
+
+            return $form_fields;
+        },
+        10,
+        2
+    );
+
+    add_filter(
+        'attachment_fields_to_save',
+        static function( $post, $attachment ) {
+            if ( isset( $attachment['be_schema_creator_name'] ) ) {
+                $value = sanitize_text_field( $attachment['be_schema_creator_name'] );
+                if ( '' !== $value ) {
+                    update_post_meta( $post['ID'], '_be_schema_creator_name', $value );
+                } else {
+                    delete_post_meta( $post['ID'], '_be_schema_creator_name' );
+                }
+            }
+            return $post;
+        },
+        10,
+        2
+    );
 }
 
 /**
