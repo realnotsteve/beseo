@@ -1,0 +1,49 @@
+<?php
+/**
+ * Schema view partial: Preview tab.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+function be_schema_engine_render_schema_tab_preview() {
+    ?>
+    <h2><?php esc_html_e( 'Preview', 'beseo' ); ?></h2>
+    <p class="description be-schema-description">
+        <?php esc_html_e( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ); ?>
+    </p>
+
+    <div class="be-schema-preview-layout">
+        <div class="be-schema-global-section be-schema-preview-controls">
+            <h4 class="be-schema-section-title"><?php esc_html_e( 'Target', 'beseo' ); ?></h4>
+            <p class="description be-schema-description">
+                <?php esc_html_e( 'Enter a URL or a post ID, then generate the schema graph preview.', 'beseo' ); ?>
+            </p>
+            <div class="be-schema-preview-inputs">
+                <input type="text" id="be-schema-preview-target" class="regular-text" placeholder="<?php esc_attr_e( 'https://example.com/page or 123', 'beseo' ); ?>" />
+                <div class="be-schema-preview-buttons">
+                    <button type="button" class="button button-secondary" id="be-schema-preview-home">
+                        <?php esc_html_e( 'Use Homepage', 'beseo' ); ?>
+                    </button>
+                    <button type="button" class="button button-primary" id="be-schema-preview-run">
+                        <?php esc_html_e( 'Generate Preview', 'beseo' ); ?>
+                    </button>
+                </div>
+            </div>
+            <div id="be-schema-preview-status" class="be-schema-preview-status" aria-live="polite"></div>
+            <div class="be-schema-preview-meta">
+                <div><strong><?php esc_html_e( 'Nodes', 'beseo' ); ?></strong>: <span id="be-schema-preview-node-count">0</span></div>
+                <div><strong><?php esc_html_e( 'Edges', 'beseo' ); ?></strong>: <span id="be-schema-preview-edge-count">0</span></div>
+            </div>
+        </div>
+
+        <div class="be-schema-global-section be-schema-preview-canvas">
+            <h4 class="be-schema-section-title"><?php esc_html_e( 'Graph', 'beseo' ); ?></h4>
+            <div id="be-schema-preview-graph" class="be-schema-preview-graph"></div>
+            <label class="be-schema-preview-json-label" for="be-schema-preview-json"><?php esc_html_e( 'Raw JSON-LD', 'beseo' ); ?></label>
+            <textarea id="be-schema-preview-json" class="large-text code" rows="10" readonly></textarea>
+        </div>
+    </div>
+    <?php
+}

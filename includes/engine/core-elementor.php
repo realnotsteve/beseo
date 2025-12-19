@@ -373,6 +373,50 @@ function be_schema_elementor_collect_nodes_from_elements( $elements, array &$nod
 }
 
 /**
+ * Collect Elementor widget schema nodes for a specific post ID.
+ *
+ * @param int $post_id
+ * @return array
+ */
+function be_schema_elementor_get_nodes_for_post( $post_id ) {
+    $post_id = (int) $post_id;
+    if ( $post_id <= 0 ) {
+        return array();
+    }
+
+    if ( ! class_exists( '\Elementor\Plugin' ) ) {
+        return array();
+    }
+
+    $plugin   = \Elementor\Plugin::$instance;
+    $document = $plugin->documents->get_doc_for_frontend( $post_id );
+
+    if ( ! $document ) {
+        return array();
+    }
+
+    $elements_data = $document->get_elements_data();
+    if ( empty( $elements_data ) || ! is_array( $elements_data ) ) {
+        return array();
+    }
+
+    $nodes    = array();
+    $entities = be_schema_get_site_entities();
+
+    if ( isset( $entities['logo'] ) && is_array( $entities['logo'] ) && ! empty( $entities['logo'] ) ) {
+        $nodes[] = $entities['logo'];
+    }
+
+    if ( isset( $entities['publisher_logo'] ) && is_array( $entities['publisher_logo'] ) && ! empty( $entities['publisher_logo'] ) ) {
+        $nodes[] = $entities['publisher_logo'];
+    }
+
+    be_schema_elementor_collect_nodes_from_elements( $elements_data, $nodes );
+
+    return $nodes;
+}
+
+/**
  * Build an ImageObject node from Elementor Image widget settings.
  *
  * @param array $settings

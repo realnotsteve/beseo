@@ -749,4 +749,380 @@ document.addEventListener('DOMContentLoaded', function () {
                         syncPlaceholder();
                     });
                 })();
+
+                // Schema graph preview.
+                (function () {
+                    var previewRoot = document.getElementById('be-schema-tab-preview');
+                    if (!previewRoot) {
+                        return;
+                    }
+
+                    var preview = data.preview || {};
+                    var ajaxUrl = preview.ajaxUrl || '';
+                    var nonce = preview.nonce || '';
+                    var homeUrl = preview.homeUrl || '';
+
+                    var targetInput = document.getElementById('be-schema-preview-target');
+                    var runBtn = document.getElementById('be-schema-preview-run');
+                    var homeBtn = document.getElementById('be-schema-preview-home');
+                    var statusEl = document.getElementById('be-schema-preview-status');
+                    var graphEl = document.getElementById('be-schema-preview-graph');
+                    var jsonEl = document.getElementById('be-schema-preview-json');
+                    var nodeCountEl = document.getElementById('be-schema-preview-node-count');
+                    var edgeCountEl = document.getElementById('be-schema-preview-edge-count');
+
+                    function setStatus(message, type) {
+                        if (!statusEl) {
+                            return;
+                        }
+                        statusEl.textContent = message || '';
+                        statusEl.className = 'be-schema-preview-status';
+                        if (message) {
+                            statusEl.classList.add('is-active');
+                            if (type) {
+                                statusEl.classList.add(type);
+                            }
+                        }
+                    }
+
+                    function setCounts(nodes, edges) {
+                        if (nodeCountEl) {
+                            nodeCountEl.textContent = String(nodes || 0);
+                        }
+                        if (edgeCountEl) {
+                            edgeCountEl.textContent = String(edges || 0);
+                        }
+                    }
+
+                    function clearPreview() {
+                        if (graphEl) {
+                            graphEl.innerHTML = '';
+                        }
+                        if (jsonEl) {
+                            jsonEl.value = '';
+                        }
+                        setCounts(0, 0);
+                    }
+
+                    function truncate(text, max) {
+                        var value = (text || '').toString();
+                        if (value.length <= max) {
+                            return value;
+                        }
+                        return value.slice(0, Math.max(0, max - 3)) + '...';
+                    }
+
+                    function normalizeType(value) {
+                        if (Array.isArray(value)) {
+                            return value.join(', ');
+                        }
+                        return value ? value.toString() : 'Thing';
+                    }
+
+                    function buildNodes(graph) {
+                        var nodes = [];
+                        var map = {};
+                        if (!Array.isArray(graph)) {
+                            return { nodes: nodes, map: map };
+                        }
+
+                        graph.forEach(function (node, index) {
+                            if (!node || typeof node !== 'object') {
+                                return;
+                            }
+                            var type = node['@type'];
+                            if (!type) {
+                                return;
+                            }
+                            var id = node['@id'] || node.url || ('node-' + index);
+                            if (map[id]) {
+                                return;
+                            }
+                            var name = node.name || node.headline || node.url || node['@id'] || id;
+                            var typeLabel = normalizeType(type);
+                            var entry = {
+                                id: id,
+                                type: typeLabel,
+                                name: name ? name.toString() : typeLabel
+                            };
+                            nodes.push(entry);
+                            map[id] = entry;
+                        });
+
+                        return { nodes: nodes, map: map };
+                    }
+
+                    function collectEdges(value, key, fromId, edges, nodesById) {
+                        if (!value) {
+                            return;
+                        }
+                        if (Array.isArray(value)) {
+                            value.forEach(function (item) {
+                                collectEdges(item, key, fromId, edges, nodesById);
+                            });
+                            return;
+                        }
+                        if (typeof value === 'object') {
+                            if (value['@id']) {
+                                if (nodesById[value['@id']]) {
+                                    edges.push({
+                                        from: fromId,
+                                        to: value['@id'],
+                                        label: key
+                                    });
+                                }
+                            } else {
+                                Object.keys(value).forEach(function (subKey) {
+                                    collectEdges(value[subKey], key, fromId, edges, nodesById);
+                                });
+                            }
+                        }
+                    }
+
+                    function buildEdges(graph, nodesById) {
+                        var edges = [];
+                        if (!Array.isArray(graph)) {
+                            return edges;
+                        }
+                        graph.forEach(function (node, index) {
+                            if (!node || typeof node !== 'object') {
+                                return;
+                            }
+                            var fromId = node['@id'] || node.url || ('node-' + index);
+                            if (!nodesById[fromId]) {
+                                return;
+                            }
+                            Object.keys(node).forEach(function (key) {
+                                if (key === '@id' || key === '@type' || key === '@context') {
+                                    return;
+                                }
+                                collectEdges(node[key], key, fromId, edges, nodesById);
+                            });
+                        });
+                        return edges;
+                    }
+
+                    function renderGraph(nodes, edges) {
+                        if (!graphEl) {
+                            return;
+                        }
+                        graphEl.innerHTML = '';
+                        if (!nodes.length) {
+                            return;
+                        }
+
+                        var nodeWidth = 180;
+                        var nodeHeight = 60;
+                        var colGap = 40;
+                        var rowGap = 40;
+                        var padding = 20;
+                        var cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(nodes.length))));
+                        var rows = Math.ceil(nodes.length / cols);
+                        var width = padding * 2 + cols * nodeWidth + (cols - 1) * colGap;
+                        var height = padding * 2 + rows * nodeHeight + (rows - 1) * rowGap;
+
+                        var ns = 'http://www.w3.org/2000/svg';
+                        var svg = document.createElementNS(ns, 'svg');
+                        svg.setAttribute('width', width);
+                        svg.setAttribute('height', height);
+                        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+
+                        var nodesById = {};
+                        nodes.forEach(function (node, index) {
+                            var col = index % cols;
+                            var row = Math.floor(index / cols);
+                            node.x = padding + col * (nodeWidth + colGap);
+                            node.y = padding + row * (nodeHeight + rowGap);
+                            nodesById[node.id] = node;
+                        });
+
+                        edges.forEach(function (edge) {
+                            var from = nodesById[edge.from];
+                            var to = nodesById[edge.to];
+                            if (!from || !to) {
+                                return;
+                            }
+                            var line = document.createElementNS(ns, 'line');
+                            line.setAttribute('x1', from.x + nodeWidth / 2);
+                            line.setAttribute('y1', from.y + nodeHeight / 2);
+                            line.setAttribute('x2', to.x + nodeWidth / 2);
+                            line.setAttribute('y2', to.y + nodeHeight / 2);
+                            line.setAttribute('stroke', '#94a3b8');
+                            line.setAttribute('stroke-width', '1');
+                            line.setAttribute('stroke-linecap', 'round');
+                            svg.appendChild(line);
+                        });
+
+                        nodes.forEach(function (node) {
+                            var group = document.createElementNS(ns, 'g');
+                            var rect = document.createElementNS(ns, 'rect');
+                            rect.setAttribute('x', node.x);
+                            rect.setAttribute('y', node.y);
+                            rect.setAttribute('width', nodeWidth);
+                            rect.setAttribute('height', nodeHeight);
+                            rect.setAttribute('rx', '4');
+                            rect.setAttribute('ry', '4');
+                            rect.setAttribute('fill', '#ffffff');
+                            rect.setAttribute('stroke', '#ccd0d4');
+                            rect.setAttribute('stroke-width', '1');
+                            group.appendChild(rect);
+
+                            var typeText = document.createElementNS(ns, 'text');
+                            typeText.setAttribute('x', node.x + 8);
+                            typeText.setAttribute('y', node.y + 20);
+                            typeText.setAttribute('font-size', '11');
+                            typeText.setAttribute('font-weight', '600');
+                            typeText.setAttribute('fill', '#1d2327');
+                            typeText.textContent = truncate(node.type, 24);
+                            group.appendChild(typeText);
+
+                            var nameText = document.createElementNS(ns, 'text');
+                            nameText.setAttribute('x', node.x + 8);
+                            nameText.setAttribute('y', node.y + 38);
+                            nameText.setAttribute('font-size', '10');
+                            nameText.setAttribute('fill', '#3c434a');
+                            nameText.textContent = truncate(node.name, 30);
+                            group.appendChild(nameText);
+
+                            svg.appendChild(group);
+                        });
+
+                        graphEl.appendChild(svg);
+                    }
+
+                    function handlePreviewResponse(payload) {
+                        clearPreview();
+
+                        if (!payload) {
+                            setStatus('No preview data returned.', 'is-error');
+                            return;
+                        }
+
+                        if (payload.message && !payload.graph) {
+                            setStatus(payload.message, 'is-warning');
+                            return;
+                        }
+
+                        var graphPayload = payload.graph || null;
+                        var graph = graphPayload && graphPayload['@graph'] ? graphPayload['@graph'] : graphPayload;
+                        if (!Array.isArray(graph) || !graph.length) {
+                            setStatus(payload.message || 'No graph nodes were returned.', 'is-warning');
+                            return;
+                        }
+
+                        var parsed = buildNodes(graph);
+                        var edges = buildEdges(graph, parsed.map);
+                        renderGraph(parsed.nodes, edges);
+                        setCounts(parsed.nodes.length, edges.length);
+
+                        if (jsonEl) {
+                            jsonEl.value = JSON.stringify(graphPayload, null, 2);
+                        }
+
+                        var message = 'Preview loaded.';
+                        if (payload.target && payload.target.title) {
+                            message = 'Preview loaded for ' + payload.target.title + '.';
+                        }
+
+                        if (payload.warnings && payload.warnings.length) {
+                            message += ' ' + payload.warnings.join(' ');
+                            setStatus(message, 'is-warning');
+                            return;
+                        }
+
+                        setStatus(message);
+                    }
+
+                    function postData(params, onSuccess, onError) {
+                        if (!ajaxUrl) {
+                            setStatus('Missing AJAX URL.', 'is-error');
+                            return;
+                        }
+
+                        var body = Object.keys(params).map(function (key) {
+                            return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+                        }).join('&');
+
+                        if (window.fetch) {
+                            fetch(ajaxUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                },
+                                body: body
+                            })
+                                .then(function (response) {
+                                    return response.json();
+                                })
+                                .then(onSuccess)
+                                .catch(onError);
+                            return;
+                        }
+
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('POST', ajaxUrl, true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+                        xhr.onreadystatechange = function () {
+                            if (xhr.readyState !== 4) {
+                                return;
+                            }
+                            try {
+                                var json = JSON.parse(xhr.responseText);
+                                onSuccess(json);
+                            } catch (err) {
+                                onError(err);
+                            }
+                        };
+                        xhr.send(body);
+                    }
+
+                    function runPreview(target) {
+                        var value = (target || '').toString().trim();
+                        if (!value) {
+                            setStatus('Enter a URL or post ID to preview.', 'is-error');
+                            clearPreview();
+                            return;
+                        }
+
+                        setStatus('Generating preview...');
+                        postData(
+                            {
+                                action: 'be_schema_preview_graph',
+                                nonce: nonce,
+                                target: value
+                            },
+                            function (response) {
+                                if (!response || !response.success) {
+                                    var msg = (response && response.data && response.data.message) ? response.data.message : 'Preview failed.';
+                                    setStatus(msg, 'is-error');
+                                    clearPreview();
+                                    return;
+                                }
+                                handlePreviewResponse(response.data);
+                            },
+                            function () {
+                                setStatus('Preview request failed.', 'is-error');
+                                clearPreview();
+                            }
+                        );
+                    }
+
+                    if (homeBtn) {
+                        homeBtn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            if (homeUrl && targetInput) {
+                                targetInput.value = homeUrl;
+                            }
+                            runPreview(targetInput ? targetInput.value : homeUrl);
+                        });
+                    }
+
+                    if (runBtn) {
+                        runBtn.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            runPreview(targetInput ? targetInput.value : '');
+                        });
+                    }
+                })();
             });

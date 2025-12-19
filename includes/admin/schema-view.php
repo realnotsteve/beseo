@@ -5,8 +5,11 @@
  * Submenu: BE SEO → Schema
  *
  * Tabs:
- *  - Settings  (global plugin toggles, Elementor toggle, debug, snapshot, health check)
+ *  - Dashboard (global plugin toggles, Elementor toggle, debug)
+ *  - Status    (snapshots + health check)
+ *  - Preview   (graph preview for a specific page)
  *  - Website   (site identity mode plus site entities: Global / Person / Organisation / Publisher)
+ *  - Settings  (global author defaults)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Shared helpers live in the schema service.
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-service.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-settings.php';
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-preview.php';
 
 /**
  * Save main BE Schema Engine settings.
@@ -953,6 +957,13 @@ function be_schema_engine_render_schema_page() {
                         </a>
                     </li>
                     <li>
+                        <a href="#be-schema-tab-preview"
+                           class="be-schema-tab-link"
+                           data-schema-tab="preview">
+                            <?php esc_html_e( 'Preview', 'beseo' ); ?>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#be-schema-tab-website"
                            class="be-schema-tab-link"
                            data-schema-tab="website">
@@ -1295,6 +1306,11 @@ function be_schema_engine_render_schema_page() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- PREVIEW TAB -->
+                <div id="be-schema-tab-preview" class="be-schema-tab-panel">
+                    <?php be_schema_engine_render_schema_tab_preview(); ?>
                 </div>
 
                 <!-- SETTINGS TAB -->

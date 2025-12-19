@@ -37,6 +37,11 @@ function be_schema_engine_enqueue_schema_assets() {
         'beSchemaSchemaData',
         array(
             'imageValidationEnabled' => $image_validation_enabled,
+            'preview'                => array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'be_schema_preview_graph' ),
+                'homeUrl' => home_url( '/' ),
+            ),
             'labels'                 => array(
                 'undefined'          => __( 'Undefined', 'beseo' ),
                 'verified'           => __( 'Verified', 'beseo' ),
