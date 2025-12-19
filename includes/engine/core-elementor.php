@@ -608,6 +608,105 @@ function be_schema_elementor_enqueue_editor_assets() {
         'elementor.hooks.addAction("panel/open_editor/widget/video_playlist", function(panel, model){ bindPreview(panel, model, "video_playlist"); });' .
         '})(jQuery);'
     );
+
+    wp_add_inline_script(
+        'be-schema-elementor-preview',
+        '(function($){' .
+        'var cleanupData = {' .
+            'ajaxurl: ' . wp_json_encode( admin_url( 'admin-ajax.php' ) ) . ',' .
+            'nonce: ' . wp_json_encode( wp_create_nonce( 'be_schema_revision_cleanup' ) ) .
+        '};' .
+        'var beSchemaRevisionTries = 0;' .
+        'var beSchemaRevisionDetected = false;' .
+        'var beSchemaObserver = null;' .
+        'function beSchemaGetDocConfig(){' .
+            'if(window.elementor){' .
+                'if(elementor.config && elementor.config.initial_document){ return elementor.config.initial_document; }' .
+                'if(elementor.config && elementor.config.document){ return elementor.config.document; }' .
+                'if(elementor.documents && elementor.documents.getCurrent){' .
+                    'var current = elementor.documents.getCurrent();' .
+                    'if(current && current.config){ return current.config; }' .
+                    'if(current && current.attributes){ return current.attributes; }' .
+                '}' .
+            '}' .
+            'return {};' .
+        '}' .
+        'function beSchemaIsRevisionDoc(){' .
+            'var doc = beSchemaGetDocConfig();' .
+            'var postType = (doc.post_type || doc.postType || doc.post_type_name || "").toString().toLowerCase();' .
+            'var title = (doc.post_type_title || doc.postTypeTitle || "").toString().toLowerCase();' .
+            'var type = (doc.type || "").toString().toLowerCase();' .
+            'var isRevision = doc.is_revision || doc.isRevision || false;' .
+            'var detected = !!isRevision || postType === "revision" || title === "revision" || type.indexOf("revision") !== -1;' .
+            'if(detected){ beSchemaRevisionDetected = true; }' .
+            'return beSchemaRevisionDetected;' .
+        '}' .
+        'function beSchemaGetDocumentId(){' .
+            'var doc = beSchemaGetDocConfig();' .
+            'var id = doc.id || doc.post_id || doc.postId || 0;' .
+            'if(!id && window.elementor && elementor.config && elementor.config.post_id){ id = elementor.config.post_id; }' .
+            'return parseInt(id, 10) || 0;' .
+        '}' .
+        'function beSchemaGetPageSettingsContainer(){' .
+            'var $controls = $("#elementor-panel-page-settings-controls");' .
+            'if($controls.length){ return $controls; }' .
+            'var $page = $("#elementor-panel-page-settings");' .
+            'if($page.length){ return $page; }' .
+            'var $wrapper = $("#elementor-panel-content-wrapper");' .
+            'return $wrapper.length ? $wrapper : $();' .
+        '}' .
+        'function beSchemaTryInsertNotice(){' .
+            'if(!beSchemaIsRevisionDoc()){' .
+                'if(beSchemaRevisionTries < 40){ beSchemaRevisionTries++; setTimeout(beSchemaTryInsertNotice, 300); }' .
+                'return;' .
+            '}' .
+            'var $container = beSchemaGetPageSettingsContainer();' .
+            'if(!$container.length || !$container.is(":visible")){ return; }' .
+            'if($container.find(".be-schema-revision-notice").length){ return; }' .
+            'var html = "<div class=\\"be-schema-revision-notice\\" style=\\"margin:12px; padding:10px 12px; border:1px solid #dba617; background:#fff4d6; border-radius:4px; color:#1d2327;\\">"' .
+                '+ "<div style=\\"display:flex; align-items:center; gap:10px; flex-wrap:wrap;\\">"' .
+                '+ "<div style=\\"flex:1 1 260px;\\"><strong>Revision loaded.</strong> Elementor is editing a revision, so Page Settings like Featured Image may be hidden. Open the editor from the page itself to edit those settings.</div>"' .
+                '+ "<div style=\\"flex:0 0 auto;\\"><button type=\\"button\\" class=\\"elementor-button elementor-button-default be-schema-revision-clean\\">Delete revisions & reload</button></div>"' .
+                '+ "</div>"' .
+                '+ "<div class=\\"be-schema-revision-status\\" style=\\"margin-top:6px; color:#1d2327;\\"></div>"' .
+                '+ "</div>";' .
+            '$container.prepend(html);' .
+        '}' .
+        'function beSchemaObservePanel(){' .
+            'if(beSchemaObserver){ return; }' .
+            'var target = document.getElementById("elementor-panel-content-wrapper") || document.getElementById("elementor-panel");' .
+            'if(!target){ setTimeout(beSchemaObservePanel, 200); return; }' .
+            'beSchemaObserver = new MutationObserver(function(){ beSchemaTryInsertNotice(); });' .
+            'beSchemaObserver.observe(target, {childList:true, subtree:true});' .
+        '}' .
+        '$(document).off("click.beSchemaRevisionClean").on("click.beSchemaRevisionClean", ".be-schema-revision-clean", function(e){' .
+            'e.preventDefault();' .
+            'var $btn = $(this);' .
+            'if($btn.data("loading")){ return; }' .
+            'if(!window.confirm("Delete all revisions for this post? This cannot be undone.")){ return; }' .
+            'var $wrap = $btn.closest(".be-schema-revision-notice");' .
+            'var $status = $wrap.find(".be-schema-revision-status");' .
+            'var docId = beSchemaGetDocumentId();' .
+            '$btn.data("loading", true).prop("disabled", true).text("Deleting revisions...");' .
+            '$status.text("Working...");' .
+            '$.post(cleanupData.ajaxurl, {action:"be_schema_elementor_delete_revisions", nonce:cleanupData.nonce, document_id:docId}, function(resp){' .
+                'if(resp && resp.success){' .
+                    '$status.text("Revisions deleted. Reloading editor...");' .
+                    'if(resp.data && resp.data.redirect_url){ window.location = resp.data.redirect_url; } else { window.location.reload(); }' .
+                '} else {' .
+                    'var msg = (resp && resp.data && resp.data.message) ? resp.data.message : "Unable to delete revisions.";' .
+                    '$status.text(msg);' .
+                    '$btn.data("loading", false).prop("disabled", false).text("Delete revisions & reload");' .
+                '}' .
+            '}).fail(function(){' .
+                '$status.text("Request failed. Try again.");' .
+                '$btn.data("loading", false).prop("disabled", false).text("Delete revisions & reload");' .
+            '});' .
+        '});' .
+        '$(window).on("elementor:init", function(){ beSchemaObservePanel(); setTimeout(beSchemaTryInsertNotice, 200); });' .
+        '$(function(){ beSchemaObservePanel(); setTimeout(beSchemaTryInsertNotice, 200); });' .
+        '})(jQuery);'
+    );
 }
 add_action( 'elementor/editor/after_enqueue_scripts', 'be_schema_elementor_enqueue_editor_assets' );
 
@@ -647,6 +746,53 @@ function be_schema_preview_elementor() {
     );
 }
 add_action( 'wp_ajax_be_schema_preview_elementor', 'be_schema_preview_elementor' );
+
+/**
+ * AJAX handler to delete all revisions for the current Elementor document.
+ */
+function be_schema_elementor_delete_revisions() {
+    if ( ! current_user_can( 'edit_posts' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'beseo' ) ), 403 );
+    }
+    check_ajax_referer( 'be_schema_revision_cleanup', 'nonce' );
+
+    $document_id = isset( $_POST['document_id'] ) ? absint( $_POST['document_id'] ) : 0;
+    if ( ! $document_id ) {
+        wp_send_json_error( array( 'message' => __( 'Missing document ID.', 'beseo' ) ) );
+    }
+
+    $parent_id = wp_is_post_revision( $document_id );
+    $post_id   = $parent_id ? $parent_id : $document_id;
+
+    $post = get_post( $post_id );
+    if ( ! $post ) {
+        wp_send_json_error( array( 'message' => __( 'Post not found.', 'beseo' ) ) );
+    }
+
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'beseo' ) ), 403 );
+    }
+
+    $revision_ids = wp_get_post_revisions( $post_id, array( 'fields' => 'ids' ) );
+    $deleted      = 0;
+
+    if ( $revision_ids ) {
+        foreach ( $revision_ids as $revision_id ) {
+            if ( wp_delete_post_revision( $revision_id ) ) {
+                $deleted++;
+            }
+        }
+    }
+
+    wp_send_json_success(
+        array(
+            'deleted'      => $deleted,
+            'post_id'      => $post_id,
+            'redirect_url' => admin_url( 'post.php?post=' . $post_id . '&action=elementor' ),
+        )
+    );
+}
+add_action( 'wp_ajax_be_schema_elementor_delete_revisions', 'be_schema_elementor_delete_revisions' );
 
 /**
  * Elementor editor: ensure auth-check markup exists and silence missing-wrap errors.
