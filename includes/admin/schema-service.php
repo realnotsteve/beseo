@@ -357,3 +357,110 @@ add_action(
         );
     }
 );
+
+// AJAX: Overwrite global author onto images without overrides.
+add_action(
+    'wp_ajax_be_schema_overwrite_creator_globals',
+    function() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'beseo' ) ), 403 );
+        }
+
+        $nonce = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'be_schema_overwrite_creator_globals' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beseo' ) ), 400 );
+        }
+
+        $mode         = isset( $_POST['mode'] ) ? sanitize_text_field( wp_unslash( $_POST['mode'] ) ) : 'website';
+        $mode         = in_array( $mode, array( 'website', 'override' ), true ) ? $mode : 'website';
+        $creator      = isset( $_POST['creator'] ) ? sanitize_text_field( wp_unslash( $_POST['creator'] ) ) : '';
+        $creator_type = isset( $_POST['creator_type'] ) ? sanitize_text_field( wp_unslash( $_POST['creator_type'] ) ) : 'Person';
+        $creator_type = in_array( $creator_type, array( 'Person', 'Organisation' ), true ) ? $creator_type : 'Person';
+        $creator_url  = '';
+
+        if ( 'website' === $mode ) {
+            $settings = be_schema_engine_get_settings();
+            $entities = be_schema_get_site_entities();
+            $identity = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+            $identity = in_array( $identity, array( 'person', 'organisation', 'publisher' ), true ) ? $identity : 'publisher';
+            $key      = ( 'organisation' === $identity ) ? 'organization' : $identity;
+            $entity   = isset( $entities[ $key ] ) ? $entities[ $key ] : null;
+
+            if ( $entity && is_array( $entity ) && empty( $entity['name'] ) ) {
+                $entity = isset( $entities['organization'] ) ? $entities['organization'] : ( $entities['person'] ?? $entity );
+            }
+
+            if ( $entity && is_array( $entity ) ) {
+                $creator = isset( $entity['name'] ) ? $entity['name'] : '';
+                $type_raw = isset( $entity['@type'] ) ? $entity['@type'] : '';
+                if ( 'Organization' === $type_raw ) {
+                    $creator_type = 'Organisation';
+                } elseif ( 'Person' === $type_raw ) {
+                    $creator_type = 'Person';
+                }
+                if ( ! empty( $entity['url'] ) ) {
+                    $creator_url = $entity['url'];
+                }
+            }
+        } elseif ( 'override' === $mode ) {
+            $settings = be_schema_engine_get_settings();
+            if ( ! empty( $settings['global_author_url'] ) ) {
+                $creator_url = $settings['global_author_url'];
+            }
+        }
+
+        if ( '' === $creator ) {
+            wp_send_json_error( array( 'message' => __( 'Global author is empty.', 'beseo' ) ), 400 );
+        }
+
+        $query = new WP_Query(
+            array(
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'post_mime_type' => 'image',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+            )
+        );
+
+        $updated = 0;
+        $skipped = 0;
+
+        if ( $query->have_posts() ) {
+            foreach ( $query->posts as $attachment_id ) {
+                $current = get_post_meta( $attachment_id, '_be_schema_creator_name', true );
+                $enabled_flag = get_post_meta( $attachment_id, '_be_schema_creator_enabled', true );
+                $has_override = ( '1' === $enabled_flag ) || ( '' === $enabled_flag && '' !== trim( (string) $current ) );
+                if ( $has_override ) {
+                    $skipped++;
+                    continue;
+                }
+
+                update_post_meta( $attachment_id, '_be_schema_creator_name', $creator );
+                update_post_meta( $attachment_id, '_be_schema_creator_type', $creator_type );
+                update_post_meta( $attachment_id, '_be_schema_creator_enabled', '1' );
+                if ( $creator_url ) {
+                    update_post_meta( $attachment_id, '_be_schema_creator_url', $creator_url );
+                    update_post_meta( $attachment_id, '_be_schema_creator_url_enabled', '1' );
+                } else {
+                    delete_post_meta( $attachment_id, '_be_schema_creator_url' );
+                    update_post_meta( $attachment_id, '_be_schema_creator_url_enabled', '0' );
+                }
+                $updated++;
+            }
+        }
+
+        wp_send_json_success(
+            array(
+                'message' => sprintf(
+                    /* translators: 1: updated count, 2: skipped count */
+                    __( 'Updated %1$d images. Skipped %2$d with overrides.', 'beseo' ),
+                    $updated,
+                    $skipped
+                ),
+                'updated' => $updated,
+                'skipped' => $skipped,
+            )
+        );
+    }
+);

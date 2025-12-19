@@ -292,8 +292,77 @@ if ( is_admin() ) {
             $creator_url_enabled = ( '' === $creator_url_enabled_raw ) ? ( '' !== trim( (string) $creator_url ) ) : ( '1' === $creator_url_enabled_raw );
             $creator_type        = in_array( $creator_type, array( 'Person', 'Organisation' ), true ) ? $creator_type : 'Person';
 
+            $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
+            $global_author_mode = isset( $settings['global_author_mode'] ) ? $settings['global_author_mode'] : 'website';
+            $global_author_mode = ( 'override' === $global_author_mode ) ? 'override' : 'website';
+            $global_author_name = isset( $settings['global_author_name'] ) ? $settings['global_author_name'] : '';
+            $global_author_url  = isset( $settings['global_author_url'] ) ? $settings['global_author_url'] : '';
+            $global_author_type = isset( $settings['global_author_type'] ) ? $settings['global_author_type'] : 'Person';
+            $global_author_type = in_array( $global_author_type, array( 'Person', 'Organisation' ), true ) ? $global_author_type : 'Person';
+
+            $website_author_name = '';
+            $website_author_url  = '';
+            $website_author_type = '';
+
+            if ( function_exists( 'be_schema_get_site_entities' ) ) {
+                $site_entities = be_schema_get_site_entities();
+                $identity      = isset( $settings['site_identity_mode'] ) ? $settings['site_identity_mode'] : 'publisher';
+                $identity      = in_array( $identity, array( 'person', 'organisation', 'publisher' ), true ) ? $identity : 'publisher';
+                $key           = ( 'organisation' === $identity ) ? 'organization' : $identity;
+                $entity        = isset( $site_entities[ $key ] ) ? $site_entities[ $key ] : null;
+
+                if ( $entity && is_array( $entity ) && empty( $entity['name'] ) ) {
+                    $entity = isset( $site_entities['organization'] ) ? $site_entities['organization'] : ( $site_entities['person'] ?? $entity );
+                }
+
+                if ( $entity && is_array( $entity ) ) {
+                    $entity_type = isset( $entity['@type'] ) ? $entity['@type'] : '';
+                    if ( 'Organization' === $entity_type || 'Organisation' === $entity_type ) {
+                        $website_author_type = 'Organisation';
+                    } elseif ( 'Person' === $entity_type ) {
+                        $website_author_type = 'Person';
+                    }
+                    if ( ! empty( $entity['name'] ) ) {
+                        $website_author_name = $entity['name'];
+                    }
+                    if ( ! empty( $entity['url'] ) ) {
+                        $website_author_url = $entity['url'];
+                    }
+                }
+            }
+
+            $global_display_name = ( 'override' === $global_author_mode ) ? $global_author_name : $website_author_name;
+            $global_display_url  = ( 'override' === $global_author_mode ) ? $global_author_url : $website_author_url;
+            $global_display_type = ( 'override' === $global_author_mode ) ? $global_author_type : ( $website_author_type ? $website_author_type : 'Person' );
+
+            $creator_display_name = $creator_enabled ? $creator_name : $global_display_name;
+            $creator_display_url  = $creator_enabled ? $creator_url : $global_display_url;
+            $creator_display_type = $creator_enabled ? $creator_type : $global_display_type;
+            $creator_display_url_enabled = $creator_enabled ? $creator_url_enabled : ( '' !== trim( (string) $global_display_url ) );
+
+            $creator_name_missing = '' === trim( (string) $creator_name );
+            $global_name_missing  = '' === trim( (string) $global_display_name );
+            $warning_message      = '';
+            if ( $creator_enabled ) {
+                if ( $creator_name_missing ) {
+                    $warning_message = __( 'Creator Override is enabled but Creator Name is empty. Image schema will not be produced until the fields have values.', 'beseo' );
+                }
+            } else {
+                if ( $global_name_missing && $creator_name_missing ) {
+                    $warning_message = __( 'No Global Author value is available and Creator Override is off. Image schema will not be produced until the fields have values.', 'beseo' );
+                }
+            }
+
             $box_html  = '<tr class="be-schema-creator-box-row"><td colspan="2" style="padding-right:0; display:flex;">';
-            $box_html .= '<div class="be-schema-creator-box" style="border:1px solid #ccd0d4; padding:10px; margin:6px 0; background:#fff; width:100%; box-sizing:border-box;">';
+            $box_html .= sprintf(
+                '<div class="be-schema-creator-box" style="border:1px solid #ccd0d4; padding:10px; margin:6px 0; background:#fff; width:100%%; box-sizing:border-box;" data-global-name="%1$s" data-global-type="%2$s" data-global-url="%3$s" data-override-name="%4$s" data-override-url="%5$s" data-override-type="%6$s">',
+                esc_attr( $global_display_name ),
+                esc_attr( $global_display_type ),
+                esc_attr( $global_display_url ),
+                esc_attr( $creator_name ),
+                esc_attr( $creator_url ),
+                esc_attr( $creator_type )
+            );
             $box_html .= '<div style="font-weight:600; margin-bottom:8px;">' . esc_html__( 'BE SEO', 'beseo' ) . '</div>';
             $box_html .= '<div style="margin-bottom:8px;">';
             $box_html .= sprintf(
@@ -302,13 +371,27 @@ if ( is_admin() ) {
                 $creator_enabled ? 'checked="checked"' : '',
                 esc_html__( 'Creator Override', 'beseo' )
             );
+            $box_html .= sprintf(
+                ' <button type="button" class="button be-schema-creator-copy-global" style="margin-left:10px;">%s</button>',
+                esc_html__( 'Copy Global', 'beseo' )
+            );
             $box_html .= '</div><hr style="margin:8px 0;" />';
+            if ( '' !== $warning_message ) {
+                $box_html .= sprintf(
+                    '<div class="notice notice-error inline be-schema-creator-warning" style="margin:8px 0;"><p>%s</p></div>',
+                    esc_html( $warning_message )
+                );
+            } else {
+                $box_html .= '<div class="notice notice-error inline be-schema-creator-warning" style="margin:8px 0; display:none;"></div>';
+            }
             $box_html .= '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">';
             $box_html .= '<label style="min-width:120px;">' . esc_html__( 'Creator Name', 'beseo' ) . '</label>';
             $box_html .= sprintf(
-                '<input type="text" class="text be-schema-creator-name" name="attachments[%1$d][be_schema_creator_name]" value="%2$s" %3$s style="flex:1 1 320px; min-width:220px;" />',
+                '<input type="text" class="text be-schema-creator-name" name="attachments[%1$d][be_schema_creator_name]" value="%2$s" data-override-value="%3$s" data-global-value="%4$s" %5$s style="flex:1 1 320px; min-width:220px;" />',
                 (int) $post->ID,
+                esc_attr( $creator_display_name ),
                 esc_attr( $creator_name ),
+                esc_attr( $global_display_name ),
                 $creator_enabled ? '' : 'disabled="disabled"'
             );
             $box_html .= '</div>';
@@ -318,8 +401,8 @@ if ( is_admin() ) {
                 '<label style="margin-right:10px;"><input type="radio" class="be-schema-creator-type" name="attachments[%1$d][be_schema_creator_type]" value="Person" %2$s %4$s /> %5$s</label>' .
                 '<label><input type="radio" class="be-schema-creator-type" name="attachments[%1$d][be_schema_creator_type]" value="Organisation" %3$s %4$s /> %6$s</label>',
                 (int) $post->ID,
-                ( 'Person' === $creator_type ) ? 'checked="checked"' : '',
-                ( 'Organisation' === $creator_type ) ? 'checked="checked"' : '',
+                ( 'Person' === $creator_display_type ) ? 'checked="checked"' : '',
+                ( 'Organisation' === $creator_display_type ) ? 'checked="checked"' : '',
                 $creator_enabled ? '' : 'disabled="disabled"',
                 esc_html__( 'Person', 'beseo' ),
                 esc_html__( 'Organisation', 'beseo' )
@@ -328,16 +411,20 @@ if ( is_admin() ) {
             $box_html .= '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
             $box_html .= '<label style="min-width:120px;">' . esc_html__( 'Creator URL', 'beseo' ) . '</label>';
             $box_html .= sprintf(
-                '<input type="checkbox" class="be-schema-creator-url-enabled" name="attachments[%1$d][be_schema_creator_url_enabled]" value="1" %2$s %3$s aria-label="%4$s" />',
+                '<input type="checkbox" class="be-schema-creator-url-enabled" name="attachments[%1$d][be_schema_creator_url_enabled]" value="1" %2$s %3$s data-override-enabled="%4$s" data-global-enabled="%5$s" aria-label="%6$s" />',
                 (int) $post->ID,
-                $creator_url_enabled ? 'checked="checked"' : '',
+                $creator_display_url_enabled ? 'checked="checked"' : '',
                 $creator_enabled ? '' : 'disabled="disabled"',
+                $creator_url_enabled ? '1' : '0',
+                ( '' !== trim( (string) $global_display_url ) ) ? '1' : '0',
                 esc_attr__( 'Include creator URL', 'beseo' )
             );
             $box_html .= sprintf(
-                '<input type="url" class="text be-schema-creator-url" name="attachments[%1$d][be_schema_creator_url]" value="%2$s" %3$s style="flex:1 1 320px; min-width:220px;" />',
+                '<input type="url" class="text be-schema-creator-url" name="attachments[%1$d][be_schema_creator_url]" value="%2$s" data-override-value="%3$s" data-global-value="%4$s" %5$s style="flex:1 1 320px; min-width:220px;" />',
                 (int) $post->ID,
+                esc_attr( $creator_display_url ),
                 esc_attr( $creator_url ),
+                esc_attr( $global_display_url ),
                 ( $creator_enabled && $creator_url_enabled ) ? '' : 'disabled="disabled"'
             );
             $box_html .= '</div>';
@@ -397,14 +484,83 @@ if ( is_admin() ) {
             ?>
             <script>
             jQuery(function($){
+                var warningOverrideMsg = '<?php echo esc_js( __( 'Creator Override is enabled but Creator Name is empty. Image schema will not be produced until the fields have values.', 'beseo' ) ); ?>';
+                var warningGlobalMsg = '<?php echo esc_js( __( 'No Global Author value is available and Creator Override is off. Image schema will not be produced until the fields have values.', 'beseo' ) ); ?>';
+                var copyGlobalMissingMsg = '<?php echo esc_js( __( 'Global author is empty.', 'beseo' ) ); ?>';
+
+                function isOverrideEnabled($table){
+                    return $table.find('.be-schema-creator-enabled').is(':checked');
+                }
+
+                function applyCreatorValues($table, useOverride){
+                    var $box = $table.find('.be-schema-creator-box');
+                    var globalName = ($box.data('globalName') || '').toString();
+                    var globalType = ($box.data('globalType') || 'Person').toString();
+                    var globalUrl = ($box.data('globalUrl') || '').toString();
+                    var overrideType = ($box.data('overrideType') || 'Person').toString();
+                    var nextType = useOverride ? overrideType : globalType;
+
+                    $table.find('.be-schema-creator-name').each(function(){
+                        var $field = $(this);
+                        var val = useOverride ? $field.data('overrideValue') : $field.data('globalValue');
+                        if (typeof val !== 'undefined') {
+                            $field.val(val);
+                        }
+                    });
+
+                    $table.find('.be-schema-creator-type').prop('checked', false)
+                        .filter('[value="' + nextType + '"]').prop('checked', true);
+
+                    $table.find('.be-schema-creator-url').each(function(){
+                        var $field = $(this);
+                        var val = useOverride ? $field.data('overrideValue') : $field.data('globalValue');
+                        if (typeof val !== 'undefined') {
+                            $field.val(val);
+                        }
+                    });
+
+                    var $urlToggle = $table.find('.be-schema-creator-url-enabled');
+                    var urlEnabled = useOverride ? $urlToggle.data('overrideEnabled') : $urlToggle.data('globalEnabled');
+                    urlEnabled = urlEnabled ? true : false;
+                    $urlToggle.prop('checked', urlEnabled);
+                }
+
+                function updateCreatorWarning($table){
+                    var $box = $table.find('.be-schema-creator-box');
+                    var $warning = $box.find('.be-schema-creator-warning');
+                    if(!$warning.length){ return; }
+                    var overrideEnabled = isOverrideEnabled($table);
+                    var globalName = ($box.data('globalName') || '').toString().trim();
+                    var overrideName = ($table.find('.be-schema-creator-name').data('overrideValue') || '').toString().trim();
+                    var message = '';
+
+                    if (overrideEnabled) {
+                        if (!overrideName) {
+                            message = warningOverrideMsg;
+                        }
+                    } else {
+                        if (!globalName && !overrideName) {
+                            message = warningGlobalMsg;
+                        }
+                    }
+
+                    if (message) {
+                        $warning.html('<p>' + message + '</p>').show();
+                    } else {
+                        $warning.hide().empty();
+                    }
+                }
+
                 function syncCreatorFields($table){
                     if(!$table || !$table.length){ return; }
                     var $enabled = $table.find('.be-schema-creator-enabled');
                     if(!$enabled.length){ return; }
                     var enabled = $enabled.is(':checked');
+                    applyCreatorValues($table, enabled);
                     $table.find('.be-schema-creator-name, .be-schema-creator-type, .be-schema-creator-url-enabled').prop('disabled', !enabled);
                     var urlEnabled = enabled && $table.find('.be-schema-creator-url-enabled').is(':checked');
                     $table.find('.be-schema-creator-url').prop('disabled', !urlEnabled);
+                    updateCreatorWarning($table);
                 }
 
                 function syncAll(){
@@ -413,8 +569,60 @@ if ( is_admin() ) {
                     });
                 }
 
-                $(document).on('change', '.be-schema-creator-enabled, .be-schema-creator-url-enabled', function(){
+                $(document).on('change', '.be-schema-creator-enabled', function(){
                     syncCreatorFields($(this).closest('table'));
+                });
+
+                $(document).on('change', '.be-schema-creator-url-enabled', function(){
+                    var $table = $(this).closest('table');
+                    if (isOverrideEnabled($table)) {
+                        $(this).data('overrideEnabled', $(this).is(':checked') ? 1 : 0);
+                    }
+                    syncCreatorFields($table);
+                });
+
+                $(document).on('input', '.be-schema-creator-name', function(){
+                    var $table = $(this).closest('table');
+                    if (isOverrideEnabled($table)) {
+                        $(this).data('overrideValue', $(this).val());
+                    }
+                    updateCreatorWarning($table);
+                });
+
+                $(document).on('input', '.be-schema-creator-url', function(){
+                    var $table = $(this).closest('table');
+                    if (isOverrideEnabled($table)) {
+                        $(this).data('overrideValue', $(this).val());
+                    }
+                });
+
+                $(document).on('change', '.be-schema-creator-type', function(){
+                    var $table = $(this).closest('table');
+                    if (isOverrideEnabled($table)) {
+                        $table.find('.be-schema-creator-box').data('overrideType', $(this).val());
+                    }
+                });
+
+                $(document).on('click', '.be-schema-creator-copy-global', function(e){
+                    e.preventDefault();
+                    var $table = $(this).closest('table');
+                    var $box = $table.find('.be-schema-creator-box');
+                    var globalName = ($box.data('globalName') || '').toString();
+                    var globalType = ($box.data('globalType') || 'Person').toString();
+                    var globalUrl = ($box.data('globalUrl') || '').toString();
+                    if (!globalName.trim()) {
+                        alert(copyGlobalMissingMsg);
+                        return;
+                    }
+                    $table.find('.be-schema-creator-enabled').prop('checked', true);
+                    $box.data('overrideType', globalType);
+                    $table.find('.be-schema-creator-name').data('overrideValue', globalName).val(globalName);
+                    $table.find('.be-schema-creator-url').data('overrideValue', globalUrl).val(globalUrl);
+                    var urlEnabled = globalUrl.trim() !== '' ? 1 : 0;
+                    $table.find('.be-schema-creator-url-enabled').data('overrideEnabled', urlEnabled).prop('checked', !!urlEnabled);
+                    $table.find('.be-schema-creator-type').prop('checked', false)
+                        .filter('[value="' + globalType + '"]').prop('checked', true);
+                    syncCreatorFields($table);
                 });
 
                 syncAll();

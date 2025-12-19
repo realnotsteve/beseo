@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.25] - 2025-12-19
+Summary: Engine.
+
+### Changed
+- Touched areas: engine.
+
+### Files
+- assets/css/schema.css
+- assets/js/schema.js
+- includes/admin/schema-service.php
+- includes/admin/schema-view-website.php
+- includes/admin/schema-view.php
+- includes/engine/core-site-entities.php
+
+
 ## [2.1.24] - 2025-12-19
 Summary: Engine.
 

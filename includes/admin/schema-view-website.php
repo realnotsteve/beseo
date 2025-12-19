@@ -803,7 +803,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                                         <input type="text"
                                                                name="be_schema_person_name"
                                                                value="<?php echo esc_attr( $person_name ); ?>"
-                                                               class="regular-text" />
+                                                               class="regular-text be-schema-person-name"
+                                                               placeholder="<?php echo esc_attr( $person_name_effective ); ?>"
+                                                               data-fallback="<?php echo esc_attr( $person_name_effective ); ?>" />
                                                         <p class="description be-schema-description">
                                                             <?php esc_html_e(
                                                                 'If empty, defaults to the Site Title.',

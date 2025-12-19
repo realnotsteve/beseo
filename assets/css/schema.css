@@ -53,6 +53,10 @@
                 max-width: none;
             }
 
+            .be-schema-person-name::placeholder {
+                color: #8c8f94;
+            }
+
             .be-schema-status-pill {
                 display: inline-block;
                 padding: 3px 8px;

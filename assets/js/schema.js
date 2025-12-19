@@ -714,4 +714,39 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     syncPublisherIdentityAvailability();
                 })();
+
+                // Person name fallback placeholder behavior.
+                (function () {
+                    var inputs = document.querySelectorAll('.be-schema-person-name');
+                    if (!inputs.length) {
+                        return;
+                    }
+
+                    inputs.forEach(function (input) {
+                        var fallback = input.getAttribute('data-fallback') || '';
+                        if (!fallback) {
+                            return;
+                        }
+
+                        function applyPlaceholder() {
+                            input.setAttribute('placeholder', fallback);
+                        }
+
+                        function clearPlaceholder() {
+                            input.setAttribute('placeholder', '');
+                        }
+
+                        function syncPlaceholder() {
+                            if (input.value.trim()) {
+                                clearPlaceholder();
+                            } else {
+                                applyPlaceholder();
+                            }
+                        }
+
+                        input.addEventListener('focus', clearPlaceholder);
+                        input.addEventListener('blur', syncPlaceholder);
+                        syncPlaceholder();
+                    });
+                })();
             });

@@ -1355,28 +1355,36 @@ function be_schema_engine_render_schema_page() {
                                     $author_warnings = array();
                                     if ( $use_override ) {
                                         if ( '' === trim( (string) $global_author_name ) ) {
-                                            $author_warnings[] = __( 'Global Override is selected but Author name is empty. Images without a local creator will not output a creator field.', 'beseo' );
+                                            $author_warnings[] = __( 'Global Override is selected but Author name is empty. Image schema will not be produced for items without a local override until the fields have values.', 'beseo' );
                                         }
                                     } else {
                                         if ( '' === trim( (string) $website_author_name ) ) {
-                                            $author_warnings[] = __( 'Website Entity is selected but no author name is available from the current Site Identity configuration. Images without a local creator will not output a creator field.', 'beseo' );
+                                            $author_warnings[] = __( 'Website Entity is selected but no author name is available from the current Site Identity configuration. Image schema will not be produced for items without a local override until the fields have values.', 'beseo' );
                                         }
                                     }
                                     ?>
-                                    <label style="margin-right:12px;">
-                                        <input type="radio" name="be_schema_global_author_mode" value="website" <?php checked( ! $use_override ); ?> />
-                                        <?php esc_html_e( 'Website Entity', 'beseo' ); ?>
-                                    </label>
-                                    <label>
-                                        <input type="radio" name="be_schema_global_author_mode" value="override" <?php checked( $use_override ); ?> />
-                                        <?php esc_html_e( 'Global Override', 'beseo' ); ?>
-                                    </label>
+                                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                                        <label>
+                                            <input type="radio" name="be_schema_global_author_mode" value="website" <?php checked( ! $use_override ); ?> />
+                                            <?php esc_html_e( 'Website Entity', 'beseo' ); ?>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="be_schema_global_author_mode" value="override" <?php checked( $use_override ); ?> />
+                                            <?php esc_html_e( 'Global Override', 'beseo' ); ?>
+                                        </label>
+                                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                            <button type="button" class="button" id="be-schema-populate-author-empty"><?php esc_html_e( 'Populate Empty', 'beseo' ); ?></button>
+                                            <button type="button" class="button" id="be-schema-overwrite-author-globals"><?php esc_html_e( 'Overwrite Globals', 'beseo' ); ?></button>
+                                            <span class="description" id="be-schema-populate-author-status"></span>
+                                        </div>
+                                    </div>
                                     <p class="description"><?php esc_html_e( 'Use Website Entity for author by default, or choose Global Override to edit fields below.', 'beseo' ); ?></p>
                                     <?php if ( ! empty( $author_warnings ) ) : ?>
                                         <div class="notice notice-warning inline" style="margin-top:8px;">
                                             <p><?php echo wp_kses_post( implode( '<br />', $author_warnings ) ); ?></p>
                                         </div>
                                     <?php endif; ?>
+                                    <hr class="be-schema-global-divider" />
                                 </td>
                             </tr>
                             <tr>
@@ -1403,8 +1411,6 @@ function be_schema_engine_render_schema_page() {
                                                data-override-value="<?php echo esc_attr( $global_author_name ); ?>"
                                                data-website-value="<?php echo esc_attr( $website_author_name ); ?>"
                                                <?php disabled( ! $use_override ); ?> />
-                                        <button type="button" class="button" id="be-schema-populate-author-empty"><?php esc_html_e( 'Populate Empty', 'beseo' ); ?></button>
-                                        <span class="description" id="be-schema-populate-author-status"></span>
                                     </div>
                                     <p class="description"><?php esc_html_e( 'Name used as the default author when missing. “Populate Empty” writes name/type/URL to images without a Schema creator.', 'beseo' ); ?></p>
                                 </td>
@@ -1466,6 +1472,7 @@ function be_schema_engine_render_schema_page() {
         });
 
         var $btn = $('#be-schema-populate-author-empty');
+        var $overwriteBtn = $('#be-schema-overwrite-author-globals');
         var $nameInput = $('input[name="be_schema_global_author_name"]');
         var $typeSelect = $('select[name="be_schema_global_author_type"]');
         var $status = $('#be-schema-populate-author-status');
@@ -1498,6 +1505,38 @@ function be_schema_engine_render_schema_page() {
                     if($status.length){ $status.text('<?php echo esc_js( __( 'Populate failed.', 'beseo' ) ); ?>'); }
                 }).always(function(){
                     $btn.prop('disabled', false);
+                });
+            });
+        }
+
+        if($overwriteBtn.length){
+            $overwriteBtn.on('click', function(e){
+                e.preventDefault();
+                var mode = $authorMode.filter(':checked').val() || 'website';
+                var creator = '';
+                var creatorType = $typeSelect.val() || 'Person';
+                if(mode === 'override'){
+                    creator = $nameInput.val().trim();
+                    if(!creator){
+                        alert('<?php echo esc_js( __( 'Set a Global author name first.', 'beseo' ) ); ?>');
+                        return;
+                    }
+                }
+                $overwriteBtn.prop('disabled', true);
+                if($status.length){ $status.text('<?php echo esc_js( __( 'Overwriting…', 'beseo' ) ); ?>'); }
+                $.post(ajaxurl, {
+                    action: 'be_schema_overwrite_creator_globals',
+                    nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_overwrite_creator_globals' ) ); ?>',
+                    creator: creator,
+                    creator_type: creatorType,
+                    mode: mode
+                }).done(function(resp){
+                    var msg = (resp && resp.data && resp.data.message) ? resp.data.message : '<?php echo esc_js( __( 'Completed.', 'beseo' ) ); ?>';
+                    if($status.length){ $status.text(msg); }
+                }).fail(function(){
+                    if($status.length){ $status.text('<?php echo esc_js( __( 'Overwrite failed.', 'beseo' ) ); ?>'); }
+                }).always(function(){
+                    $overwriteBtn.prop('disabled', false);
                 });
             });
         }
