@@ -904,10 +904,6 @@ function be_schema_get_site_entities() {
         $website_node['description'] = $site_desc_clean;
     }
 
-    if ( $site_desc_clean ) {
-        $website_node['alternateName'] = $site_desc_clean;
-    }
-
     if ( $logo_node ) {
         $website_node['logo'] = array(
             '@id' => $logo_node['@id'],

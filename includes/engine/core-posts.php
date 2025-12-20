@@ -938,20 +938,38 @@ function be_schema_output_post_schema() {
 		return;
 	}
 
-	$webpage    = be_schema_build_post_webpage_node( $post );
-	$blogposting = be_schema_build_blogposting_node( $post );
+	$skip_post_nodes = false;
+	if ( is_front_page() ) {
+		$skip_post_nodes = true;
+	}
+
+	if ( function_exists( 'be_schema_get_elementor_page_type' ) ) {
+		$page_type = be_schema_get_elementor_page_type( $post_id );
+		$special_types = array( 'contact', 'about', 'privacy-policy', 'accessibility-statement' );
+		if ( $page_type && in_array( $page_type, $special_types, true ) ) {
+			$skip_post_nodes = true;
+		}
+	}
+
+	$graph = array();
+	if ( ! $skip_post_nodes ) {
+		$webpage    = be_schema_build_post_webpage_node( $post );
+		$blogposting = be_schema_build_blogposting_node( $post );
+		$graph[] = $webpage;
+		$graph[] = $blogposting;
+	}
+
 	$faq_nodes   = be_schema_build_faq_schema( $post );
 	$howto_nodes = be_schema_build_howto_schema( $post );
-
-	$graph = array(
-		$webpage,
-		$blogposting,
-	);
 	if ( $faq_nodes ) {
 		$graph = array_merge( $graph, $faq_nodes );
 	}
 	if ( $howto_nodes ) {
 		$graph = array_merge( $graph, $howto_nodes );
+	}
+
+	if ( empty( $graph ) ) {
+		return;
 	}
 
 	$payload = array(

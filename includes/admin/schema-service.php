@@ -697,7 +697,8 @@ if ( ! function_exists( 'be_schema_admin_build_preview_graph' ) ) {
         }
 
         $front_page_id = (int) get_option( 'page_on_front' );
-        if ( $front_page_id && $post_id === $front_page_id ) {
+        $is_front_page = ( $front_page_id && $post_id === $front_page_id );
+        if ( $is_front_page ) {
             $graph_nodes[] = be_schema_build_webpage_node(
                 $post_id,
                 'WebPage',
@@ -715,7 +716,8 @@ if ( ! function_exists( 'be_schema_admin_build_preview_graph' ) ) {
             'privacy-policy'          => 'PrivacyPolicy',
             'accessibility-statement' => 'WebPage',
         );
-        if ( $page_type && isset( $type_map[ $page_type ] ) ) {
+        $is_special_page = ( $page_type && isset( $type_map[ $page_type ] ) );
+        if ( $is_special_page ) {
             $graph_nodes[] = be_schema_build_webpage_node(
                 $post_id,
                 $type_map[ $page_type ],
@@ -726,8 +728,10 @@ if ( ! function_exists( 'be_schema_admin_build_preview_graph' ) ) {
             );
         }
 
-        $graph_nodes[] = be_schema_build_post_webpage_node( $post );
-        $graph_nodes[] = be_schema_build_blogposting_node( $post );
+        if ( ! $is_front_page && ! $is_special_page ) {
+            $graph_nodes[] = be_schema_build_post_webpage_node( $post );
+            $graph_nodes[] = be_schema_build_blogposting_node( $post );
+        }
 
         $faq_nodes = be_schema_build_faq_schema( $post );
         if ( $faq_nodes ) {
