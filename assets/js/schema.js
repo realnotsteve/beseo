@@ -794,13 +794,70 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
 
+                    function escapeHtml(text) {
+                        return (text || '').replace(/[&<>"']/g, function (char) {
+                            switch (char) {
+                                case '&':
+                                    return '&amp;';
+                                case '<':
+                                    return '&lt;';
+                                case '>':
+                                    return '&gt;';
+                                case '"':
+                                    return '&quot;';
+                                case "'":
+                                    return '&#39;';
+                                default:
+                                    return char;
+                            }
+                        });
+                    }
+
+                    function highlightJson(text) {
+                        var source = (text || '').toString();
+                        var regex = /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g;
+                        var result = '';
+                        var lastIndex = 0;
+                        var match;
+                        while ((match = regex.exec(source)) !== null) {
+                            var token = match[0];
+                            var index = match.index;
+                            result += escapeHtml(source.slice(lastIndex, index));
+                            var cls = 'json-number';
+                            if (token.charAt(0) === '"') {
+                                if (/:$/.test(token)) {
+                                    cls = 'json-key';
+                                } else {
+                                    cls = 'json-string';
+                                }
+                            } else if (token === 'true' || token === 'false') {
+                                cls = 'json-boolean';
+                            } else if (token === 'null') {
+                                cls = 'json-null';
+                            }
+                            result += '<span class="' + cls + '">' + escapeHtml(token) + '</span>';
+                            lastIndex = index + token.length;
+                        }
+                        result += escapeHtml(source.slice(lastIndex));
+                        return result;
+                    }
+
+                    function setJsonOutput(text) {
+                        if (!jsonEl) {
+                            return;
+                        }
+                        if (jsonEl.tagName === 'TEXTAREA') {
+                            jsonEl.value = text || '';
+                            return;
+                        }
+                        jsonEl.innerHTML = highlightJson(text || '');
+                    }
+
                     function clearPreview() {
                         if (graphEl) {
                             graphEl.innerHTML = '';
                         }
-                        if (jsonEl) {
-                            jsonEl.value = '';
-                        }
+                        setJsonOutput('');
                         setCounts(0, 0);
                     }
 
@@ -1015,9 +1072,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         renderGraph(parsed.nodes, edges);
                         setCounts(parsed.nodes.length, edges.length);
 
-                        if (jsonEl) {
-                            jsonEl.value = JSON.stringify(graphPayload, null, 2);
-                        }
+                        setJsonOutput(JSON.stringify(graphPayload, null, 2));
 
                         var message = 'Preview loaded.';
                         if (payload.target && payload.target.title) {

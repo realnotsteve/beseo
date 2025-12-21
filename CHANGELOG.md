@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.31] - 2025-12-20
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- assets/css/schema.css
+- assets/js/schema.js
+- includes/admin/schema-view-preview.php
+
+
 ## [2.1.30] - 2025-12-19
 Summary: Engine.
 

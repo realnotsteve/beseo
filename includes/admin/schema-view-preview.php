@@ -41,8 +41,8 @@ function be_schema_engine_render_schema_tab_preview() {
         <div class="be-schema-global-section be-schema-preview-canvas">
             <h4 class="be-schema-section-title"><?php esc_html_e( 'Graph', 'beseo' ); ?></h4>
             <div id="be-schema-preview-graph" class="be-schema-preview-graph"></div>
-            <label class="be-schema-preview-json-label" for="be-schema-preview-json"><?php esc_html_e( 'Raw JSON-LD', 'beseo' ); ?></label>
-            <textarea id="be-schema-preview-json" class="large-text code" rows="10" readonly></textarea>
+            <label class="be-schema-preview-json-label" id="be-schema-preview-json-label"><?php esc_html_e( 'Raw JSON-LD', 'beseo' ); ?></label>
+            <pre class="be-schema-preview-json" role="textbox" aria-readonly="true" aria-labelledby="be-schema-preview-json-label"><code id="be-schema-preview-json" class="be-schema-json-code"></code></pre>
         </div>
     </div>
     <?php

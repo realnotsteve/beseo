@@ -667,3 +667,42 @@
                 margin-top: 12px;
                 font-weight: 600;
             }
+
+            .be-schema-preview-json {
+                margin-top: 8px;
+                padding: 12px;
+                background: #f6f7fb;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                min-height: 220px;
+                max-height: 360px;
+                overflow: auto;
+            }
+
+            .be-schema-json-code {
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+                font-size: 12px;
+                line-height: 1.5;
+                color: #1d2327;
+                white-space: pre;
+            }
+
+            .be-schema-json-code .json-key {
+                color: #1d4ed8;
+            }
+
+            .be-schema-json-code .json-string {
+                color: #047857;
+            }
+
+            .be-schema-json-code .json-number {
+                color: #b45309;
+            }
+
+            .be-schema-json-code .json-boolean {
+                color: #7c3aed;
+            }
+
+            .be-schema-json-code .json-null {
+                color: #6b7280;
+            }
