@@ -3,7 +3,7 @@
  * Plugin Name:       BESEO
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
- * Version:           2.1.31.11
+ * Version:           2.1.32.11
  * Author:            Bill Evans
  * Author URI:        https://billevans.be/
  * Text Domain:       beseo
@@ -84,6 +84,7 @@ require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-breadcrumbs.php
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-elementor.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-social.php';
 require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-sitemap.php';
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/engine/core-playfair.php';
 
 /**
  * -------------------------------------------------------------------------
@@ -171,6 +172,11 @@ add_action(
 
 if ( is_admin() ) {
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/admin-menu.php';
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/playfair-admin.php';
+}
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/cli/playfair-cli.php';
 }
 
 /**

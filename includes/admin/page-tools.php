@@ -514,6 +514,12 @@ function be_schema_engine_render_tools_page() {
             'type'  => 'post',
         );
     }
+    $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
+    $playfair_defaults = array(
+        'mode'    => isset( $settings['playfair_target_mode'] ) ? $settings['playfair_target_mode'] : 'auto',
+        'profile' => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
+        'wait_ms' => isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500,
+    );
 
     wp_enqueue_script(
         'be-schema-help-accent',
@@ -538,7 +544,7 @@ function be_schema_engine_render_tools_page() {
         } else {
             $tools_default_tab = 'help';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'images' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'images', 'playfair' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
@@ -932,6 +938,92 @@ function be_schema_engine_render_tools_page() {
                 color: #1d2327;
                 border-bottom: 1px solid #fff;
             }
+            .be-schema-playfair-box {
+                border: 1px solid #ccd0d4;
+                background: #fff;
+                border-radius: 6px;
+                padding: 16px;
+                margin-top: 12px;
+            }
+            .be-schema-playfair-form {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .be-schema-playfair-row {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .be-schema-playfair-row label {
+                font-weight: 600;
+            }
+            .be-schema-playfair-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .be-schema-playfair-status {
+                padding: 8px 10px;
+                border-radius: 4px;
+                background: #f5f5f5;
+                color: #1d2327;
+                display: none;
+            }
+            .be-schema-playfair-status.is-active {
+                display: block;
+            }
+            .be-schema-playfair-status.is-error {
+                background: #fbeaea;
+                color: #8a1f11;
+            }
+            .be-schema-playfair-status.is-warning {
+                background: #fff4d6;
+            }
+            .be-schema-playfair-results {
+                margin-top: 16px;
+                display: none;
+            }
+            .be-schema-playfair-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 12px;
+                margin-top: 12px;
+            }
+            .be-schema-playfair-panel {
+                border: 1px solid #e2e4e7;
+                background: #f9fafb;
+                border-radius: 6px;
+                padding: 10px;
+            }
+            .be-schema-playfair-panel h4 {
+                margin: 0 0 8px 0;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #3c434a;
+            }
+            .be-schema-playfair-pre {
+                margin: 0;
+                max-height: 260px;
+                overflow: auto;
+                background: #fff;
+                border: 1px solid #e2e4e7;
+                border-radius: 4px;
+                padding: 8px;
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+                font-size: 12px;
+                white-space: pre-wrap;
+            }
+            .be-schema-playfair-meta {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 8px;
+                font-size: 12px;
+                color: #444;
+            }
         </style>
 
         <h2 class="nav-tab-wrapper">
@@ -943,6 +1035,7 @@ function be_schema_engine_render_tools_page() {
             <?php endif; ?>
             <?php if ( ! $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-images" class="nav-tab<?php echo ( 'images' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="images"><?php esc_html_e( 'Images', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-playfair" class="nav-tab<?php echo ( 'playfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="playfair"><?php esc_html_e( 'Playfair', 'beseo' ); ?></a>
             <?php endif; ?>
         </h2>
 
@@ -987,6 +1080,76 @@ function be_schema_engine_render_tools_page() {
                         <?php esc_html_e( 'Go to Schema Images', 'beseo' ); ?>
                     </a>
                 </p>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( ! $is_settings_submenu ) : ?>
+            <div id="be-schema-tools-playfair" class="be-schema-tools-panel<?php echo ( 'playfair' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <div class="be-schema-playfair-box">
+                    <h3><?php esc_html_e( 'Playfair Capture', 'beseo' ); ?></h3>
+                    <p class="description"><?php esc_html_e( 'Render a live page and collect schema + Open Graph outputs.', 'beseo' ); ?></p>
+                    <div class="be-schema-playfair-form">
+                        <label for="be-schema-playfair-target"><?php esc_html_e( 'Target URL or Post ID', 'beseo' ); ?></label>
+                        <input type="text" id="be-schema-playfair-target" class="regular-text" placeholder="<?php esc_attr_e( 'https://example.com or 123', 'beseo' ); ?>" />
+                        <div class="be-schema-playfair-row">
+                            <label for="be-schema-playfair-profile"><?php esc_html_e( 'Profile', 'beseo' ); ?></label>
+                            <select id="be-schema-playfair-profile">
+                                <option value="desktop_chromium" <?php selected( 'desktop_chromium', $playfair_defaults['profile'] ); ?>><?php esc_html_e( 'Desktop (Chromium)', 'beseo' ); ?></option>
+                                <option value="mobile_chromium" <?php selected( 'mobile_chromium', $playfair_defaults['profile'] ); ?>><?php esc_html_e( 'Mobile (Chromium)', 'beseo' ); ?></option>
+                                <option value="webkit" <?php selected( 'webkit', $playfair_defaults['profile'] ); ?>><?php esc_html_e( 'WebKit', 'beseo' ); ?></option>
+                            </select>
+                            <label for="be-schema-playfair-wait"><?php esc_html_e( 'Wait (ms)', 'beseo' ); ?></label>
+                            <input type="number" id="be-schema-playfair-wait" class="small-text" value="<?php echo esc_attr( $playfair_defaults['wait_ms'] ); ?>" min="0" max="60000" step="100" />
+                            <label for="be-schema-playfair-mode"><?php esc_html_e( 'Target', 'beseo' ); ?></label>
+                            <select id="be-schema-playfair-mode">
+                                <option value="auto" <?php selected( 'auto', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Auto', 'beseo' ); ?></option>
+                                <option value="local" <?php selected( 'local', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Force Local', 'beseo' ); ?></option>
+                                <option value="vps" <?php selected( 'vps', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Force VPS', 'beseo' ); ?></option>
+                            </select>
+                        </div>
+                        <div class="be-schema-playfair-actions">
+                            <button type="button" class="button" id="be-schema-playfair-home"><?php esc_html_e( 'Use Homepage', 'beseo' ); ?></button>
+                            <button type="button" class="button button-primary" id="be-schema-playfair-run"><?php esc_html_e( 'Run Capture', 'beseo' ); ?></button>
+                        </div>
+                        <div id="be-schema-playfair-status" class="be-schema-playfair-status" aria-live="polite"></div>
+                        <div class="be-schema-playfair-meta" id="be-schema-playfair-meta"></div>
+                    </div>
+                </div>
+
+                <div class="be-schema-playfair-results" id="be-schema-playfair-results">
+                    <div class="be-schema-playfair-grid">
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Schema (DOM)', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-dom"></pre>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Schema (Server)', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-server"></pre>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Open Graph (DOM)', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-dom"></pre>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Open Graph (Server)', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-server"></pre>
+                        </div>
+                    </div>
+                    <div class="be-schema-playfair-grid">
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Console', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-console"></pre>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Page Errors', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-pageerrors"></pre>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'Request Failed', 'beseo' ); ?></h4>
+                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-requestfailed"></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
     </div>
@@ -1778,6 +1941,223 @@ function be_schema_engine_render_tools_page() {
                 updateButtonState();
                 toggleCrops();
                 applyPreviewToggles();
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var playfairData = {
+                ajaxUrl: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
+                nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_playfair_capture' ) ); ?>',
+                homeUrl: '<?php echo esc_js( home_url( '/' ) ); ?>'
+            };
+
+            function escapeHtml(text) {
+                return (text || '').toString().replace(/[&<>"']/g, function (char) {
+                    switch (char) {
+                        case '&':
+                            return '&amp;';
+                        case '<':
+                            return '&lt;';
+                        case '>':
+                            return '&gt;';
+                        case '"':
+                            return '&quot;';
+                        case "'":
+                            return '&#39;';
+                        default:
+                            return char;
+                    }
+                });
+            }
+
+            function setPre(el, data) {
+                if (!el) {
+                    return;
+                }
+                if (!data || (Array.isArray(data) && !data.length)) {
+                    el.textContent = '';
+                    return;
+                }
+                if (typeof data === 'string') {
+                    el.textContent = data;
+                    return;
+                }
+                el.textContent = JSON.stringify(data, null, 2);
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var runBtn = document.getElementById('be-schema-playfair-run');
+                if (!runBtn) {
+                    return;
+                }
+                var homeBtn = document.getElementById('be-schema-playfair-home');
+                var targetInput = document.getElementById('be-schema-playfair-target');
+                var profileSelect = document.getElementById('be-schema-playfair-profile');
+                var waitInput = document.getElementById('be-schema-playfair-wait');
+                var modeSelect = document.getElementById('be-schema-playfair-mode');
+                var statusEl = document.getElementById('be-schema-playfair-status');
+                var metaEl = document.getElementById('be-schema-playfair-meta');
+                var resultsEl = document.getElementById('be-schema-playfair-results');
+
+                var schemaDom = document.getElementById('be-schema-playfair-schema-dom');
+                var schemaServer = document.getElementById('be-schema-playfair-schema-server');
+                var ogDom = document.getElementById('be-schema-playfair-og-dom');
+                var ogServer = document.getElementById('be-schema-playfair-og-server');
+                var consoleEl = document.getElementById('be-schema-playfair-console');
+                var pageErrorsEl = document.getElementById('be-schema-playfair-pageerrors');
+                var requestFailedEl = document.getElementById('be-schema-playfair-requestfailed');
+
+                function setStatus(message, type) {
+                    if (!statusEl) {
+                        return;
+                    }
+                    statusEl.textContent = message || '';
+                    statusEl.className = 'be-schema-playfair-status';
+                    if (message) {
+                        statusEl.classList.add('is-active');
+                        if (type) {
+                            statusEl.classList.add(type);
+                        }
+                    }
+                }
+
+                function clearResults() {
+                    if (resultsEl) {
+                        resultsEl.style.display = 'none';
+                    }
+                    if (metaEl) {
+                        metaEl.innerHTML = '';
+                    }
+                    setPre(schemaDom, '');
+                    setPre(schemaServer, '');
+                    setPre(ogDom, '');
+                    setPre(ogServer, '');
+                    setPre(consoleEl, '');
+                    setPre(pageErrorsEl, '');
+                    setPre(requestFailedEl, '');
+                }
+
+                function renderMeta(meta, paths) {
+                    if (!metaEl) {
+                        return;
+                    }
+                    var lines = [];
+                    if (meta && meta.target) {
+                        lines.push('Target: ' + meta.target);
+                    }
+                    if (meta && meta.mode) {
+                        lines.push('Mode: ' + meta.mode);
+                    }
+                    if (meta && meta.endpoint) {
+                        lines.push('Endpoint: ' + meta.endpoint);
+                    }
+                    if (meta && meta.profile) {
+                        lines.push('Profile: ' + meta.profile);
+                    }
+                    if (meta && typeof meta.wait_ms !== 'undefined') {
+                        lines.push('Wait: ' + meta.wait_ms + 'ms');
+                    }
+                    if (paths && paths.capture_id) {
+                        lines.push('Capture: ' + paths.capture_id);
+                    }
+                    metaEl.innerHTML = lines.map(function (line) {
+                        return '<div>' + escapeHtml(line) + '</div>';
+                    }).join('');
+                }
+
+                function renderResult(payload) {
+                    if (resultsEl) {
+                        resultsEl.style.display = 'block';
+                    }
+                    renderMeta(payload.meta || {}, payload.paths || {});
+                    setPre(schemaDom, payload.schema ? payload.schema.dom : null);
+                    setPre(schemaServer, payload.schema ? payload.schema.server : null);
+                    setPre(ogDom, payload.opengraph ? payload.opengraph.dom : null);
+                    setPre(ogServer, payload.opengraph ? payload.opengraph.server : null);
+                    setPre(consoleEl, payload.logs ? payload.logs.console : null);
+                    setPre(pageErrorsEl, payload.logs ? payload.logs.pageerrors : null);
+                    setPre(requestFailedEl, payload.logs ? payload.logs.requestfailed : null);
+                }
+
+                function postCapture(payload, onSuccess, onError) {
+                    var body = Object.keys(payload).map(function (key) {
+                        return encodeURIComponent(key) + '=' + encodeURIComponent(payload[key]);
+                    }).join('&');
+
+                    if (window.fetch) {
+                        fetch(playfairData.ajaxUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                            body: body
+                        })
+                            .then(function (response) { return response.json(); })
+                            .then(onSuccess)
+                            .catch(onError);
+                        return;
+                    }
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', playfairData.ajaxUrl, true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState !== 4) {
+                            return;
+                        }
+                        try {
+                            var json = JSON.parse(xhr.responseText);
+                            onSuccess(json);
+                        } catch (err) {
+                            onError(err);
+                        }
+                    };
+                    xhr.send(body);
+                }
+
+                if (homeBtn) {
+                    homeBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        if (targetInput) {
+                            targetInput.value = playfairData.homeUrl;
+                        }
+                    });
+                }
+
+                runBtn.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var target = targetInput ? targetInput.value.trim() : '';
+                    if (!target) {
+                        setStatus('<?php echo esc_js( __( 'Enter a URL or post ID.', 'beseo' ) ); ?>', 'is-error');
+                        clearResults();
+                        return;
+                    }
+                    setStatus('<?php echo esc_js( __( 'Running capture…', 'beseo' ) ); ?>');
+                    clearResults();
+
+                    postCapture(
+                        {
+                            action: 'be_schema_playfair_capture',
+                            nonce: playfairData.nonce,
+                            url: target,
+                            profile: profileSelect ? profileSelect.value : '',
+                            wait_ms: waitInput ? waitInput.value : '',
+                            mode: modeSelect ? modeSelect.value : ''
+                        },
+                        function (response) {
+                            if (!response || !response.success) {
+                                var msg = (response && response.data && response.data.message) ? response.data.message : '<?php echo esc_js( __( 'Capture failed.', 'beseo' ) ); ?>';
+                                setStatus(msg, 'is-error');
+                                return;
+                            }
+                            renderResult(response.data);
+                            setStatus('<?php echo esc_js( __( 'Capture complete.', 'beseo' ) ); ?>');
+                        },
+                        function () {
+                            setStatus('<?php echo esc_js( __( 'Capture request failed.', 'beseo' ) ); ?>', 'is-error');
+                        }
+                    );
+                });
             });
         })();
     </script>

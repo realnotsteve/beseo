@@ -132,6 +132,34 @@ function be_schema_engine_save_settings() {
         $type = sanitize_text_field( wp_unslash( $_POST['be_schema_global_creator_type'] ) );
         $settings['global_creator_type'] = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
     }
+
+    // Playfair capture settings.
+    $settings['playfair_vps_endpoint'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_playfair_vps_endpoint'] ) ? wp_unslash( $_POST['be_schema_playfair_vps_endpoint'] ) : '',
+        __( 'Playfair VPS endpoint', 'beseo' ),
+        $validation_errors
+    );
+    $settings['playfair_vps_token'] = isset( $_POST['be_schema_playfair_vps_token'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_vps_token'] ) ) : '';
+    $settings['playfair_local_endpoint'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_playfair_local_endpoint'] ) ? wp_unslash( $_POST['be_schema_playfair_local_endpoint'] ) : '',
+        __( 'Playfair local endpoint', 'beseo' ),
+        $validation_errors
+    );
+    if ( isset( $_POST['be_schema_playfair_target_mode'] ) ) {
+        $mode = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_target_mode'] ) );
+        $settings['playfair_target_mode'] = in_array( $mode, array( 'auto', 'local', 'vps' ), true ) ? $mode : 'auto';
+    }
+    if ( isset( $_POST['be_schema_playfair_default_profile'] ) ) {
+        $profile = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_profile'] ) );
+        $settings['playfair_default_profile'] = in_array( $profile, array( 'desktop_chromium', 'mobile_chromium', 'webkit' ), true ) ? $profile : 'desktop_chromium';
+    }
+    if ( isset( $_POST['be_schema_playfair_default_wait_ms'] ) ) {
+        $wait_ms = absint( $_POST['be_schema_playfair_default_wait_ms'] );
+        if ( $wait_ms > 60000 ) {
+            $wait_ms = 60000;
+        }
+        $settings['playfair_default_wait_ms'] = $wait_ms;
+    }
     // Global author.
     $settings['global_author_mode'] = isset( $_POST['be_schema_global_author_mode'] ) && 'override' === $_POST['be_schema_global_author_mode'] ? 'override' : 'website';
     $settings['global_author_name'] = isset( $_POST['be_schema_global_author_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_global_author_name'] ) ) : '';

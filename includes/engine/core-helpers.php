@@ -94,6 +94,14 @@ function be_schema_engine_get_settings( $force_refresh = false ) {
 		// Image validation toggle (UI pill checks).
 		'image_validation_enabled' => '1',
 
+		// Playfair capture defaults.
+		'playfair_vps_endpoint'   => 'https://playfair.belexes.com/capture',
+		'playfair_vps_token'      => '',
+		'playfair_local_endpoint' => 'http://host.docker.internal:3719/capture',
+		'playfair_target_mode'    => 'auto',
+		'playfair_default_profile' => 'desktop_chromium',
+		'playfair_default_wait_ms' => 1500,
+
 		// Publisher custom organisation.
 		'publisher_custom_name' => '',
 		'publisher_custom_url'  => '',
