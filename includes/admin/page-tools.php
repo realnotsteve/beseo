@@ -3,6 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-service.php';
+
 add_action( 'wp_ajax_be_schema_validator_run', 'be_schema_engine_handle_validator_run' );
 
 /**
@@ -484,6 +486,9 @@ function be_schema_engine_render_tools_page() {
     $is_settings_submenu = ( 'beseo-settings' === $current_page );
     $help_notice         = '';
     $help_overrides      = array();
+    if ( $is_settings_submenu && isset( $_POST['be_schema_playfair_settings_submitted'] ) ) {
+        be_schema_engine_save_playfair_settings();
+    }
     $validator_pages     = get_pages(
         array(
             'post_status' => 'publish',
@@ -516,9 +521,13 @@ function be_schema_engine_render_tools_page() {
     }
     $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
     $playfair_defaults = array(
-        'mode'    => isset( $settings['playfair_target_mode'] ) ? $settings['playfair_target_mode'] : 'auto',
-        'profile' => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
-        'wait_ms' => isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500,
+        'mode'          => isset( $settings['playfair_mode'] ) ? $settings['playfair_mode'] : 'auto',
+        'profile'       => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
+        'wait_ms'       => isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500,
+        'include_html'  => ! empty( $settings['playfair_include_html_default'] ),
+        'include_logs'  => ! empty( $settings['playfair_include_logs_default'] ),
+        'locale'        => isset( $settings['playfair_default_locale'] ) ? $settings['playfair_default_locale'] : '',
+        'timezone'      => isset( $settings['playfair_default_timezone'] ) ? $settings['playfair_default_timezone'] : '',
     );
 
     wp_enqueue_script(
@@ -538,9 +547,12 @@ function be_schema_engine_render_tools_page() {
         }
     }
     if ( $is_settings_submenu ) {
-        // Default to Help tab if explicitly requested or after a save postback.
-        if ( ( $requested_tab && 'help' === $requested_tab ) || ! empty( $_POST['be_schema_help_overrides_nonce'] ) ) {
+        if ( ! empty( $_POST['be_schema_playfair_settings_submitted'] ) ) {
+            $tools_default_tab = 'wayfair';
+        } elseif ( ! empty( $_POST['be_schema_help_overrides_nonce'] ) ) {
             $tools_default_tab = 'help';
+        } elseif ( $requested_tab && in_array( $requested_tab, array( 'help', 'wayfair' ), true ) ) {
+            $tools_default_tab = $requested_tab;
         } else {
             $tools_default_tab = 'help';
         }
@@ -1032,6 +1044,7 @@ function be_schema_engine_render_tools_page() {
             <?php endif; ?>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair', 'beseo' ); ?></a>
             <?php endif; ?>
             <?php if ( ! $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-images" class="nav-tab<?php echo ( 'images' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="images"><?php esc_html_e( 'Images', 'beseo' ); ?></a>
@@ -1064,6 +1077,140 @@ function be_schema_engine_render_tools_page() {
                     echo '<p class="description">' . esc_html__( 'Help overrides are unavailable.', 'beseo' ) . '</p>';
                 }
                 ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( $is_settings_submenu ) : ?>
+            <div id="be-schema-tools-wayfair" class="be-schema-tools-panel<?php echo ( 'wayfair' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <?php settings_errors( 'be_schema_engine' ); ?>
+                <?php
+                $playfair_remote_base_url  = isset( $settings['playfair_remote_base_url'] ) ? $settings['playfair_remote_base_url'] : '';
+                $playfair_local_base_url   = isset( $settings['playfair_local_base_url'] ) ? $settings['playfair_local_base_url'] : '';
+                $playfair_mode             = isset( $settings['playfair_mode'] ) ? $settings['playfair_mode'] : 'auto';
+                $playfair_timeout          = isset( $settings['playfair_timeout_seconds'] ) ? (int) $settings['playfair_timeout_seconds'] : 60;
+                $playfair_include_html     = ! empty( $settings['playfair_include_html_default'] );
+                $playfair_include_logs     = ! empty( $settings['playfair_include_logs_default'] );
+                $playfair_default_profile  = isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium';
+                $playfair_default_wait_ms  = isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500;
+                $playfair_default_locale   = isset( $settings['playfair_default_locale'] ) ? $settings['playfair_default_locale'] : '';
+                $playfair_default_timezone = isset( $settings['playfair_default_timezone'] ) ? $settings['playfair_default_timezone'] : '';
+                $playfair_allow_private    = ! empty( $settings['playfair_allow_private_targets'] );
+                $playfair_token_set        = ! empty( $settings['playfair_remote_token'] );
+                ?>
+                <form method="post">
+                    <?php wp_nonce_field( 'be_schema_playfair_save_settings', 'be_schema_playfair_settings_nonce' ); ?>
+                    <input type="hidden" name="be_schema_playfair_settings_submitted" value="1" />
+
+                    <div class="be-schema-playfair-box">
+                        <h3><?php esc_html_e( 'Wayfair Settings', 'beseo' ); ?></h3>
+                        <p class="description"><?php esc_html_e( 'Configure Playfair capture endpoints and defaults.', 'beseo' ); ?></p>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Remote base URL', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="url" class="regular-text code" name="be_schema_playfair_remote_base_url" value="<?php echo esc_attr( $playfair_remote_base_url ); ?>" placeholder="https://playfair.belexes.com" />
+                                    <p class="description"><?php esc_html_e( 'Playfair remote base URL (uses /health and /capture).', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Remote token', 'beseo' ); ?></th>
+                                <td>
+                                    <?php if ( $playfair_token_set ) : ?>
+                                        <p class="description"><?php esc_html_e( 'Token saved (hidden).', 'beseo' ); ?></p>
+                                    <?php endif; ?>
+                                    <input type="password" class="regular-text" name="be_schema_playfair_remote_token_new" value="" placeholder="<?php echo $playfair_token_set ? '********' : ''; ?>" autocomplete="off" />
+                                    <label style="margin-left:8px;">
+                                        <input type="checkbox" name="be_schema_playfair_remote_token_clear" value="1" />
+                                        <?php esc_html_e( 'Clear token', 'beseo' ); ?>
+                                    </label>
+                                    <p class="description"><?php esc_html_e( 'Stored securely; never displayed in full.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Local base URL', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="url" class="regular-text code" name="be_schema_playfair_local_base_url" value="<?php echo esc_attr( $playfair_local_base_url ); ?>" placeholder="http://127.0.0.1:3719" />
+                                    <p class="description"><?php esc_html_e( 'Local Playfair base URL for workstation captures.', 'beseo' ); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Mode', 'beseo' ); ?></th>
+                                <td>
+                                    <label style="margin-right:12px;">
+                                        <input type="radio" name="be_schema_playfair_mode" value="auto" <?php checked( 'auto', $playfair_mode ); ?> />
+                                        <?php esc_html_e( 'Auto (try remote, then local)', 'beseo' ); ?>
+                                    </label>
+                                    <label style="margin-right:12px;">
+                                        <input type="radio" name="be_schema_playfair_mode" value="remote" <?php checked( 'remote', $playfair_mode ); ?> />
+                                        <?php esc_html_e( 'Remote (VPS)', 'beseo' ); ?>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="be_schema_playfair_mode" value="local" <?php checked( 'local', $playfair_mode ); ?> />
+                                        <?php esc_html_e( 'Local', 'beseo' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Timeout (seconds)', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="number" class="small-text" name="be_schema_playfair_timeout_seconds" value="<?php echo esc_attr( $playfair_timeout ); ?>" min="5" max="300" step="1" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Default profile', 'beseo' ); ?></th>
+                                <td>
+                                    <select name="be_schema_playfair_default_profile">
+                                        <option value="desktop_chromium" <?php selected( 'desktop_chromium', $playfair_default_profile ); ?>><?php esc_html_e( 'Desktop (Chromium)', 'beseo' ); ?></option>
+                                        <option value="mobile_chromium" <?php selected( 'mobile_chromium', $playfair_default_profile ); ?>><?php esc_html_e( 'Mobile (Chromium)', 'beseo' ); ?></option>
+                                        <option value="webkit" <?php selected( 'webkit', $playfair_default_profile ); ?>><?php esc_html_e( 'WebKit', 'beseo' ); ?></option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Default wait (ms)', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="number" class="small-text" name="be_schema_playfair_default_wait_ms" value="<?php echo esc_attr( $playfair_default_wait_ms ); ?>" min="0" max="60000" step="100" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Default locale', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="text" class="regular-text" name="be_schema_playfair_default_locale" value="<?php echo esc_attr( $playfair_default_locale ); ?>" placeholder="en-US" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Default timezone', 'beseo' ); ?></th>
+                                <td>
+                                    <input type="text" class="regular-text" name="be_schema_playfair_default_timezone" value="<?php echo esc_attr( $playfair_default_timezone ); ?>" placeholder="America/New_York" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Default options', 'beseo' ); ?></th>
+                                <td>
+                                    <label style="margin-right:12px;">
+                                        <input type="checkbox" name="be_schema_playfair_include_html_default" value="1" <?php checked( $playfair_include_html ); ?> />
+                                        <?php esc_html_e( 'Include HTML', 'beseo' ); ?>
+                                    </label>
+                                    <label>
+                                        <input type="checkbox" name="be_schema_playfair_include_logs_default" value="1" <?php checked( $playfair_include_logs ); ?> />
+                                        <?php esc_html_e( 'Include logs', 'beseo' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Developer mode', 'beseo' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="be_schema_playfair_allow_private_targets" value="1" <?php checked( $playfair_allow_private ); ?> />
+                                        <?php esc_html_e( 'Allow private/local targets (SSRF risk)', 'beseo' ); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <?php submit_button( __( 'Save Wayfair Settings', 'beseo' ) ); ?>
+                </form>
             </div>
         <?php endif; ?>
 
@@ -1100,15 +1247,31 @@ function be_schema_engine_render_tools_page() {
                             </select>
                             <label for="be-schema-playfair-wait"><?php esc_html_e( 'Wait (ms)', 'beseo' ); ?></label>
                             <input type="number" id="be-schema-playfair-wait" class="small-text" value="<?php echo esc_attr( $playfair_defaults['wait_ms'] ); ?>" min="0" max="60000" step="100" />
-                            <label for="be-schema-playfair-mode"><?php esc_html_e( 'Target', 'beseo' ); ?></label>
+                            <label for="be-schema-playfair-mode"><?php esc_html_e( 'Mode', 'beseo' ); ?></label>
                             <select id="be-schema-playfair-mode">
                                 <option value="auto" <?php selected( 'auto', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Auto', 'beseo' ); ?></option>
                                 <option value="local" <?php selected( 'local', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Force Local', 'beseo' ); ?></option>
-                                <option value="vps" <?php selected( 'vps', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Force VPS', 'beseo' ); ?></option>
+                                <option value="remote" <?php selected( 'remote', $playfair_defaults['mode'] ); ?>><?php esc_html_e( 'Force Remote', 'beseo' ); ?></option>
                             </select>
+                        </div>
+                        <div class="be-schema-playfair-row">
+                            <label for="be-schema-playfair-locale"><?php esc_html_e( 'Locale', 'beseo' ); ?></label>
+                            <input type="text" id="be-schema-playfair-locale" class="regular-text" value="<?php echo esc_attr( $playfair_defaults['locale'] ); ?>" placeholder="en-US" />
+                            <label for="be-schema-playfair-timezone"><?php esc_html_e( 'Timezone', 'beseo' ); ?></label>
+                            <input type="text" id="be-schema-playfair-timezone" class="regular-text" value="<?php echo esc_attr( $playfair_defaults['timezone'] ); ?>" placeholder="America/New_York" />
+                            <label>
+                                <input type="checkbox" id="be-schema-playfair-include-html" <?php checked( $playfair_defaults['include_html'] ); ?> />
+                                <?php esc_html_e( 'Include HTML', 'beseo' ); ?>
+                            </label>
+                            <label>
+                                <input type="checkbox" id="be-schema-playfair-include-logs" <?php checked( $playfair_defaults['include_logs'] ); ?> />
+                                <?php esc_html_e( 'Include logs', 'beseo' ); ?>
+                            </label>
                         </div>
                         <div class="be-schema-playfair-actions">
                             <button type="button" class="button" id="be-schema-playfair-home"><?php esc_html_e( 'Use Homepage', 'beseo' ); ?></button>
+                            <button type="button" class="button" id="be-schema-playfair-health"><?php esc_html_e( 'Health Check', 'beseo' ); ?></button>
+                            <button type="button" class="button" id="be-schema-playfair-test"><?php esc_html_e( 'Run Test', 'beseo' ); ?></button>
                             <button type="button" class="button button-primary" id="be-schema-playfair-run"><?php esc_html_e( 'Run Capture', 'beseo' ); ?></button>
                         </div>
                         <div id="be-schema-playfair-status" class="be-schema-playfair-status" aria-live="polite"></div>
@@ -1120,33 +1283,70 @@ function be_schema_engine_render_tools_page() {
                     <div class="be-schema-playfair-grid">
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Schema (DOM)', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-dom"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-dom"></pre>
+                            </details>
                         </div>
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Schema (Server)', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-server"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-schema-server"></pre>
+                            </details>
                         </div>
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Open Graph (DOM)', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-dom"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-dom"></pre>
+                            </details>
                         </div>
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Open Graph (Server)', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-server"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-og-server"></pre>
+                            </details>
+                        </div>
+                    </div>
+                    <div class="be-schema-playfair-grid" id="be-schema-playfair-html">
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'HTML (DOM)', 'beseo' ); ?></h4>
+                            <details>
+                                <summary><?php esc_html_e( 'View HTML', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-html-dom"></pre>
+                            </details>
+                        </div>
+                        <div class="be-schema-playfair-panel">
+                            <h4><?php esc_html_e( 'HTML (Server)', 'beseo' ); ?></h4>
+                            <details>
+                                <summary><?php esc_html_e( 'View HTML', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-html-server"></pre>
+                            </details>
                         </div>
                     </div>
                     <div class="be-schema-playfair-grid">
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Console', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-console"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-console"></pre>
+                            </details>
                         </div>
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Page Errors', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-pageerrors"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-pageerrors"></pre>
+                            </details>
                         </div>
                         <div class="be-schema-playfair-panel">
                             <h4><?php esc_html_e( 'Request Failed', 'beseo' ); ?></h4>
-                            <pre class="be-schema-playfair-pre" id="be-schema-playfair-requestfailed"></pre>
+                            <details>
+                                <summary><?php esc_html_e( 'View JSON', 'beseo' ); ?></summary>
+                                <pre class="be-schema-playfair-pre" id="be-schema-playfair-requestfailed"></pre>
+                            </details>
                         </div>
                     </div>
                 </div>
@@ -1948,8 +2148,10 @@ function be_schema_engine_render_tools_page() {
         (function() {
             var playfairData = {
                 ajaxUrl: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
-                nonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_playfair_capture' ) ); ?>',
-                homeUrl: '<?php echo esc_js( home_url( '/' ) ); ?>'
+                captureNonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_playfair_capture' ) ); ?>',
+                healthNonce: '<?php echo esc_js( wp_create_nonce( 'be_schema_playfair_health' ) ); ?>',
+                homeUrl: '<?php echo esc_js( home_url( '/' ) ); ?>',
+                testUrl: 'https://example.com/'
             };
 
             function escapeHtml(text) {
@@ -1986,24 +2188,37 @@ function be_schema_engine_render_tools_page() {
                 el.textContent = JSON.stringify(data, null, 2);
             }
 
+            function countList(list) {
+                return Array.isArray(list) ? list.length : 0;
+            }
+
             document.addEventListener('DOMContentLoaded', function () {
                 var runBtn = document.getElementById('be-schema-playfair-run');
                 if (!runBtn) {
                     return;
                 }
                 var homeBtn = document.getElementById('be-schema-playfair-home');
+                var healthBtn = document.getElementById('be-schema-playfair-health');
+                var testBtn = document.getElementById('be-schema-playfair-test');
                 var targetInput = document.getElementById('be-schema-playfair-target');
                 var profileSelect = document.getElementById('be-schema-playfair-profile');
                 var waitInput = document.getElementById('be-schema-playfair-wait');
                 var modeSelect = document.getElementById('be-schema-playfair-mode');
+                var localeInput = document.getElementById('be-schema-playfair-locale');
+                var timezoneInput = document.getElementById('be-schema-playfair-timezone');
+                var includeHtmlInput = document.getElementById('be-schema-playfair-include-html');
+                var includeLogsInput = document.getElementById('be-schema-playfair-include-logs');
                 var statusEl = document.getElementById('be-schema-playfair-status');
                 var metaEl = document.getElementById('be-schema-playfair-meta');
                 var resultsEl = document.getElementById('be-schema-playfair-results');
+                var htmlWrap = document.getElementById('be-schema-playfair-html');
 
                 var schemaDom = document.getElementById('be-schema-playfair-schema-dom');
                 var schemaServer = document.getElementById('be-schema-playfair-schema-server');
                 var ogDom = document.getElementById('be-schema-playfair-og-dom');
                 var ogServer = document.getElementById('be-schema-playfair-og-server');
+                var htmlDom = document.getElementById('be-schema-playfair-html-dom');
+                var htmlServer = document.getElementById('be-schema-playfair-html-server');
                 var consoleEl = document.getElementById('be-schema-playfair-console');
                 var pageErrorsEl = document.getElementById('be-schema-playfair-pageerrors');
                 var requestFailedEl = document.getElementById('be-schema-playfair-requestfailed');
@@ -2029,16 +2244,21 @@ function be_schema_engine_render_tools_page() {
                     if (metaEl) {
                         metaEl.innerHTML = '';
                     }
+                    if (htmlWrap) {
+                        htmlWrap.style.display = 'none';
+                    }
                     setPre(schemaDom, '');
                     setPre(schemaServer, '');
                     setPre(ogDom, '');
                     setPre(ogServer, '');
+                    setPre(htmlDom, '');
+                    setPre(htmlServer, '');
                     setPre(consoleEl, '');
                     setPre(pageErrorsEl, '');
                     setPre(requestFailedEl, '');
                 }
 
-                function renderMeta(meta, paths) {
+                function renderMeta(meta, payload) {
                     if (!metaEl) {
                         return;
                     }
@@ -2058,8 +2278,16 @@ function be_schema_engine_render_tools_page() {
                     if (meta && typeof meta.wait_ms !== 'undefined') {
                         lines.push('Wait: ' + meta.wait_ms + 'ms');
                     }
-                    if (paths && paths.capture_id) {
-                        lines.push('Capture: ' + paths.capture_id);
+                    if (meta && meta.fallback) {
+                        lines.push('Fallback: remote failed' + (meta.fallback_error ? ' (' + meta.fallback_error + ')' : ''));
+                    }
+                    if (payload && payload.schema) {
+                        lines.push('Schema DOM: ' + countList(payload.schema.dom));
+                        lines.push('Schema Server: ' + countList(payload.schema.server));
+                    }
+                    if (payload && payload.opengraph) {
+                        lines.push('OG DOM: ' + countList(payload.opengraph.dom));
+                        lines.push('OG Server: ' + countList(payload.opengraph.server));
                     }
                     metaEl.innerHTML = lines.map(function (line) {
                         return '<div>' + escapeHtml(line) + '</div>';
@@ -2070,17 +2298,27 @@ function be_schema_engine_render_tools_page() {
                     if (resultsEl) {
                         resultsEl.style.display = 'block';
                     }
-                    renderMeta(payload.meta || {}, payload.paths || {});
+                    renderMeta(payload.meta || {}, payload);
                     setPre(schemaDom, payload.schema ? payload.schema.dom : null);
                     setPre(schemaServer, payload.schema ? payload.schema.server : null);
                     setPre(ogDom, payload.opengraph ? payload.opengraph.dom : null);
                     setPre(ogServer, payload.opengraph ? payload.opengraph.server : null);
                     setPre(consoleEl, payload.logs ? payload.logs.console : null);
-                    setPre(pageErrorsEl, payload.logs ? payload.logs.pageerrors : null);
-                    setPre(requestFailedEl, payload.logs ? payload.logs.requestfailed : null);
+                    setPre(pageErrorsEl, payload.logs ? payload.logs.pageErrors : null);
+                    setPre(requestFailedEl, payload.logs ? payload.logs.requestFailed : null);
+
+                    if (payload.html && (payload.html.dom || payload.html.server)) {
+                        if (htmlWrap) {
+                            htmlWrap.style.display = 'grid';
+                        }
+                        setPre(htmlDom, payload.html.dom || '');
+                        setPre(htmlServer, payload.html.server || '');
+                    } else if (htmlWrap) {
+                        htmlWrap.style.display = 'none';
+                    }
                 }
 
-                function postCapture(payload, onSuccess, onError) {
+                function postAction(payload, onSuccess, onError) {
                     var body = Object.keys(payload).map(function (key) {
                         return encodeURIComponent(key) + '=' + encodeURIComponent(payload[key]);
                     }).join('&');
@@ -2115,12 +2353,99 @@ function be_schema_engine_render_tools_page() {
                     xhr.send(body);
                 }
 
+                function buildCapturePayload(target) {
+                    return {
+                        action: 'be_schema_playfair_capture',
+                        nonce: playfairData.captureNonce,
+                        url: target,
+                        profile: profileSelect ? profileSelect.value : '',
+                        wait_ms: waitInput ? waitInput.value : '',
+                        mode: modeSelect ? modeSelect.value : '',
+                        include_html: includeHtmlInput && includeHtmlInput.checked ? '1' : '0',
+                        include_logs: includeLogsInput && includeLogsInput.checked ? '1' : '0',
+                        locale: localeInput ? localeInput.value : '',
+                        timezone_id: timezoneInput ? timezoneInput.value : ''
+                    };
+                }
+
                 if (homeBtn) {
                     homeBtn.addEventListener('click', function (event) {
                         event.preventDefault();
                         if (targetInput) {
                             targetInput.value = playfairData.homeUrl;
                         }
+                    });
+                }
+
+                if (healthBtn) {
+                    healthBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        setStatus('<?php echo esc_js( __( 'Checking health…', 'beseo' ) ); ?>');
+                        clearResults();
+                        postAction(
+                            {
+                                action: 'be_schema_playfair_health',
+                                nonce: playfairData.healthNonce,
+                                mode: modeSelect ? modeSelect.value : ''
+                            },
+                            function (response) {
+                                if (!response || !response.success) {
+                                    var msg = (response && response.data && response.data.message) ? response.data.message : '<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>';
+                                    setStatus(msg, 'is-error');
+                                    return;
+                                }
+                                setStatus('<?php echo esc_js( __( 'Health check OK.', 'beseo' ) ); ?>');
+                            },
+                            function () {
+                                setStatus('<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>', 'is-error');
+                            }
+                        );
+                    });
+                }
+
+                if (testBtn) {
+                    testBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        setStatus('<?php echo esc_js( __( 'Running test…', 'beseo' ) ); ?>');
+                        clearResults();
+                        postAction(
+                            {
+                                action: 'be_schema_playfair_health',
+                                nonce: playfairData.healthNonce,
+                                mode: modeSelect ? modeSelect.value : ''
+                            },
+                            function (healthResponse) {
+                                if (!healthResponse || !healthResponse.success) {
+                                    var msg = (healthResponse && healthResponse.data && healthResponse.data.message) ? healthResponse.data.message : '<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>';
+                                    setStatus(msg, 'is-error');
+                                    return;
+                                }
+                                postAction(
+                                    buildCapturePayload(playfairData.testUrl),
+                                    function (captureResponse) {
+                                        if (!captureResponse || !captureResponse.success) {
+                                            var msg2 = (captureResponse && captureResponse.data && captureResponse.data.message) ? captureResponse.data.message : '<?php echo esc_js( __( 'Test capture failed.', 'beseo' ) ); ?>';
+                                            setStatus(msg2, 'is-error');
+                                            return;
+                                        }
+                                        renderResult(captureResponse.data);
+                                        var testMsg = '<?php echo esc_js( __( 'Test complete.', 'beseo' ) ); ?>';
+                                        var testType = '';
+                                        if (captureResponse.data && captureResponse.data.meta && captureResponse.data.meta.fallback) {
+                                            testMsg = '<?php echo esc_js( __( 'Test complete (remote failed, used local).', 'beseo' ) ); ?>';
+                                            testType = 'is-warning';
+                                        }
+                                        setStatus(testMsg, testType);
+                                    },
+                                    function () {
+                                        setStatus('<?php echo esc_js( __( 'Test capture failed.', 'beseo' ) ); ?>', 'is-error');
+                                    }
+                                );
+                            },
+                            function () {
+                                setStatus('<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>', 'is-error');
+                            }
+                        );
                     });
                 }
 
@@ -2135,15 +2460,8 @@ function be_schema_engine_render_tools_page() {
                     setStatus('<?php echo esc_js( __( 'Running capture…', 'beseo' ) ); ?>');
                     clearResults();
 
-                    postCapture(
-                        {
-                            action: 'be_schema_playfair_capture',
-                            nonce: playfairData.nonce,
-                            url: target,
-                            profile: profileSelect ? profileSelect.value : '',
-                            wait_ms: waitInput ? waitInput.value : '',
-                            mode: modeSelect ? modeSelect.value : ''
-                        },
+                    postAction(
+                        buildCapturePayload(target),
                         function (response) {
                             if (!response || !response.success) {
                                 var msg = (response && response.data && response.data.message) ? response.data.message : '<?php echo esc_js( __( 'Capture failed.', 'beseo' ) ); ?>';
@@ -2151,7 +2469,13 @@ function be_schema_engine_render_tools_page() {
                                 return;
                             }
                             renderResult(response.data);
-                            setStatus('<?php echo esc_js( __( 'Capture complete.', 'beseo' ) ); ?>');
+                            var captureMsg = '<?php echo esc_js( __( 'Capture complete.', 'beseo' ) ); ?>';
+                            var captureType = '';
+                            if (response.data && response.data.meta && response.data.meta.fallback) {
+                                captureMsg = '<?php echo esc_js( __( 'Capture complete (remote failed, used local).', 'beseo' ) ); ?>';
+                                captureType = 'is-warning';
+                            }
+                            setStatus(captureMsg, captureType);
                         },
                         function () {
                             setStatus('<?php echo esc_js( __( 'Capture request failed.', 'beseo' ) ); ?>', 'is-error');

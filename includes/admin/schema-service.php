@@ -133,33 +133,6 @@ function be_schema_engine_save_settings() {
         $settings['global_creator_type'] = in_array( $type, array( 'Person', 'Organisation' ), true ) ? $type : 'Person';
     }
 
-    // Playfair capture settings.
-    $settings['playfair_vps_endpoint'] = be_schema_engine_validate_url_field(
-        isset( $_POST['be_schema_playfair_vps_endpoint'] ) ? wp_unslash( $_POST['be_schema_playfair_vps_endpoint'] ) : '',
-        __( 'Playfair VPS endpoint', 'beseo' ),
-        $validation_errors
-    );
-    $settings['playfair_vps_token'] = isset( $_POST['be_schema_playfair_vps_token'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_vps_token'] ) ) : '';
-    $settings['playfair_local_endpoint'] = be_schema_engine_validate_url_field(
-        isset( $_POST['be_schema_playfair_local_endpoint'] ) ? wp_unslash( $_POST['be_schema_playfair_local_endpoint'] ) : '',
-        __( 'Playfair local endpoint', 'beseo' ),
-        $validation_errors
-    );
-    if ( isset( $_POST['be_schema_playfair_target_mode'] ) ) {
-        $mode = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_target_mode'] ) );
-        $settings['playfair_target_mode'] = in_array( $mode, array( 'auto', 'local', 'vps' ), true ) ? $mode : 'auto';
-    }
-    if ( isset( $_POST['be_schema_playfair_default_profile'] ) ) {
-        $profile = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_profile'] ) );
-        $settings['playfair_default_profile'] = in_array( $profile, array( 'desktop_chromium', 'mobile_chromium', 'webkit' ), true ) ? $profile : 'desktop_chromium';
-    }
-    if ( isset( $_POST['be_schema_playfair_default_wait_ms'] ) ) {
-        $wait_ms = absint( $_POST['be_schema_playfair_default_wait_ms'] );
-        if ( $wait_ms > 60000 ) {
-            $wait_ms = 60000;
-        }
-        $settings['playfair_default_wait_ms'] = $wait_ms;
-    }
     // Global author.
     $settings['global_author_mode'] = isset( $_POST['be_schema_global_author_mode'] ) && 'override' === $_POST['be_schema_global_author_mode'] ? 'override' : 'website';
     $settings['global_author_name'] = isset( $_POST['be_schema_global_author_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_global_author_name'] ) ) : '';
@@ -268,6 +241,90 @@ function be_schema_engine_save_settings() {
     $settings['publisher_image_9_16'] = isset( $_POST['be_schema_publisher_image_9_16'] )
         ? esc_url_raw( wp_unslash( $_POST['be_schema_publisher_image_9_16'] ) )
         : '';
+
+    update_option( 'be_schema_engine_settings', $settings );
+    if ( function_exists( 'be_schema_engine_get_settings' ) ) {
+        be_schema_engine_get_settings( true );
+    }
+
+    foreach ( $validation_errors as $message ) {
+        add_settings_error( 'be_schema_engine', 'be_schema_engine_validation', $message, 'error' );
+    }
+}
+}
+
+if ( ! function_exists( 'be_schema_engine_save_playfair_settings' ) ) {
+function be_schema_engine_save_playfair_settings() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
+    if (
+        ! isset( $_POST['be_schema_playfair_settings_nonce'] ) ||
+        ! wp_verify_nonce( $_POST['be_schema_playfair_settings_nonce'], 'be_schema_playfair_save_settings' )
+    ) {
+        return;
+    }
+
+    if ( function_exists( 'be_schema_engine_get_settings' ) ) {
+        $settings = be_schema_engine_get_settings();
+    } else {
+        $settings = array();
+    }
+
+    $validation_errors = array();
+
+    $settings['playfair_remote_base_url'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_playfair_remote_base_url'] ) ? wp_unslash( $_POST['be_schema_playfair_remote_base_url'] ) : '',
+        __( 'Playfair remote base URL', 'beseo' ),
+        $validation_errors
+    );
+    $settings['playfair_local_base_url'] = be_schema_engine_validate_url_field(
+        isset( $_POST['be_schema_playfair_local_base_url'] ) ? wp_unslash( $_POST['be_schema_playfair_local_base_url'] ) : '',
+        __( 'Playfair local base URL', 'beseo' ),
+        $validation_errors
+    );
+    if ( isset( $_POST['be_schema_playfair_mode'] ) ) {
+        $mode = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_mode'] ) );
+        if ( 'vps' === $mode ) {
+            $mode = 'remote';
+        }
+        $settings['playfair_mode'] = in_array( $mode, array( 'auto', 'local', 'remote' ), true ) ? $mode : 'auto';
+    }
+    if ( isset( $_POST['be_schema_playfair_timeout_seconds'] ) ) {
+        $timeout = absint( $_POST['be_schema_playfair_timeout_seconds'] );
+        if ( $timeout < 5 ) {
+            $timeout = 5;
+        }
+        if ( $timeout > 300 ) {
+            $timeout = 300;
+        }
+        $settings['playfair_timeout_seconds'] = $timeout;
+    }
+    $settings['playfair_include_html_default'] = isset( $_POST['be_schema_playfair_include_html_default'] ) ? '1' : '0';
+    $settings['playfair_include_logs_default'] = isset( $_POST['be_schema_playfair_include_logs_default'] ) ? '1' : '0';
+    $settings['playfair_allow_private_targets'] = isset( $_POST['be_schema_playfair_allow_private_targets'] ) ? '1' : '0';
+    if ( isset( $_POST['be_schema_playfair_default_profile'] ) ) {
+        $profile = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_profile'] ) );
+        $settings['playfair_default_profile'] = in_array( $profile, array( 'desktop_chromium', 'mobile_chromium', 'webkit' ), true ) ? $profile : 'desktop_chromium';
+    }
+    if ( isset( $_POST['be_schema_playfair_default_wait_ms'] ) ) {
+        $wait_ms = absint( $_POST['be_schema_playfair_default_wait_ms'] );
+        if ( $wait_ms > 60000 ) {
+            $wait_ms = 60000;
+        }
+        $settings['playfair_default_wait_ms'] = $wait_ms;
+    }
+    $settings['playfair_default_locale'] = isset( $_POST['be_schema_playfair_default_locale'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_locale'] ) ) : '';
+    $settings['playfair_default_timezone'] = isset( $_POST['be_schema_playfair_default_timezone'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_timezone'] ) ) : '';
+
+    $token_new = isset( $_POST['be_schema_playfair_remote_token_new'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_remote_token_new'] ) ) : '';
+    $token_clear = isset( $_POST['be_schema_playfair_remote_token_clear'] );
+    if ( $token_clear ) {
+        $settings['playfair_remote_token'] = '';
+    } elseif ( '' !== $token_new ) {
+        $settings['playfair_remote_token'] = $token_new;
+    }
 
     update_option( 'be_schema_engine_settings', $settings );
     if ( function_exists( 'be_schema_engine_get_settings' ) ) {

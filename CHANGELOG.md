@@ -4,13 +4,34 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
-## [2.1.32] - 2025-12-23
-Summary: Engine.
+## [2.1.33] - 2025-12-23
+Summary: Devnotes + engine.
 
 ### Changed
-- Touched areas: engine.
+- Touched areas: devnotes, engine.
 
 ### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- includes/admin/page-tools.php
+- includes/admin/playfair-admin.php
+- includes/admin/schema-service.php
+- includes/admin/schema-view-settings.php
+- includes/admin/schema-view.php
+- includes/cli/playfair-cli.php
+- includes/engine/core-helpers.php
+- includes/engine/core-playfair.php
+
+
+## [2.1.32] - 2025-12-23
+Summary: Playfair capture.
+
+### Changed
+- Replaced the ZIP-based Playfair flow with a JSON capture client (local/remote, auto fallback, includeHtml/includeLogs, locale/timezone).
+- Updated Playfair settings, Tools UI, and CLI to match the JSON API, health checks, token handling, and SSRF guardrails.
+
+### Files
+- beseo-devnotes.json
 - beseo.php
 - includes/admin/page-tools.php
 - includes/admin/playfair-admin.php

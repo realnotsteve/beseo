@@ -2,7 +2,9 @@
 /**
  * Playfair capture integration.
  *
- * Handles remote/local capture endpoints and parsing of result bundles.
+ * Client for local/remote Playfair endpoints that return JSON responses.
+ *
+ * Author: Bill Evans
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,40 +12,90 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Determine whether a host is private or localhost.
+ * Normalize mode values.
  *
- * @param string $host Hostname or IPv4 string.
+ * @param string $mode Mode string.
+ * @return string
+ */
+function be_schema_playfair_normalize_mode( $mode ) {
+    $mode = strtolower( trim( (string) $mode ) );
+    if ( 'vps' === $mode ) {
+        $mode = 'remote';
+    }
+    if ( in_array( $mode, array( 'remote', 'local', 'auto' ), true ) ) {
+        return $mode;
+    }
+    return 'auto';
+}
+
+/**
+ * Build a Playfair endpoint URL from a base URL + path.
+ *
+ * @param string $base Base URL.
+ * @param string $path Path like '/capture' or '/health'.
+ * @return string
+ */
+function be_schema_playfair_build_endpoint( $base, $path ) {
+    $base = trim( (string) $base );
+    if ( '' === $base ) {
+        return '';
+    }
+
+    $path = '/' . ltrim( (string) $path, '/' );
+
+    if ( preg_match( '#/(capture|health)$#', $base ) ) {
+        if ( substr( $base, -strlen( $path ) ) === $path ) {
+            return $base;
+        }
+        $base = preg_replace( '#/(capture|health)$#', '', $base );
+    }
+
+    return rtrim( $base, '/' ) . $path;
+}
+
+/**
+ * Check if IP is private/local.
+ *
+ * @param string $ip IP address.
  * @return bool
  */
-function be_schema_playfair_is_local_host( $host ) {
-    $host = strtolower( trim( (string) $host ) );
-    if ( '' === $host ) {
+function be_schema_playfair_is_private_ip( $ip ) {
+    if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+        $parts = array_map( 'intval', explode( '.', $ip ) );
+        if ( 4 !== count( $parts ) ) {
+            return false;
+        }
+        if ( 10 === $parts[0] ) {
+            return true;
+        }
+        if ( 127 === $parts[0] ) {
+            return true;
+        }
+        if ( 0 === $parts[0] ) {
+            return true;
+        }
+        if ( 169 === $parts[0] && 254 === $parts[1] ) {
+            return true;
+        }
+        if ( 172 === $parts[0] && $parts[1] >= 16 && $parts[1] <= 31 ) {
+            return true;
+        }
+        if ( 192 === $parts[0] && 168 === $parts[1] ) {
+            return true;
+        }
         return false;
     }
 
-    if ( 'localhost' === $host || '127.0.0.1' === $host ) {
-        return true;
-    }
-
-    if ( '.local' === substr( $host, -6 ) ) {
-        return true;
-    }
-
-    if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-        $parts = array_map( 'intval', explode( '.', $host ) );
-        if ( 4 === count( $parts ) ) {
-            if ( 10 === $parts[0] ) {
-                return true;
-            }
-            if ( 127 === $parts[0] ) {
-                return true;
-            }
-            if ( 192 === $parts[0] && 168 === $parts[1] ) {
-                return true;
-            }
-            if ( 172 === $parts[0] && $parts[1] >= 16 && $parts[1] <= 31 ) {
-                return true;
-            }
+    if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+        $ip = strtolower( $ip );
+        if ( '::1' === $ip ) {
+            return true;
+        }
+        if ( 0 === strpos( $ip, 'fe80:' ) ) {
+            return true;
+        }
+        if ( 0 === strpos( $ip, 'fc' ) || 0 === strpos( $ip, 'fd' ) ) {
+            return true;
         }
     }
 
@@ -51,175 +103,362 @@ function be_schema_playfair_is_local_host( $host ) {
 }
 
 /**
- * Check if a target URL should be treated as local/private.
+ * Check if a host is private/local.
+ *
+ * @param string $host Hostname.
+ * @return bool
+ */
+function be_schema_playfair_is_private_host( $host ) {
+    $host = strtolower( trim( (string) $host ) );
+    if ( '' === $host ) {
+        return false;
+    }
+
+    if ( 'localhost' === $host || '127.0.0.1' === $host || '::1' === $host ) {
+        return true;
+    }
+
+    if ( '.local' === substr( $host, -6 ) ) {
+        return true;
+    }
+
+    if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+        return be_schema_playfair_is_private_ip( $host );
+    }
+
+    $resolved = gethostbyname( $host );
+    if ( $resolved && $resolved !== $host ) {
+        return be_schema_playfair_is_private_ip( $resolved );
+    }
+
+    return false;
+}
+
+/**
+ * Check if a target URL is private/local.
  *
  * @param string $url Target URL.
  * @return bool
  */
-function be_schema_playfair_is_local_target( $url ) {
+function be_schema_playfair_is_private_target( $url ) {
     $host = parse_url( $url, PHP_URL_HOST );
     if ( ! $host ) {
         return false;
     }
-
-    return be_schema_playfair_is_local_host( $host );
+    return be_schema_playfair_is_private_host( $host );
 }
 
 /**
- * Normalize target mode.
+ * Validate target URL and SSRF rules.
  *
- * @param string $mode Mode.
- * @return string
+ * @param string $url Target URL.
+ * @param bool   $allow_private Whether private targets are allowed.
+ * @return array {ok, message}
  */
-function be_schema_playfair_normalize_mode( $mode ) {
-    $mode = strtolower( trim( (string) $mode ) );
-    if ( in_array( $mode, array( 'local', 'vps', 'auto' ), true ) ) {
-        return $mode;
-    }
-    return 'auto';
-}
-
-/**
- * Resolve Playfair endpoint based on settings and target URL.
- *
- * @param string $target_url Target URL.
- * @param array  $settings   Schema settings.
- * @param string $mode_override Optional mode override.
- * @return array {mode, endpoint, error?}
- */
-function be_schema_playfair_resolve_endpoint( $target_url, array $settings, $mode_override = '' ) {
-    $mode = $mode_override ? be_schema_playfair_normalize_mode( $mode_override ) : be_schema_playfair_normalize_mode( $settings['playfair_target_mode'] ?? 'auto' );
-
-    if ( 'auto' === $mode ) {
-        $mode = be_schema_playfair_is_local_target( $target_url ) ? 'local' : 'vps';
-    }
-
-    $endpoint = ( 'local' === $mode )
-        ? ( $settings['playfair_local_endpoint'] ?? '' )
-        : ( $settings['playfair_vps_endpoint'] ?? '' );
-
-    if ( empty( $endpoint ) ) {
+function be_schema_playfair_validate_target( $url, $allow_private ) {
+    if ( ! wp_http_validate_url( $url ) ) {
         return array(
-            'error' => __( 'Playfair endpoint is not configured.', 'beseo' ),
+            'ok'      => false,
+            'message' => __( 'Target URL must be a valid http/https URL.', 'beseo' ),
         );
     }
 
+    if ( ! $allow_private && be_schema_playfair_is_private_target( $url ) ) {
+        return array(
+            'ok'      => false,
+            'message' => __( 'Target URL is private or local. Enable developer mode to allow private targets.', 'beseo' ),
+        );
+    }
+
+    return array( 'ok' => true );
+}
+
+/**
+ * Normalize schema list entries to {raw, parsed}.
+ *
+ * @param mixed $entries Entries list.
+ * @return array
+ */
+function be_schema_playfair_normalize_schema_entries( $entries ) {
+    if ( empty( $entries ) || ! is_array( $entries ) ) {
+        return array();
+    }
+
+    $normalized = array();
+    foreach ( $entries as $entry ) {
+        if ( is_string( $entry ) ) {
+            $parsed = json_decode( $entry, true );
+            $normalized[] = array(
+                'raw'    => $entry,
+                'parsed' => is_array( $parsed ) ? $parsed : null,
+            );
+            continue;
+        }
+
+        if ( is_array( $entry ) ) {
+            if ( array_key_exists( 'raw', $entry ) || array_key_exists( 'parsed', $entry ) ) {
+                $raw = isset( $entry['raw'] ) ? (string) $entry['raw'] : '';
+                $parsed = isset( $entry['parsed'] ) && is_array( $entry['parsed'] ) ? $entry['parsed'] : null;
+                if ( '' === $raw && $parsed ) {
+                    $raw = wp_json_encode( $parsed );
+                }
+                $normalized[] = array(
+                    'raw'    => $raw,
+                    'parsed' => $parsed,
+                );
+                continue;
+            }
+
+            $normalized[] = array(
+                'raw'    => wp_json_encode( $entry ),
+                'parsed' => $entry,
+            );
+        }
+    }
+
+    return $normalized;
+}
+
+/**
+ * Normalize Open Graph list entries.
+ *
+ * @param mixed $entries Entries list.
+ * @return array
+ */
+function be_schema_playfair_normalize_og_entries( $entries ) {
+    if ( empty( $entries ) || ! is_array( $entries ) ) {
+        return array();
+    }
+
+    $normalized = array();
+    foreach ( $entries as $entry ) {
+        if ( is_array( $entry ) ) {
+            $normalized[] = $entry;
+        } elseif ( is_string( $entry ) ) {
+            $normalized[] = array( 'raw' => $entry );
+        }
+    }
+
+    return $normalized;
+}
+
+/**
+ * Build request arguments.
+ *
+ * @param array $settings Settings.
+ * @param array $overrides Overrides.
+ * @return array
+ */
+function be_schema_playfair_build_request_options( array $settings, array $overrides ) {
+    $profile = isset( $overrides['profile'] ) ? sanitize_text_field( $overrides['profile'] ) : ( $settings['playfair_default_profile'] ?? 'desktop_chromium' );
+    if ( ! in_array( $profile, array( 'desktop_chromium', 'mobile_chromium', 'webkit' ), true ) ) {
+        $profile = 'desktop_chromium';
+    }
+
+    $wait_ms = isset( $overrides['wait_ms'] ) ? absint( $overrides['wait_ms'] ) : (int) ( $settings['playfair_default_wait_ms'] ?? 1500 );
+    if ( $wait_ms > 60000 ) {
+        $wait_ms = 60000;
+    }
+
+    $include_html = isset( $overrides['include_html'] ) ? (bool) $overrides['include_html'] : ! empty( $settings['playfair_include_html_default'] );
+    $include_logs = isset( $overrides['include_logs'] ) ? (bool) $overrides['include_logs'] : ! empty( $settings['playfair_include_logs_default'] );
+
+    $locale = isset( $overrides['locale'] ) ? sanitize_text_field( $overrides['locale'] ) : ( $settings['playfair_default_locale'] ?? '' );
+    $timezone = isset( $overrides['timezone_id'] ) ? sanitize_text_field( $overrides['timezone_id'] ) : ( $settings['playfair_default_timezone'] ?? '' );
+
+    $payload = array(
+        'profile'    => $profile,
+        'waitMs'     => $wait_ms,
+        'includeHtml' => $include_html,
+        'includeLogs' => $include_logs,
+    );
+
+    if ( $locale ) {
+        $payload['locale'] = $locale;
+    }
+
+    if ( $timezone ) {
+        $payload['timezoneId'] = $timezone;
+    }
+
     return array(
-        'mode'     => $mode,
-        'endpoint' => $endpoint,
+        'payload'      => $payload,
+        'profile'      => $profile,
+        'wait_ms'      => $wait_ms,
+        'include_html' => $include_html,
+        'include_logs' => $include_logs,
+        'locale'       => $locale,
+        'timezone_id'  => $timezone,
     );
 }
 
 /**
- * Extract a zip to a destination directory (safe, file-by-file).
+ * Perform HTTP request to Playfair.
  *
- * @param ZipArchive $zip Zip archive.
- * @param string     $dest Destination directory.
- * @return array Extracted files map (relative name => path).
- */
-function be_schema_playfair_extract_zip( ZipArchive $zip, $dest ) {
-    $files = array();
-    $dest  = rtrim( (string) $dest, '/\\' );
-
-    for ( $i = 0; $i < $zip->numFiles; $i++ ) {
-        $stat = $zip->statIndex( $i );
-        if ( empty( $stat['name'] ) ) {
-            continue;
-        }
-        $name = ltrim( (string) $stat['name'], '/\\' );
-        if ( '' === $name || '/' === substr( $name, -1 ) ) {
-            continue;
-        }
-        if ( false !== strpos( $name, '..' ) ) {
-            continue;
-        }
-        $target = $dest . '/' . $name;
-        if ( 0 !== strpos( $target, $dest ) ) {
-            continue;
-        }
-
-        $dir = dirname( $target );
-        if ( ! is_dir( $dir ) ) {
-            wp_mkdir_p( $dir );
-        }
-
-        $stream = $zip->getStream( $stat['name'] );
-        if ( ! $stream ) {
-            continue;
-        }
-        $out = fopen( $target, 'w' );
-        if ( ! $out ) {
-            fclose( $stream );
-            continue;
-        }
-        while ( ! feof( $stream ) ) {
-            fwrite( $out, fread( $stream, 8192 ) );
-        }
-        fclose( $out );
-        fclose( $stream );
-
-        $files[ $name ] = $target;
-    }
-
-    return $files;
-}
-
-/**
- * Decode a JSON file.
- *
- * @param string $path File path.
- * @return array|null
- */
-function be_schema_playfair_read_json_file( $path ) {
-    if ( empty( $path ) || ! file_exists( $path ) ) {
-        return null;
-    }
-    $raw = file_get_contents( $path );
-    if ( false === $raw ) {
-        return null;
-    }
-    $decoded = json_decode( $raw, true );
-    return is_array( $decoded ) ? $decoded : null;
-}
-
-/**
- * Decode a JSONL file (line-delimited JSON).
- *
- * @param string $path File path.
+ * @param string $method GET/POST.
+ * @param string $url URL.
+ * @param array  $headers Headers.
+ * @param array|null $body JSON body.
+ * @param int    $timeout Timeout seconds.
  * @return array
  */
-function be_schema_playfair_read_json_lines( $path ) {
-    if ( empty( $path ) || ! file_exists( $path ) ) {
-        return array();
-    }
-    $handle = fopen( $path, 'r' );
-    if ( ! $handle ) {
-        return array();
-    }
-    $items = array();
-    while ( ( $line = fgets( $handle ) ) !== false ) {
-        $line = trim( $line );
-        if ( '' === $line ) {
-            continue;
-        }
-        $decoded = json_decode( $line, true );
-        if ( is_array( $decoded ) ) {
-            $items[] = $decoded;
-        } else {
-            $items[] = array( 'raw' => $line );
-        }
-    }
-    fclose( $handle );
+function be_schema_playfair_http_request( $method, $url, array $headers, $body, $timeout ) {
+    $args = array(
+        'timeout' => $timeout,
+        'headers' => $headers,
+    );
 
-    return $items;
+    if ( 'POST' === $method ) {
+        $args['body'] = wp_json_encode( $body );
+    }
+
+    $response = ( 'POST' === $method ) ? wp_remote_post( $url, $args ) : wp_remote_get( $url, $args );
+    if ( is_wp_error( $response ) ) {
+        return array(
+            'ok'      => false,
+            'status'  => 0,
+            'message' => $response->get_error_message(),
+        );
+    }
+
+    $status_code = wp_remote_retrieve_response_code( $response );
+    $raw_body    = wp_remote_retrieve_body( $response );
+    $decoded     = null;
+    if ( $raw_body ) {
+        $decoded = json_decode( $raw_body, true );
+    }
+
+    if ( 200 !== (int) $status_code ) {
+        $error_message = __( 'Playfair request failed.', 'beseo' );
+        if ( is_array( $decoded ) && ! empty( $decoded['error'] ) ) {
+            $error_message = (string) $decoded['error'];
+        }
+        return array(
+            'ok'      => false,
+            'status'  => $status_code,
+            'message' => $error_message,
+            'data'    => $decoded,
+        );
+    }
+
+    if ( ! is_array( $decoded ) ) {
+        return array(
+            'ok'      => false,
+            'status'  => $status_code,
+            'message' => __( 'Playfair returned invalid JSON.', 'beseo' ),
+        );
+    }
+
+    if ( empty( $decoded['ok'] ) ) {
+        $error_message = ! empty( $decoded['error'] ) ? (string) $decoded['error'] : __( 'Playfair returned ok=false.', 'beseo' );
+        return array(
+            'ok'      => false,
+            'status'  => $status_code,
+            'message' => $error_message,
+            'data'    => $decoded,
+        );
+    }
+
+    return array(
+        'ok'     => true,
+        'status' => $status_code,
+        'data'   => $decoded,
+    );
+}
+
+/**
+ * Resolve Playfair endpoints based on mode.
+ *
+ * @param array $settings Settings.
+ * @param string $mode Mode.
+ * @return array
+ */
+function be_schema_playfair_get_endpoints( array $settings, $mode ) {
+    $remote_base = $settings['playfair_remote_base_url'] ?? '';
+    $local_base  = $settings['playfair_local_base_url'] ?? '';
+
+    return array(
+        'remote' => be_schema_playfair_build_endpoint( $remote_base, '/capture' ),
+        'local'  => be_schema_playfair_build_endpoint( $local_base, '/capture' ),
+    );
+}
+
+/**
+ * Resolve Playfair health endpoints based on mode.
+ *
+ * @param array $settings Settings.
+ * @return array
+ */
+function be_schema_playfair_get_health_endpoints( array $settings ) {
+    $remote_base = $settings['playfair_remote_base_url'] ?? '';
+    $local_base  = $settings['playfair_local_base_url'] ?? '';
+
+    return array(
+        'remote' => be_schema_playfair_build_endpoint( $remote_base, '/health' ),
+        'local'  => be_schema_playfair_build_endpoint( $local_base, '/health' ),
+    );
+}
+
+/**
+ * Run a Playfair health check.
+ *
+ * @param array  $settings Settings.
+ * @param string $mode Mode override.
+ * @return array
+ */
+function be_schema_playfair_health( array $settings, $mode = '' ) {
+    $mode = be_schema_playfair_normalize_mode( $mode ? $mode : ( $settings['playfair_mode'] ?? 'auto' ) );
+    $timeout = isset( $settings['playfair_timeout_seconds'] ) ? (int) $settings['playfair_timeout_seconds'] : 60;
+    if ( $timeout < 5 ) {
+        $timeout = 5;
+    }
+
+    $endpoints = be_schema_playfair_get_health_endpoints( $settings );
+    $token = $settings['playfair_remote_token'] ?? '';
+
+    $attempt = function( $target_mode ) use ( $endpoints, $token, $timeout ) {
+        $endpoint = $endpoints[ $target_mode ] ?? '';
+        if ( '' === $endpoint ) {
+            return array(
+                'ok'      => false,
+                'message' => __( 'Playfair endpoint is not configured.', 'beseo' ),
+            );
+        }
+
+        $headers = array();
+        if ( 'remote' === $target_mode && '' !== $token ) {
+            $headers['X-Playfair-Token'] = $token;
+        }
+
+        $response = be_schema_playfair_http_request( 'GET', $endpoint, $headers, null, $timeout );
+        $response['endpoint'] = $endpoint;
+        $response['mode'] = $target_mode;
+        return $response;
+    };
+
+    if ( 'auto' !== $mode ) {
+        return $attempt( $mode );
+    }
+
+    $remote = $attempt( 'remote' );
+    if ( ! empty( $remote['ok'] ) ) {
+        $remote['fallback'] = false;
+        return $remote;
+    }
+
+    $local = $attempt( 'local' );
+    $local['fallback'] = true;
+    $local['fallback_error'] = $remote['message'] ?? '';
+
+    return $local;
 }
 
 /**
  * Run a Playfair capture for the provided URL.
  *
- * @param string $target_url Target URL.
- * @param array  $args Optional overrides: mode, profile, wait_ms, out_dir.
- * @return array Result payload.
+ * @param string $target_url Target URL or post ID.
+ * @param array  $args Optional overrides: mode, profile, wait_ms, include_html, include_logs, locale, timezone_id.
+ * @return array
  */
 function be_schema_playfair_capture( $target_url, array $args = array() ) {
     $target_url = trim( (string) $target_url );
@@ -237,203 +476,120 @@ function be_schema_playfair_capture( $target_url, array $args = array() ) {
         }
     }
 
-    if ( ! wp_http_validate_url( $target_url ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Target URL must be a valid http/https URL.', 'beseo' ),
-        );
-    }
-
     $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
-    $mode_override = isset( $args['mode'] ) ? (string) $args['mode'] : '';
 
-    $endpoint_data = be_schema_playfair_resolve_endpoint( $target_url, $settings, $mode_override );
-    if ( ! empty( $endpoint_data['error'] ) ) {
+    $allow_private = ! empty( $settings['playfair_allow_private_targets'] );
+    $validation = be_schema_playfair_validate_target( $target_url, $allow_private );
+    if ( empty( $validation['ok'] ) ) {
         return array(
             'ok'      => false,
-            'message' => $endpoint_data['error'],
+            'message' => $validation['message'],
         );
     }
 
-    $mode     = $endpoint_data['mode'];
-    $endpoint = $endpoint_data['endpoint'];
+    $mode = be_schema_playfair_normalize_mode( isset( $args['mode'] ) ? $args['mode'] : ( $settings['playfair_mode'] ?? 'auto' ) );
+    $timeout = isset( $settings['playfair_timeout_seconds'] ) ? (int) $settings['playfair_timeout_seconds'] : 60;
+    if ( $timeout < 5 ) {
+        $timeout = 5;
+    }
 
-    if ( 'vps' === $mode && be_schema_playfair_is_local_target( $target_url ) ) {
-        $allow_local = apply_filters( 'be_schema_playfair_allow_vps_local_targets', false, $target_url );
-        if ( ! $allow_local ) {
+    $request_options = be_schema_playfair_build_request_options( $settings, $args );
+    $payload = $request_options['payload'];
+    $payload['url'] = $target_url;
+
+    $token = $settings['playfair_remote_token'] ?? '';
+    $endpoints = be_schema_playfair_get_endpoints( $settings, $mode );
+
+    $attempt = function( $target_mode ) use ( $endpoints, $token, $timeout, $payload ) {
+        $endpoint = $endpoints[ $target_mode ] ?? '';
+        if ( '' === $endpoint ) {
             return array(
                 'ok'      => false,
-                'message' => __( 'Target appears to be local/private. Use Auto or Force Local mode.', 'beseo' ),
+                'message' => __( 'Playfair endpoint is not configured.', 'beseo' ),
             );
         }
-    }
 
-    $profile = isset( $args['profile'] ) ? sanitize_text_field( $args['profile'] ) : ( $settings['playfair_default_profile'] ?? 'desktop_chromium' );
-    if ( ! in_array( $profile, array( 'desktop_chromium', 'mobile_chromium', 'webkit' ), true ) ) {
-        $profile = 'desktop_chromium';
-    }
-
-    $wait_ms = isset( $args['wait_ms'] ) ? absint( $args['wait_ms'] ) : (int) ( $settings['playfair_default_wait_ms'] ?? 1500 );
-    if ( $wait_ms > 60000 ) {
-        $wait_ms = 60000;
-    }
-
-    $request_body = array(
-        'url'     => $target_url,
-        'waitMs'  => $wait_ms,
-        'profile' => $profile,
-    );
-    if ( ! empty( $args['out_dir'] ) ) {
-        $request_body['outDir'] = (string) $args['out_dir'];
-    }
-
-    $headers = array(
-        'Content-Type' => 'application/json',
-    );
-    if ( 'vps' === $mode ) {
-        $token = $settings['playfair_vps_token'] ?? '';
-        if ( '' === $token ) {
-            return array(
-                'ok'      => false,
-                'message' => __( 'Playfair VPS token is missing.', 'beseo' ),
-            );
+        $headers = array(
+            'Content-Type' => 'application/json',
+        );
+        if ( 'remote' === $target_mode && '' !== $token ) {
+            $headers['X-Playfair-Token'] = $token;
         }
-        $headers['X-Playfair-Token'] = $token;
-    }
 
-    $response = wp_remote_post(
-        $endpoint,
-        array(
-            'timeout' => 300,
-            'headers' => $headers,
-            'body'    => wp_json_encode( $request_body ),
-        )
-    );
+        $response = be_schema_playfair_http_request( 'POST', $endpoint, $headers, $payload, $timeout );
+        $response['endpoint'] = $endpoint;
+        $response['mode'] = $target_mode;
+        return $response;
+    };
 
-    if ( is_wp_error( $response ) ) {
-        return array(
-            'ok'      => false,
-            'message' => $response->get_error_message(),
-        );
-    }
-
-    $status_code = wp_remote_retrieve_response_code( $response );
-    $body        = wp_remote_retrieve_body( $response );
-
-    if ( 200 !== (int) $status_code ) {
-        $error_message = __( 'Playfair capture failed.', 'beseo' );
-        if ( $body ) {
-            $decoded = json_decode( $body, true );
-            if ( is_array( $decoded ) && ! empty( $decoded['error'] ) ) {
-                $error_message = (string) $decoded['error'];
-            }
+    if ( 'auto' !== $mode ) {
+        $response = $attempt( $mode );
+    } else {
+        $remote = $attempt( 'remote' );
+        if ( ! empty( $remote['ok'] ) ) {
+            $response = $remote;
+            $response['fallback'] = false;
+        } else {
+            $local = $attempt( 'local' );
+            $local['fallback'] = true;
+            $local['fallback_error'] = $remote['message'] ?? '';
+            $response = $local;
         }
+    }
+
+    if ( empty( $response['ok'] ) ) {
         return array(
             'ok'      => false,
-            'message' => $error_message,
-            'status'  => $status_code,
+            'message' => $response['message'] ?? __( 'Capture failed.', 'beseo' ),
+            'status'  => $response['status'] ?? 0,
+            'meta'    => array(
+                'target' => $target_url,
+                'mode'   => $response['mode'] ?? $mode,
+                'endpoint' => $response['endpoint'] ?? '',
+            ),
         );
     }
 
-    if ( empty( $body ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Playfair returned an empty response.', 'beseo' ),
-        );
-    }
-
-    if ( ! class_exists( 'ZipArchive' ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'ZipArchive is not available on this server.', 'beseo' ),
-        );
-    }
-
-    $uploads = wp_upload_dir();
-    if ( ! empty( $uploads['error'] ) ) {
-        return array(
-            'ok'      => false,
-            'message' => $uploads['error'],
-        );
-    }
-
-    $base_dir = trailingslashit( $uploads['basedir'] ) . 'playfair';
-    if ( ! wp_mkdir_p( $base_dir ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Failed to create Playfair uploads directory.', 'beseo' ),
-        );
-    }
-
-    $capture_id  = 'capture-' . gmdate( 'Ymd-His' ) . '-' . wp_generate_password( 6, false, false );
-    $capture_dir = $base_dir . '/' . $capture_id;
-    if ( ! wp_mkdir_p( $capture_dir ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Failed to create capture directory.', 'beseo' ),
-        );
-    }
-
-    $zip_path = $capture_dir . '/capture.zip';
-    $bytes    = file_put_contents( $zip_path, $body );
-    if ( false === $bytes ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Failed to write capture zip.', 'beseo' ),
-        );
-    }
-
-    $zip = new ZipArchive();
-    if ( true !== $zip->open( $zip_path ) ) {
-        return array(
-            'ok'      => false,
-            'message' => __( 'Failed to open capture zip.', 'beseo' ),
-        );
-    }
-
-    $extract_dir = $capture_dir . '/extract';
-    wp_mkdir_p( $extract_dir );
-    $files = be_schema_playfair_extract_zip( $zip, $extract_dir );
-    $zip->close();
-
-    $base_url  = trailingslashit( $uploads['baseurl'] ) . 'playfair/' . $capture_id . '/extract/';
-    $file_urls = array();
-    foreach ( $files as $name => $path ) {
-        $file_urls[ $name ] = $base_url . str_replace( '\\', '/', $name );
-    }
+    $data = $response['data'] ?? array();
 
     $result = array(
         'ok'      => true,
         'message' => __( 'Capture completed.', 'beseo' ),
         'meta'    => array(
-            'target'   => $target_url,
-            'mode'     => $mode,
-            'endpoint' => $endpoint,
-            'profile'  => $profile,
-            'wait_ms'  => $wait_ms,
+            'target'       => $target_url,
+            'mode'         => $response['mode'] ?? $mode,
+            'endpoint'     => $response['endpoint'] ?? '',
+            'profile'      => $data['profile'] ?? $request_options['profile'],
+            'wait_ms'      => $data['waitMs'] ?? $request_options['wait_ms'],
+            'include_html' => $request_options['include_html'],
+            'include_logs' => $request_options['include_logs'],
+            'locale'       => $request_options['locale'],
+            'timezone_id'  => $request_options['timezone_id'],
+            'fallback'     => isset( $response['fallback'] ) ? (bool) $response['fallback'] : false,
+            'fallback_error' => $response['fallback_error'] ?? '',
         ),
-        'paths'   => array(
-            'capture_id' => $capture_id,
-            'capture_dir' => $capture_dir,
-            'zip'         => $zip_path,
-            'extract_dir' => $extract_dir,
-            'files'       => $files,
-            'file_urls'   => $file_urls,
+        'options' => $data['options'] ?? array(),
+        'opengraph' => array(
+            'dom'    => be_schema_playfair_normalize_og_entries( $data['opengraph']['dom'] ?? array() ),
+            'server' => be_schema_playfair_normalize_og_entries( $data['opengraph']['server'] ?? array() ),
         ),
         'schema' => array(
-            'dom'    => be_schema_playfair_read_json_file( $files['schema.dom.json'] ?? '' ),
-            'server' => be_schema_playfair_read_json_file( $files['schema.server.json'] ?? '' ),
-        ),
-        'opengraph' => array(
-            'dom'    => be_schema_playfair_read_json_file( $files['opengraph.dom.json'] ?? '' ),
-            'server' => be_schema_playfair_read_json_file( $files['opengraph.server.json'] ?? '' ),
+            'dom'    => be_schema_playfair_normalize_schema_entries( $data['schema']['dom'] ?? array() ),
+            'server' => be_schema_playfair_normalize_schema_entries( $data['schema']['server'] ?? array() ),
         ),
         'logs' => array(
-            'console'       => be_schema_playfair_read_json_lines( $files['console.jsonl'] ?? '' ),
-            'pageerrors'    => be_schema_playfair_read_json_lines( $files['pageerrors.jsonl'] ?? '' ),
-            'requestfailed' => be_schema_playfair_read_json_lines( $files['requestfailed.jsonl'] ?? '' ),
+            'console'       => is_array( $data['logs']['console'] ?? null ) ? $data['logs']['console'] : array(),
+            'pageErrors'    => is_array( $data['logs']['pageErrors'] ?? null ) ? $data['logs']['pageErrors'] : array(),
+            'requestFailed' => is_array( $data['logs']['requestFailed'] ?? null ) ? $data['logs']['requestFailed'] : array(),
         ),
     );
+
+    if ( ! empty( $data['html'] ) && is_array( $data['html'] ) ) {
+        $result['html'] = array(
+            'server' => isset( $data['html']['server'] ) ? (string) $data['html']['server'] : '',
+            'dom'    => isset( $data['html']['dom'] ) ? (string) $data['html']['dom'] : '',
+        );
+    }
 
     return $result;
 }
@@ -451,5 +607,16 @@ class BE_Schema_Playfair_Service {
      */
     public static function capture( $target_url, array $args = array() ) {
         return be_schema_playfair_capture( $target_url, $args );
+    }
+
+    /**
+     * Run a health check.
+     *
+     * @param array  $settings Settings.
+     * @param string $mode Mode override.
+     * @return array
+     */
+    public static function health( array $settings, $mode = '' ) {
+        return be_schema_playfair_health( $settings, $mode );
     }
 }

@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.32",
+    "version": "2.1.33",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -81,6 +81,16 @@
       "role": "Tools submenu UI (future home for validators, snapshots, etc.)."
     },
     {
+      "path": "includes/admin/playfair-admin.php",
+      "group": "admin",
+      "role": "AJAX handlers for Playfair health checks and captures."
+    },
+    {
+      "path": "includes/cli/playfair-cli.php",
+      "group": "cli",
+      "role": "WP-CLI commands for Playfair capture diagnostics."
+    },
+    {
       "path": "includes/engine/core-breadcrumbs.php",
       "group": "engine",
       "role": "Emits BreadcrumbList schema for non-front pages; always two levels: root + current."
@@ -99,6 +109,11 @@
       "path": "includes/engine/core-helpers.php",
       "group": "engine",
       "role": "Shared helper functions for text normalization, image normalization, per-page disable checks, and post-type eligibility."
+    },
+    {
+      "path": "includes/engine/core-playfair.php",
+      "group": "engine",
+      "role": "Playfair capture client (local/remote) with JSON parsing and SSRF validation."
     },
     {
       "path": "includes/engine/core-posts.php",
@@ -346,6 +361,101 @@
         "resolved_images",
         "handles"
       ]
+    }
+  },
+  "playfair_notes": {
+    "source_of_truth": "Playfair integration guide 2025-12-23 (pasted by Bill Evans) supersedes earlier devnotes.",
+    "endpoints": {
+      "remote_base_url_default": "https://playfair.belexes.com",
+      "local_base_url_default": "http://127.0.0.1:3719",
+      "health_path": "/health",
+      "capture_path": "/capture"
+    },
+    "auth": {
+      "header": "X-Playfair-Token",
+      "token_storage": "wp_options (hidden in UI)",
+      "local_auth_optional": true
+    },
+    "capture_request": {
+      "required": [
+        "url"
+      ],
+      "optional": [
+        "waitMs",
+        "profile",
+        "includeHtml",
+        "includeLogs",
+        "locale",
+        "timezoneId"
+      ],
+      "profiles": [
+        "desktop_chromium",
+        "mobile_chromium",
+        "webkit"
+      ],
+      "defaults": {
+        "waitMs": 1500,
+        "includeHtml": false,
+        "includeLogs": true
+      }
+    },
+    "capture_response": {
+      "success_shape": [
+        "ok",
+        "url",
+        "profile",
+        "options",
+        "opengraph",
+        "schema",
+        "logs",
+        "html (optional)"
+      ],
+      "schema_formats": [
+        "json-ld strings",
+        "objects with raw/parsed"
+      ],
+      "opengraph_formats": [
+        "arrays of {key, content}"
+      ],
+      "logs_keys": [
+        "console",
+        "pageErrors",
+        "requestFailed"
+      ]
+    },
+    "modes": {
+      "values": [
+        "auto",
+        "remote",
+        "local"
+      ],
+      "auto_behavior": "try remote first, fall back to local on failure"
+    },
+    "security": {
+      "ssrf_guard": "block private/local targets unless developer mode enabled",
+      "do_not_log_token": true
+    },
+    "admin_tools": {
+      "settings_fields": [
+        "remote_base_url",
+        "remote_token",
+        "local_base_url",
+        "mode",
+        "timeout_seconds",
+        "default_profile",
+        "default_wait_ms",
+        "default_locale",
+        "default_timezone",
+        "default_include_html",
+        "default_include_logs",
+        "allow_private_targets"
+      ],
+      "tools_actions": [
+        "Health Check",
+        "Run Test",
+        "Run Capture"
+      ],
+      "visibility": "admin only"
     }
   },
   "ui_notes": [

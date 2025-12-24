@@ -20,13 +20,25 @@ class BE_Schema_Playfair_CLI {
      * : URL or post ID to capture.
      *
      * [--mode=<mode>]
-     * : auto, local, or vps.
+     * : auto, local, or remote.
      *
      * [--profile=<profile>]
      * : desktop_chromium, mobile_chromium, or webkit.
      *
      * [--wait-ms=<ms>]
      * : Wait time in milliseconds.
+     *
+     * [--include-html]
+     * : Include HTML in the response.
+     *
+     * [--include-logs]
+     * : Include console/network logs in the response.
+     *
+     * [--locale=<locale>]
+     * : Locale override (e.g. en-US).
+     *
+     * [--timezone-id=<tz>]
+     * : Timezone ID (e.g. America/New_York).
      *
      * [--json]
      * : Output full JSON result.
@@ -54,6 +66,18 @@ class BE_Schema_Playfair_CLI {
         if ( isset( $assoc_args['wait-ms'] ) ) {
             $options['wait_ms'] = (int) $assoc_args['wait-ms'];
         }
+        if ( isset( $assoc_args['include-html'] ) ) {
+            $options['include_html'] = true;
+        }
+        if ( isset( $assoc_args['include-logs'] ) ) {
+            $options['include_logs'] = true;
+        }
+        if ( ! empty( $assoc_args['locale'] ) ) {
+            $options['locale'] = $assoc_args['locale'];
+        }
+        if ( ! empty( $assoc_args['timezone-id'] ) ) {
+            $options['timezone_id'] = $assoc_args['timezone-id'];
+        }
 
         $result = be_schema_playfair_capture( $target, $options );
         if ( empty( $result['ok'] ) ) {
@@ -66,10 +90,10 @@ class BE_Schema_Playfair_CLI {
         }
 
         $meta   = $result['meta'] ?? array();
-        $paths  = $result['paths'] ?? array();
         $schema = $result['schema'] ?? array();
         $og     = $result['opengraph'] ?? array();
         $logs   = $result['logs'] ?? array();
+        $html   = $result['html'] ?? array();
 
         WP_CLI::success( 'Capture complete.' );
         WP_CLI::line( 'Target: ' . ( $meta['target'] ?? '' ) );
@@ -77,16 +101,15 @@ class BE_Schema_Playfair_CLI {
         WP_CLI::line( 'Endpoint: ' . ( $meta['endpoint'] ?? '' ) );
         WP_CLI::line( 'Profile: ' . ( $meta['profile'] ?? '' ) );
         WP_CLI::line( 'Wait: ' . ( isset( $meta['wait_ms'] ) ? $meta['wait_ms'] . 'ms' : '' ) );
-        if ( ! empty( $paths['capture_id'] ) ) {
-            WP_CLI::line( 'Capture ID: ' . $paths['capture_id'] );
-        }
-        WP_CLI::line( 'Schema DOM: ' . ( is_array( $schema['dom'] ?? null ) ? 'ok' : 'none' ) );
-        WP_CLI::line( 'Schema Server: ' . ( is_array( $schema['server'] ?? null ) ? 'ok' : 'none' ) );
-        WP_CLI::line( 'OG DOM: ' . ( is_array( $og['dom'] ?? null ) ? 'ok' : 'none' ) );
-        WP_CLI::line( 'OG Server: ' . ( is_array( $og['server'] ?? null ) ? 'ok' : 'none' ) );
+        WP_CLI::line( 'Schema DOM: ' . count( $schema['dom'] ?? array() ) );
+        WP_CLI::line( 'Schema Server: ' . count( $schema['server'] ?? array() ) );
+        WP_CLI::line( 'OG DOM: ' . count( $og['dom'] ?? array() ) );
+        WP_CLI::line( 'OG Server: ' . count( $og['server'] ?? array() ) );
+        WP_CLI::line( 'HTML DOM: ' . ( empty( $html['dom'] ) ? 'none' : 'yes' ) );
+        WP_CLI::line( 'HTML Server: ' . ( empty( $html['server'] ) ? 'none' : 'yes' ) );
         WP_CLI::line( 'Console logs: ' . count( $logs['console'] ?? array() ) );
-        WP_CLI::line( 'Page errors: ' . count( $logs['pageerrors'] ?? array() ) );
-        WP_CLI::line( 'Request failed: ' . count( $logs['requestfailed'] ?? array() ) );
+        WP_CLI::line( 'Page errors: ' . count( $logs['pageErrors'] ?? array() ) );
+        WP_CLI::line( 'Request failed: ' . count( $logs['requestFailed'] ?? array() ) );
     }
 }
 

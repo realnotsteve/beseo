@@ -95,12 +95,18 @@ function be_schema_engine_get_settings( $force_refresh = false ) {
 		'image_validation_enabled' => '1',
 
 		// Playfair capture defaults.
-		'playfair_vps_endpoint'   => 'https://playfair.belexes.com/capture',
-		'playfair_vps_token'      => '',
-		'playfair_local_endpoint' => 'http://host.docker.internal:3719/capture',
-		'playfair_target_mode'    => 'auto',
-		'playfair_default_profile' => 'desktop_chromium',
-		'playfair_default_wait_ms' => 1500,
+		'playfair_mode'                => 'auto',
+		'playfair_remote_base_url'     => 'https://playfair.belexes.com',
+		'playfair_remote_token'        => '',
+		'playfair_local_base_url'      => 'http://127.0.0.1:3719',
+		'playfair_timeout_seconds'     => 60,
+		'playfair_include_html_default' => '0',
+		'playfair_include_logs_default' => '1',
+		'playfair_default_profile'      => 'desktop_chromium',
+		'playfair_default_wait_ms'      => 1500,
+		'playfair_default_locale'       => '',
+		'playfair_default_timezone'     => '',
+		'playfair_allow_private_targets' => '0',
 
 		// Publisher custom organisation.
 		'publisher_custom_name' => '',
@@ -144,6 +150,24 @@ function be_schema_engine_get_settings( $force_refresh = false ) {
 
 	$settings = get_option( 'be_schema_engine_settings', array() );
 	$cached   = wp_parse_args( $settings, $defaults );
+
+	// Back-compat: map legacy Playfair keys if present.
+	if ( empty( $cached['playfair_remote_base_url'] ) && ! empty( $cached['playfair_vps_endpoint'] ) ) {
+		$cached['playfair_remote_base_url'] = preg_replace( '#/capture$#', '', $cached['playfair_vps_endpoint'] );
+	}
+	if ( empty( $cached['playfair_local_base_url'] ) && ! empty( $cached['playfair_local_endpoint'] ) ) {
+		$cached['playfair_local_base_url'] = preg_replace( '#/capture$#', '', $cached['playfair_local_endpoint'] );
+	}
+	if ( empty( $cached['playfair_remote_token'] ) && ! empty( $cached['playfair_vps_token'] ) ) {
+		$cached['playfair_remote_token'] = $cached['playfair_vps_token'];
+	}
+	if ( empty( $cached['playfair_mode'] ) && ! empty( $cached['playfair_target_mode'] ) ) {
+		$legacy_mode = strtolower( (string) $cached['playfair_target_mode'] );
+		if ( 'vps' === $legacy_mode ) {
+			$legacy_mode = 'remote';
+		}
+		$cached['playfair_mode'] = in_array( $legacy_mode, array( 'remote', 'local', 'auto' ), true ) ? $legacy_mode : 'auto';
+	}
 
 	// Normalize multi-valued person fields to arrays.
 	$multi_fields = array(
