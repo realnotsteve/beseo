@@ -525,16 +525,9 @@ function be_schema_playfair_capture( $target_url, array $args = array() ) {
     if ( 'auto' !== $mode ) {
         $response = $attempt( $mode );
     } else {
-        $remote = $attempt( 'remote' );
-        if ( ! empty( $remote['ok'] ) ) {
-            $response = $remote;
-            $response['fallback'] = false;
-        } else {
-            $local = $attempt( 'local' );
-            $local['fallback'] = true;
-            $local['fallback_error'] = $remote['message'] ?? '';
-            $response = $local;
-        }
+        $selected_mode = be_schema_playfair_is_private_target( $target_url ) ? 'local' : 'remote';
+        $response = $attempt( $selected_mode );
+        $response['fallback'] = false;
     }
 
     if ( empty( $response['ok'] ) ) {

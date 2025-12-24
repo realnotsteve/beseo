@@ -279,11 +279,21 @@ function be_schema_engine_save_playfair_settings() {
         __( 'Playfair remote base URL', 'beseo' ),
         $validation_errors
     );
-    $settings['playfair_local_base_url'] = be_schema_engine_validate_url_field(
-        isset( $_POST['be_schema_playfair_local_base_url'] ) ? wp_unslash( $_POST['be_schema_playfair_local_base_url'] ) : '',
-        __( 'Playfair local base URL', 'beseo' ),
-        $validation_errors
-    );
+    $local_base_raw = isset( $_POST['be_schema_playfair_local_base_url'] ) ? wp_unslash( $_POST['be_schema_playfair_local_base_url'] ) : '';
+    $local_base_raw = trim( (string) $local_base_raw );
+    $settings['playfair_local_base_url'] = '';
+    if ( '' !== $local_base_raw ) {
+        $local_sanitized = esc_url_raw( $local_base_raw );
+        $local_parts     = wp_parse_url( $local_sanitized );
+        $local_scheme    = isset( $local_parts['scheme'] ) ? strtolower( $local_parts['scheme'] ) : '';
+        $local_host      = isset( $local_parts['host'] ) ? $local_parts['host'] : '';
+
+        if ( ! $local_sanitized || '' === $local_scheme || '' === $local_host || ! in_array( $local_scheme, array( 'http', 'https' ), true ) ) {
+            $validation_errors[] = sprintf( /* translators: %s: field label */ __( '%s must be a valid URL (http/https).', 'beseo' ), __( 'Playfair local base URL', 'beseo' ) );
+        } else {
+            $settings['playfair_local_base_url'] = $local_sanitized;
+        }
+    }
     if ( isset( $_POST['be_schema_playfair_mode'] ) ) {
         $mode = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_mode'] ) );
         if ( 'vps' === $mode ) {

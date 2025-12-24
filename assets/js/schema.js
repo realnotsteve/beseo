@@ -770,6 +770,72 @@ document.addEventListener('DOMContentLoaded', function () {
                     var jsonEl = document.getElementById('be-schema-preview-json');
                     var nodeCountEl = document.getElementById('be-schema-preview-node-count');
                     var edgeCountEl = document.getElementById('be-schema-preview-edge-count');
+                    var collapseButtons = previewRoot.querySelectorAll('.be-schema-preview-collapse');
+                    var sectionToggles = previewRoot.querySelectorAll('.be-schema-preview-section-toggle');
+
+                    function updateCollapseButton(button, collapsed) {
+                        if (!button) {
+                            return;
+                        }
+                        var collapseLabel = button.getAttribute('data-collapse-label') || 'Collapse';
+                        var expandLabel = button.getAttribute('data-expand-label') || 'Expand';
+                        var label = collapsed ? expandLabel : collapseLabel;
+                        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        button.setAttribute('aria-label', label);
+                        var srText = button.querySelector('.screen-reader-text');
+                        if (srText) {
+                            srText.textContent = label;
+                        }
+                    }
+
+                    if (collapseButtons.length) {
+                        collapseButtons.forEach(function (button) {
+                            var column = button.closest('.be-schema-preview-column');
+                            var collapsed = column ? column.classList.contains('is-collapsed') : false;
+                            updateCollapseButton(button, collapsed);
+                            button.addEventListener('click', function (event) {
+                                event.preventDefault();
+                                var targetColumn = button.closest('.be-schema-preview-column');
+                                if (!targetColumn) {
+                                    return;
+                                }
+                                var isCollapsed = targetColumn.classList.toggle('is-collapsed');
+                                updateCollapseButton(button, isCollapsed);
+                            });
+                        });
+                    }
+
+                    function updateSectionToggle(button, collapsed) {
+                        if (!button) {
+                            return;
+                        }
+                        var collapseLabel = button.getAttribute('data-collapse-label') || 'Collapse';
+                        var expandLabel = button.getAttribute('data-expand-label') || 'Expand';
+                        var label = collapsed ? expandLabel : collapseLabel;
+                        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        button.setAttribute('aria-label', label);
+                        var srText = button.querySelector('.screen-reader-text');
+                        if (srText) {
+                            srText.textContent = label;
+                        }
+                    }
+
+                    if (sectionToggles.length) {
+                        sectionToggles.forEach(function (button) {
+                            var section = button.closest('.be-schema-preview-section');
+                            var collapsed = section ? section.classList.contains('is-collapsed') : false;
+                            updateSectionToggle(button, collapsed);
+                            button.addEventListener('click', function (event) {
+                                event.preventDefault();
+                                var targetSection = button.closest('.be-schema-preview-section');
+                                if (!targetSection) {
+                                    return;
+                                }
+                                var isCollapsed = targetSection.classList.toggle('is-collapsed');
+                                updateSectionToggle(button, isCollapsed);
+                            });
+                        });
+                    }
 
                     function setStatus(message, type) {
                         if (!statusEl) {

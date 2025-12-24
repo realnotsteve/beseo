@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.34] - 2025-12-24
+Summary: Engine.
+
+### Changed
+- Touched areas: engine.
+
+### Files
+- assets/css/schema.css
+- assets/js/schema.js
+- includes/admin/page-tools.php
+- includes/admin/schema-service.php
+- includes/admin/schema-view-preview.php
+- includes/engine/core-playfair.php
+
+
 ## [2.1.33] - 2025-12-23
 Summary: Devnotes + engine.
 

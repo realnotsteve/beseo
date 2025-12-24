@@ -1198,11 +1198,11 @@ function be_schema_engine_render_tools_page() {
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row"><?php esc_html_e( 'Developer mode', 'beseo' ); ?></th>
+                                <th scope="row"><?php esc_html_e( 'Local File Access', 'beseo' ); ?></th>
                                 <td>
                                     <label>
                                         <input type="checkbox" name="be_schema_playfair_allow_private_targets" value="1" <?php checked( $playfair_allow_private ); ?> />
-                                        <?php esc_html_e( 'Allow private/local targets (SSRF risk)', 'beseo' ); ?>
+                                        <?php esc_html_e( 'Allow (SSRF risk)', 'beseo' ); ?>
                                     </label>
                                 </td>
                             </tr>
