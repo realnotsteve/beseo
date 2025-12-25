@@ -26,9 +26,16 @@ function be_schema_engine_render_schema_tab_preview() {
                     <button type="button" class="button button-secondary" id="be-schema-preview-home">
                         <?php esc_html_e( 'Use Homepage', 'beseo' ); ?>
                     </button>
+                    <button type="button" class="button" id="be-schema-preview-health">
+                        <?php esc_html_e( 'Health Check', 'beseo' ); ?>
+                    </button>
+                    <button type="button" class="button" id="be-schema-preview-test">
+                        <?php esc_html_e( 'Run Test', 'beseo' ); ?>
+                    </button>
                 </div>
             </div>
             <p class="be-schema-preview-help" id="be-schema-preview-target-help"></p>
+            <div class="be-schema-preview-status" id="be-schema-preview-target-status" aria-live="polite"></div>
         </div>
 
         <div class="be-schema-global-section be-schema-preview-criteria">

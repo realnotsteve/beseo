@@ -1255,8 +1255,6 @@ function be_schema_engine_render_tools_page() {
                         </div>
                         <div class="be-schema-playfair-actions">
                             <button type="button" class="button" id="be-schema-playfair-home"><?php esc_html_e( 'Use Homepage', 'beseo' ); ?></button>
-                            <button type="button" class="button" id="be-schema-playfair-health"><?php esc_html_e( 'Health Check', 'beseo' ); ?></button>
-                            <button type="button" class="button" id="be-schema-playfair-test"><?php esc_html_e( 'Run Test', 'beseo' ); ?></button>
                             <button type="button" class="button button-primary" id="be-schema-playfair-run"><?php esc_html_e( 'Run Capture', 'beseo' ); ?></button>
                         </div>
                         <div id="be-schema-playfair-status" class="be-schema-playfair-status" aria-live="polite"></div>
@@ -2183,8 +2181,6 @@ function be_schema_engine_render_tools_page() {
                     return;
                 }
                 var homeBtn = document.getElementById('be-schema-playfair-home');
-                var healthBtn = document.getElementById('be-schema-playfair-health');
-                var testBtn = document.getElementById('be-schema-playfair-test');
                 var targetInput = document.getElementById('be-schema-playfair-target');
                 var profileSelect = document.getElementById('be-schema-playfair-profile');
                 var waitInput = document.getElementById('be-schema-playfair-wait');
@@ -2359,78 +2355,6 @@ function be_schema_engine_render_tools_page() {
                         if (targetInput) {
                             targetInput.value = playfairData.homeUrl;
                         }
-                    });
-                }
-
-                if (healthBtn) {
-                    healthBtn.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        setStatus('<?php echo esc_js( __( 'Checking health…', 'beseo' ) ); ?>');
-                        clearResults();
-                        postAction(
-                            {
-                                action: 'be_schema_playfair_health',
-                                nonce: playfairData.healthNonce,
-                                mode: modeSelect ? modeSelect.value : ''
-                            },
-                            function (response) {
-                                if (!response || !response.success) {
-                                    var msg = (response && response.data && response.data.message) ? response.data.message : '<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>';
-                                    setStatus(msg, 'is-error');
-                                    return;
-                                }
-                                setStatus('<?php echo esc_js( __( 'Health check OK.', 'beseo' ) ); ?>');
-                            },
-                            function () {
-                                setStatus('<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>', 'is-error');
-                            }
-                        );
-                    });
-                }
-
-                if (testBtn) {
-                    testBtn.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        setStatus('<?php echo esc_js( __( 'Running test…', 'beseo' ) ); ?>');
-                        clearResults();
-                        postAction(
-                            {
-                                action: 'be_schema_playfair_health',
-                                nonce: playfairData.healthNonce,
-                                mode: modeSelect ? modeSelect.value : ''
-                            },
-                            function (healthResponse) {
-                                if (!healthResponse || !healthResponse.success) {
-                                    var msg = (healthResponse && healthResponse.data && healthResponse.data.message) ? healthResponse.data.message : '<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>';
-                                    setStatus(msg, 'is-error');
-                                    return;
-                                }
-                                postAction(
-                                    buildCapturePayload(playfairData.testUrl),
-                                    function (captureResponse) {
-                                        if (!captureResponse || !captureResponse.success) {
-                                            var msg2 = (captureResponse && captureResponse.data && captureResponse.data.message) ? captureResponse.data.message : '<?php echo esc_js( __( 'Test capture failed.', 'beseo' ) ); ?>';
-                                            setStatus(msg2, 'is-error');
-                                            return;
-                                        }
-                                        renderResult(captureResponse.data);
-                                        var testMsg = '<?php echo esc_js( __( 'Test complete.', 'beseo' ) ); ?>';
-                                        var testType = '';
-                                        if (captureResponse.data && captureResponse.data.meta && captureResponse.data.meta.fallback) {
-                                            testMsg = '<?php echo esc_js( __( 'Test complete (remote failed, used local).', 'beseo' ) ); ?>';
-                                            testType = 'is-warning';
-                                        }
-                                        setStatus(testMsg, testType);
-                                    },
-                                    function () {
-                                        setStatus('<?php echo esc_js( __( 'Test capture failed.', 'beseo' ) ); ?>', 'is-error');
-                                    }
-                                );
-                            },
-                            function () {
-                                setStatus('<?php echo esc_js( __( 'Health check failed.', 'beseo' ) ); ?>', 'is-error');
-                            }
-                        );
                     });
                 }
 

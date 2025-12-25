@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.39] - 2025-12-25
+Summary: Schema admin.
+
+### Changed
+- Touched areas: schema admin.
+
+### Files
+- assets/js/schema.js
+- includes/admin/page-schema.php
+- includes/admin/page-tools.php
+- includes/admin/schema-view-preview.php
+
+
 ## [2.1.38] - 2025-12-25
 Summary: Update.
 

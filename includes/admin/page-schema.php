@@ -44,6 +44,8 @@ function be_schema_engine_enqueue_schema_assets() {
                 'playfairNonce' => wp_create_nonce( 'be_schema_playfair_capture' ),
                 'playfairAction' => 'be_schema_playfair_capture',
                 'marker' => function_exists( 'be_schema_preview_marker_value' ) ? be_schema_preview_marker_value() : 'beseo-generated',
+                'playfairHealthNonce' => wp_create_nonce( 'be_schema_playfair_health' ),
+                'playfairTestUrl' => 'https://example.com',
             ),
             'labels'                 => array(
                 'undefined'          => __( 'Undefined', 'beseo' ),

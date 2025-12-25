@@ -761,12 +761,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     var ajaxUrl = preview.ajaxUrl || '';
                     var playfairNonce = preview.playfairNonce || '';
                     var playfairAction = preview.playfairAction || 'be_schema_playfair_capture';
+                    var playfairHealthNonce = preview.playfairHealthNonce || '';
+                    var playfairTestUrl = preview.playfairTestUrl || 'https://example.com';
                     var homeUrl = preview.homeUrl || '';
                     var marker = preview.marker || 'beseo-generated';
 
                     var targetInput = document.getElementById('be-schema-preview-target');
                     var targetHelp = document.getElementById('be-schema-preview-target-help');
+                    var targetStatus = document.getElementById('be-schema-preview-target-status');
                     var homeBtn = document.getElementById('be-schema-preview-home');
+                    var healthBtn = document.getElementById('be-schema-preview-health');
+                    var testBtn = document.getElementById('be-schema-preview-test');
                     var createBtn = document.getElementById('be-schema-preview-create');
                     var refreshAllBtn = document.getElementById('be-schema-preview-refresh-all');
                     var clearCacheBtn = document.getElementById('be-schema-preview-clear-cache');
@@ -885,6 +890,66 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
                         el.textContent = text || '';
+                    }
+
+                    function setTargetStatus(message, type) {
+                        if (!targetStatus) {
+                            return;
+                        }
+                        targetStatus.textContent = message || '';
+                        targetStatus.className = 'be-schema-preview-status';
+                        if (message) {
+                            targetStatus.classList.add('is-active');
+                            if (type) {
+                                targetStatus.classList.add(type);
+                            }
+                        }
+                    }
+
+                    function postAction(payload, onSuccess, onError) {
+                        if (!ajaxUrl) {
+                            if (onError) {
+                                onError(new Error('Missing AJAX URL.'));
+                            }
+                            return;
+                        }
+
+                        var body = Object.keys(payload).map(function (key) {
+                            return encodeURIComponent(key) + '=' + encodeURIComponent(payload[key]);
+                        }).join('&');
+
+                        if (window.fetch) {
+                            fetch(ajaxUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                },
+                                body: body
+                            })
+                                .then(function (response) { return response.json(); })
+                                .then(onSuccess)
+                                .catch(onError);
+                            return;
+                        }
+
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('POST', ajaxUrl, true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+                        xhr.onreadystatechange = function () {
+                            if (xhr.readyState !== 4) {
+                                return;
+                            }
+                            try {
+                                var json = JSON.parse(xhr.responseText);
+                                onSuccess(json);
+                            } catch (err) {
+                                if (onError) {
+                                    onError(err);
+                                }
+                            }
+                        };
+                        xhr.send(body);
                     }
 
                     function applyAvailability() {
@@ -2118,6 +2183,88 @@ document.addEventListener('DOMContentLoaded', function () {
                                 if (homeUrl) {
                                     setTargetValue(homeUrl);
                                 }
+                            });
+                        }
+
+                        if (healthBtn) {
+                            healthBtn.addEventListener('click', function (event) {
+                                event.preventDefault();
+                                if (!playfairHealthNonce) {
+                                    setTargetStatus('Playfair health check is not configured.', 'is-error');
+                                    return;
+                                }
+                                var criteria = ensureCriteriaFromInputs();
+                                var mode = criteria.location === 'internal' ? 'local' : 'remote';
+                                setTargetStatus('Checking health…');
+                                postAction(
+                                    {
+                                        action: 'be_schema_playfair_health',
+                                        nonce: playfairHealthNonce,
+                                        mode: mode
+                                    },
+                                    function (response) {
+                                        if (!response || !response.success) {
+                                            var msg = response && response.data && response.data.message ? response.data.message : 'Health check failed.';
+                                            setTargetStatus(msg, 'is-error');
+                                            return;
+                                        }
+                                        setTargetStatus('Health check OK.');
+                                    },
+                                    function () {
+                                        setTargetStatus('Health check failed.', 'is-error');
+                                    }
+                                );
+                            });
+                        }
+
+                        if (testBtn) {
+                            testBtn.addEventListener('click', function (event) {
+                                event.preventDefault();
+                                if (!playfairHealthNonce || !playfairNonce) {
+                                    setTargetStatus('Playfair test is not configured.', 'is-error');
+                                    return;
+                                }
+                                var criteria = ensureCriteriaFromInputs();
+                                var mode = criteria.location === 'internal' ? 'local' : 'remote';
+                                setTargetStatus('Running test…');
+                                postAction(
+                                    {
+                                        action: 'be_schema_playfair_health',
+                                        nonce: playfairHealthNonce,
+                                        mode: mode
+                                    },
+                                    function (healthResponse) {
+                                        if (!healthResponse || !healthResponse.success) {
+                                            var msg = healthResponse && healthResponse.data && healthResponse.data.message ? healthResponse.data.message : 'Health check failed.';
+                                            setTargetStatus(msg, 'is-error');
+                                            return;
+                                        }
+                                        postAction(
+                                            {
+                                                action: playfairAction,
+                                                nonce: playfairNonce,
+                                                url: playfairTestUrl,
+                                                mode: mode,
+                                                include_logs: 1,
+                                                include_html: 0
+                                            },
+                                            function (captureResponse) {
+                                                if (!captureResponse || !captureResponse.success) {
+                                                    var msg2 = captureResponse && captureResponse.data && captureResponse.data.message ? captureResponse.data.message : 'Test capture failed.';
+                                                    setTargetStatus(msg2, 'is-error');
+                                                    return;
+                                                }
+                                                setTargetStatus('Test complete.');
+                                            },
+                                            function () {
+                                                setTargetStatus('Test capture failed.', 'is-error');
+                                            }
+                                        );
+                                    },
+                                    function () {
+                                        setTargetStatus('Health check failed.', 'is-error');
+                                    }
+                                );
                             });
                         }
 
