@@ -1443,8 +1443,17 @@ document.addEventListener('DOMContentLoaded', function () {
                             line.setAttribute('y1', from.y + nodeHeight / 2);
                             line.setAttribute('x2', to.x + nodeWidth / 2);
                             line.setAttribute('y2', to.y + nodeHeight / 2);
-                            line.setAttribute('stroke', '#94a3b8');
-                            line.setAttribute('stroke-width', '1');
+                            var edgeStatus = from.diffStatus || to.diffStatus;
+                            var edgeStroke = '#94a3b8';
+                            if (edgeStatus === 'added') {
+                                edgeStroke = '#16a34a';
+                            } else if (edgeStatus === 'removed') {
+                                edgeStroke = '#dc2626';
+                            } else if (edgeStatus === 'changed') {
+                                edgeStroke = '#f59e0b';
+                            }
+                            line.setAttribute('stroke', edgeStroke);
+                            line.setAttribute('stroke-width', edgeStatus ? '1.5' : '1');
                             line.setAttribute('stroke-linecap', 'round');
                             svg.appendChild(line);
                         });

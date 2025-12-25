@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.37] - 2025-12-24
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- assets/js/schema.js
+
+
 ## [2.1.36] - 2025-12-24
 Summary: Update.
 
