@@ -309,42 +309,55 @@
         }
 
         function renderSites() {
-            if (!sitesList || !siteSelect) {
+            var hasList = !!sitesList;
+            var hasSelect = !!siteSelect;
+            if (!hasList && !hasSelect) {
                 return;
             }
-            sitesList.innerHTML = '';
-            siteSelect.innerHTML = '';
+            if (hasList) {
+                sitesList.innerHTML = '';
+            }
+            if (hasSelect) {
+                siteSelect.innerHTML = '';
+            }
             if (!sites.length) {
-                var li = document.createElement('li');
-                li.textContent = t('noSavedSites', 'No saved websites yet.');
-                sitesList.appendChild(li);
+                if (hasList) {
+                    var li = document.createElement('li');
+                    li.textContent = t('noSavedSites', 'No saved websites yet.');
+                    sitesList.appendChild(li);
+                }
+                if (hasSelect) {
+                    var optHome = document.createElement('option');
+                    optHome.value = data.homeUrl || '';
+                    optHome.textContent = data.homeUrl || '';
+                    siteSelect.appendChild(optHome);
+                }
+                return;
             }
             sites.forEach(function(site, idx) {
-                var li = document.createElement('li');
-                li.textContent = site.label + ' — ' + site.url;
-                var btn = document.createElement('button');
-                btn.className = 'button button-secondary';
-                btn.style.marginLeft = '8px';
-                btn.textContent = t('remove', 'Remove');
-                btn.addEventListener('click', function() {
-                    sites.splice(idx, 1);
-                    saveSites();
-                    renderSites();
-                });
-                li.appendChild(btn);
-                sitesList.appendChild(li);
+                if (hasList) {
+                    var li = document.createElement('li');
+                    li.textContent = site.label + ' — ' + site.url;
+                    var btn = document.createElement('button');
+                    btn.className = 'button button-secondary';
+                    btn.style.marginLeft = '8px';
+                    btn.textContent = t('remove', 'Remove');
+                    btn.addEventListener('click', function() {
+                        sites.splice(idx, 1);
+                        saveSites();
+                        renderSites();
+                    });
+                    li.appendChild(btn);
+                    sitesList.appendChild(li);
+                }
 
-                var opt = document.createElement('option');
-                opt.value = site.url;
-                opt.textContent = site.label + ' (' + site.url + ')';
-                siteSelect.appendChild(opt);
+                if (hasSelect) {
+                    var opt = document.createElement('option');
+                    opt.value = site.url;
+                    opt.textContent = site.label + ' (' + site.url + ')';
+                    siteSelect.appendChild(opt);
+                }
             });
-            if (!sites.length) {
-                var optHome = document.createElement('option');
-                optHome.value = data.homeUrl || '';
-                optHome.textContent = data.homeUrl || '';
-                siteSelect.appendChild(optHome);
-            }
         }
 
         function currentTargetUrl() {

@@ -551,7 +551,7 @@ function be_schema_engine_render_tools_page() {
             $tools_default_tab = 'wayfair';
         } elseif ( ! empty( $_POST['be_schema_help_overrides_nonce'] ) ) {
             $tools_default_tab = 'help';
-        } elseif ( $requested_tab && in_array( $requested_tab, array( 'help', 'wayfair' ), true ) ) {
+        } elseif ( $requested_tab && in_array( $requested_tab, array( 'help', 'wayfair', 'lists' ), true ) ) {
             $tools_default_tab = $requested_tab;
         } else {
             $tools_default_tab = 'help';
@@ -1036,6 +1036,12 @@ function be_schema_engine_render_tools_page() {
                 font-size: 12px;
                 color: #444;
             }
+            .be-schema-website-list {
+                margin-top: 8px;
+            }
+            .be-schema-website-list li {
+                margin-bottom: 6px;
+            }
         </style>
 
         <h2 class="nav-tab-wrapper">
@@ -1044,6 +1050,7 @@ function be_schema_engine_render_tools_page() {
             <?php endif; ?>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-lists" class="nav-tab<?php echo ( 'lists' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="lists"><?php esc_html_e( 'Lists', 'beseo' ); ?></a>
                 <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair', 'beseo' ); ?></a>
             <?php endif; ?>
             <?php if ( ! $is_settings_submenu ) : ?>
@@ -1081,6 +1088,20 @@ function be_schema_engine_render_tools_page() {
         <?php endif; ?>
 
         <?php if ( $is_settings_submenu ) : ?>
+            <div id="be-schema-tools-lists" class="be-schema-tools-panel<?php echo ( 'lists' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <div class="be-schema-playfair-box">
+                    <h3><?php esc_html_e( 'Websites', 'beseo' ); ?></h3>
+                    <p class="description"><?php esc_html_e( 'Manage the list of websites used by the Analyser.', 'beseo' ); ?></p>
+                    <div>
+                        <input type="text" id="be-schema-sites-label" class="regular-text" placeholder="<?php esc_attr_e( 'Label (e.g., Main Site)', 'beseo' ); ?>" />
+                        <input type="text" id="be-schema-sites-url" class="regular-text" placeholder="https://example.com/" />
+                        <button class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
+                    </div>
+                    <p class="description" id="be-schema-sites-status"></p>
+                    <ul class="be-schema-website-list" id="be-schema-sites-list"></ul>
+                </div>
+            </div>
+
             <div id="be-schema-tools-wayfair" class="be-schema-tools-panel<?php echo ( 'wayfair' === $tools_default_tab ) ? ' active' : ''; ?>">
                 <?php settings_errors( 'be_schema_engine' ); ?>
                 <?php
@@ -1430,7 +1451,92 @@ function be_schema_engine_render_tools_page() {
 
                 activateTab(defaultTab || 'dashboard');
 
-                    function currentMode() {
+                var sitesStoreKey = 'be-schema-analyser-sites';
+                var sitesList = document.getElementById('be-schema-sites-list');
+                var sitesAdd = document.getElementById('be-schema-sites-add');
+                var sitesLabel = document.getElementById('be-schema-sites-label');
+                var sitesUrl = document.getElementById('be-schema-sites-url');
+                var sitesStatus = document.getElementById('be-schema-sites-status');
+                var sites = [];
+
+                function setSitesStatus(message) {
+                    if (!sitesStatus) {
+                        return;
+                    }
+                    sitesStatus.textContent = message || '';
+                }
+
+                function loadSites() {
+                    try {
+                        var raw = localStorage.getItem(sitesStoreKey);
+                        sites = raw ? JSON.parse(raw) : [];
+                        if (!Array.isArray(sites)) {
+                            sites = [];
+                        }
+                    } catch (e) {
+                        sites = [];
+                    }
+                }
+
+                function saveSites() {
+                    try {
+                        localStorage.setItem(sitesStoreKey, JSON.stringify(sites));
+                    } catch (e) {}
+                }
+
+                function renderSites() {
+                    if (!sitesList) {
+                        return;
+                    }
+                    sitesList.innerHTML = '';
+                    if (!sites.length) {
+                        var empty = document.createElement('li');
+                        empty.textContent = '<?php echo esc_js( __( 'No saved websites yet.', 'beseo' ) ); ?>';
+                        sitesList.appendChild(empty);
+                        return;
+                    }
+                    sites.forEach(function(site, idx) {
+                        var li = document.createElement('li');
+                        li.textContent = site.label + ' — ' + site.url;
+                        var btn = document.createElement('button');
+                        btn.className = 'button button-secondary';
+                        btn.style.marginLeft = '8px';
+                        btn.textContent = '<?php echo esc_js( __( 'Remove', 'beseo' ) ); ?>';
+                        btn.addEventListener('click', function() {
+                            sites.splice(idx, 1);
+                            saveSites();
+                            renderSites();
+                        });
+                        li.appendChild(btn);
+                        sitesList.appendChild(li);
+                    });
+                }
+
+                if (sitesAdd && sitesLabel && sitesUrl) {
+                    sitesAdd.addEventListener('click', function() {
+                        var label = sitesLabel.value.trim();
+                        var url = sitesUrl.value.trim();
+                        if (!label || !url) {
+                            setSitesStatus('<?php echo esc_js( __( 'Enter a label and URL.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (!/^https?:\\/\\//i.test(url)) {
+                            setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        sites.push({ label: label, url: url });
+                        saveSites();
+                        renderSites();
+                        sitesLabel.value = '';
+                        sitesUrl.value = '';
+                        setSitesStatus('<?php echo esc_js( __( 'Website saved.', 'beseo' ) ); ?>');
+                    });
+                }
+
+                loadSites();
+                renderSites();
+
+                function currentMode() {
                         var mode = 'dropdown';
                         validatorMode.forEach(function (radio) {
                             if (radio.checked) {

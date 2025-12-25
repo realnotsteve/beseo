@@ -181,23 +181,7 @@ function be_schema_engine_render_analyser_page() {
         </div>
 
         <div id="be-schema-analyser-settings" class="be-schema-analyser-panel<?php echo ( 'settings' === $default_tab ) ? ' active' : ''; ?>">
-            <div class="be-schema-settings-layout">
-                <div class="be-schema-settings-menu">
-                    <button class="button button-secondary" data-settings-panel="websites"><?php esc_html_e( 'Websites', 'beseo' ); ?></button>
-                </div>
-                <div class="be-schema-settings-panel">
-                    <div data-settings-panel-content="websites">
-                        <h3><?php esc_html_e( 'Websites', 'beseo' ); ?></h3>
-                        <p class="description"><?php esc_html_e( 'Manage a list of sites to analyse.', 'beseo' ); ?></p>
-                        <div>
-                            <input type="text" id="be-schema-sites-label" class="regular-text" placeholder="<?php esc_attr_e( 'Label (e.g., Main Site)', 'beseo' ); ?>" />
-                            <input type="text" id="be-schema-sites-url" class="regular-text" placeholder="https://example.com/" />
-                            <button class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
-                        </div>
-                        <ul class="be-schema-website-list" id="be-schema-sites-list"></ul>
-                    </div>
-                </div>
-            </div>
+            <p class="description"><?php esc_html_e( 'Website lists are managed under Settings → Lists.', 'beseo' ); ?></p>
         </div>
     </div>
     <?php
