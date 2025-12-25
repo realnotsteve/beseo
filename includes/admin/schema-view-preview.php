@@ -14,84 +14,85 @@ function be_schema_engine_render_schema_tab_preview() {
         <?php esc_html_e( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ); ?>
     </p>
 
-    <div class="be-schema-global-section be-schema-preview-target">
-        <h4 class="be-schema-section-title"><?php esc_html_e( 'Target', 'beseo' ); ?></h4>
-        <p class="description be-schema-description">
-            <?php esc_html_e( 'Enter a URL or a post ID, then generate the schema graph preview.', 'beseo' ); ?>
-        </p>
-        <div class="be-schema-preview-inputs">
-            <input type="text" id="be-schema-preview-target" class="regular-text" placeholder="<?php esc_attr_e( 'https://example.com/page or 123', 'beseo' ); ?>" />
-            <div class="be-schema-preview-buttons">
-                <button type="button" class="button button-secondary" id="be-schema-preview-home">
-                    <?php esc_html_e( 'Use Homepage', 'beseo' ); ?>
+    <div class="be-schema-preview-upper">
+        <div class="be-schema-global-section be-schema-preview-target">
+            <h4 class="be-schema-section-title"><?php esc_html_e( 'Target', 'beseo' ); ?></h4>
+            <p class="description be-schema-description">
+                <?php esc_html_e( 'Enter a URL or a post ID, then generate schema output with Playfair.', 'beseo' ); ?>
+            </p>
+            <div class="be-schema-preview-inputs">
+                <input type="text" id="be-schema-preview-target" class="regular-text" placeholder="<?php esc_attr_e( 'https://example.com/page or 123', 'beseo' ); ?>" />
+                <div class="be-schema-preview-buttons">
+                    <button type="button" class="button button-secondary" id="be-schema-preview-home">
+                        <?php esc_html_e( 'Use Homepage', 'beseo' ); ?>
+                    </button>
+                </div>
+            </div>
+            <p class="be-schema-preview-help" id="be-schema-preview-target-help"></p>
+        </div>
+
+        <div class="be-schema-global-section be-schema-preview-criteria">
+            <h4 class="be-schema-section-title"><?php esc_html_e( 'Render Criteria', 'beseo' ); ?></h4>
+            <div class="be-schema-preview-criteria-grid">
+                <div class="be-schema-preview-field" data-control="location">
+                    <span class="be-schema-preview-label"><?php esc_html_e( 'Render Location', 'beseo' ); ?></span>
+                    <div class="be-schema-preview-options">
+                        <label><input type="radio" name="be_schema_preview_location" value="internal" checked /> <?php esc_html_e( 'Internal', 'beseo' ); ?></label>
+                        <label><input type="radio" name="be_schema_preview_location" value="external" /> <?php esc_html_e( 'External', 'beseo' ); ?></label>
+                    </div>
+                    <p class="be-schema-preview-help" id="be-schema-preview-location-help"></p>
+                </div>
+                <div class="be-schema-preview-field" data-control="capture">
+                    <span class="be-schema-preview-label"><?php esc_html_e( 'Capture Mode', 'beseo' ); ?></span>
+                    <div class="be-schema-preview-options">
+                        <label><input type="radio" name="be_schema_preview_capture" value="server" checked /> <?php esc_html_e( 'Server', 'beseo' ); ?></label>
+                        <label><input type="radio" name="be_schema_preview_capture" value="dom" /> <?php esc_html_e( 'DOM', 'beseo' ); ?></label>
+                    </div>
+                </div>
+                <div class="be-schema-preview-field" data-control="view">
+                    <span class="be-schema-preview-label"><?php esc_html_e( 'View', 'beseo' ); ?></span>
+                    <div class="be-schema-preview-options">
+                        <label><input type="radio" name="be_schema_preview_view" value="graph" checked /> <?php esc_html_e( 'Graph', 'beseo' ); ?></label>
+                        <label><input type="radio" name="be_schema_preview_view" value="json" /> <?php esc_html_e( 'JSON-LD', 'beseo' ); ?></label>
+                    </div>
+                </div>
+                <div class="be-schema-preview-field" data-control="colour">
+                    <label class="be-schema-preview-label" for="be-schema-preview-colour"><?php esc_html_e( 'Colour', 'beseo' ); ?></label>
+                    <select id="be-schema-preview-colour">
+                        <option value="keyword"><?php esc_html_e( 'Keyword', 'beseo' ); ?></option>
+                        <option value="source"><?php esc_html_e( 'Source', 'beseo' ); ?></option>
+                    </select>
+                    <p class="be-schema-preview-help" id="be-schema-preview-colour-help"></p>
+                </div>
+                <div class="be-schema-preview-field" data-control="beseo">
+                    <label class="be-schema-preview-label">
+                        <input type="checkbox" id="be-schema-preview-add-beseo" checked />
+                        <?php esc_html_e( 'Add BE SEO', 'beseo' ); ?>
+                    </label>
+                    <p class="be-schema-preview-help" id="be-schema-preview-beseo-help"></p>
+                </div>
+            </div>
+            <p class="be-schema-preview-note"><?php esc_html_e( 'Schema extraction currently supports JSON-LD only (Microdata/RDFa not supported yet).', 'beseo' ); ?></p>
+            <div class="be-schema-preview-actions">
+                <button type="button" class="button button-primary" id="be-schema-preview-create">
+                    <?php esc_html_e( 'Create', 'beseo' ); ?>
                 </button>
-                <button type="button" class="button button-primary" id="be-schema-preview-run">
-                    <?php esc_html_e( 'Generate Preview', 'beseo' ); ?>
+                <button type="button" class="button" id="be-schema-preview-refresh-all">
+                    <?php esc_html_e( 'Refresh All', 'beseo' ); ?>
+                </button>
+                <button type="button" class="button" id="be-schema-preview-clear-cache">
+                    <?php esc_html_e( 'Clear Cache', 'beseo' ); ?>
                 </button>
             </div>
-        </div>
-        <div id="be-schema-preview-status" class="be-schema-preview-status" aria-live="polite"></div>
-        <div class="be-schema-preview-meta">
-            <div><strong><?php esc_html_e( 'Nodes', 'beseo' ); ?></strong>: <span id="be-schema-preview-node-count">0</span></div>
-            <div><strong><?php esc_html_e( 'Edges', 'beseo' ); ?></strong>: <span id="be-schema-preview-edge-count">0</span></div>
         </div>
     </div>
 
-    <div class="be-schema-preview-columns">
-        <div class="be-schema-preview-column" id="be-schema-preview-column-internal">
-            <div class="be-schema-preview-column-header">
-                <span class="be-schema-preview-column-title"><?php esc_html_e( 'Internal', 'beseo' ); ?></span>
-                <button type="button" class="button-link be-schema-preview-collapse" aria-expanded="true" aria-controls="be-schema-preview-internal-body" aria-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-collapse-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-expand-label="<?php esc_attr_e( 'Expand', 'beseo' ); ?>">
-                    <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
-                </button>
-            </div>
-            <div class="be-schema-preview-column-body" id="be-schema-preview-internal-body">
-                <div class="be-schema-preview-section">
-                    <div class="be-schema-preview-section-header">
-                        <span class="be-schema-preview-section-title"><?php esc_html_e( 'Graph', 'beseo' ); ?></span>
-                        <button type="button" class="button-link be-schema-preview-section-toggle" aria-expanded="true" aria-controls="be-schema-preview-graph-wrap" aria-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-collapse-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-expand-label="<?php esc_attr_e( 'Expand', 'beseo' ); ?>">
-                            <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
-                        </button>
-                    </div>
-                    <div class="be-schema-preview-section-body" id="be-schema-preview-graph-wrap">
-                        <div id="be-schema-preview-graph" class="be-schema-preview-graph"></div>
-                    </div>
-                </div>
-                <div class="be-schema-preview-section">
-                    <div class="be-schema-preview-section-header">
-                        <span class="be-schema-preview-section-title" id="be-schema-preview-json-label"><?php esc_html_e( 'Raw JSON-LD', 'beseo' ); ?></span>
-                        <button type="button" class="button-link be-schema-preview-section-toggle" aria-expanded="true" aria-controls="be-schema-preview-json-wrap" aria-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-collapse-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-expand-label="<?php esc_attr_e( 'Expand', 'beseo' ); ?>">
-                            <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
-                        </button>
-                    </div>
-                    <div class="be-schema-preview-section-body" id="be-schema-preview-json-wrap">
-                        <pre class="be-schema-preview-json" role="textbox" aria-readonly="true" aria-labelledby="be-schema-preview-json-label"><code id="be-schema-preview-json" class="be-schema-json-code"></code></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="be-schema-preview-column" id="be-schema-preview-column-third-party">
-            <div class="be-schema-preview-column-header">
-                <span class="be-schema-preview-column-title"><?php esc_html_e( 'Third-Party Output', 'beseo' ); ?></span>
-                <button type="button" class="button-link be-schema-preview-collapse" aria-expanded="true" aria-controls="be-schema-preview-third-party-body" aria-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-collapse-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-expand-label="<?php esc_attr_e( 'Expand', 'beseo' ); ?>">
-                    <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
-                </button>
-            </div>
-            <div class="be-schema-preview-column-body" id="be-schema-preview-third-party-body">
-                <p class="be-schema-preview-empty"><?php esc_html_e( 'No third-party output loaded.', 'beseo' ); ?></p>
-            </div>
-        </div>
-        <div class="be-schema-preview-column" id="be-schema-preview-column-full">
-            <div class="be-schema-preview-column-header">
-                <span class="be-schema-preview-column-title"><?php esc_html_e( 'Full Output', 'beseo' ); ?></span>
-                <button type="button" class="button-link be-schema-preview-collapse" aria-expanded="true" aria-controls="be-schema-preview-full-body" aria-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-collapse-label="<?php esc_attr_e( 'Collapse', 'beseo' ); ?>" data-expand-label="<?php esc_attr_e( 'Expand', 'beseo' ); ?>">
-                    <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
-                </button>
-            </div>
-            <div class="be-schema-preview-column-body" id="be-schema-preview-full-body">
-                <p class="be-schema-preview-empty"><?php esc_html_e( 'No full output loaded.', 'beseo' ); ?></p>
-            </div>
-        </div>
+    <div class="be-schema-preview-columns" id="be-schema-preview-columns"></div>
+
+    <div class="be-schema-global-section be-schema-preview-diff" id="be-schema-preview-diff">
+        <h4 class="be-schema-section-title"><?php esc_html_e( 'Diff', 'beseo' ); ?></h4>
+        <p class="description"><?php esc_html_e( 'Select two columns to compare their JSON-LD output.', 'beseo' ); ?></p>
+        <div class="be-schema-preview-diff-body" id="be-schema-preview-diff-body"></div>
     </div>
     <?php
 }

@@ -29,6 +29,16 @@ function be_schema_playfair_capture_ajax() {
     $include_logs = isset( $_POST['include_logs'] ) ? (bool) absint( $_POST['include_logs'] ) : null;
     $locale = isset( $_POST['locale'] ) ? sanitize_text_field( wp_unslash( $_POST['locale'] ) ) : '';
     $timezone_id = isset( $_POST['timezone_id'] ) ? sanitize_text_field( wp_unslash( $_POST['timezone_id'] ) ) : '';
+    $query_args_raw = isset( $_POST['query_args'] ) ? wp_unslash( $_POST['query_args'] ) : null;
+    $query_args = array();
+    if ( is_string( $query_args_raw ) && '' !== $query_args_raw ) {
+        $decoded = json_decode( $query_args_raw, true );
+        if ( is_array( $decoded ) ) {
+            $query_args = $decoded;
+        }
+    } elseif ( is_array( $query_args_raw ) ) {
+        $query_args = $query_args_raw;
+    }
 
     $args = array();
     if ( $mode ) {
@@ -51,6 +61,9 @@ function be_schema_playfair_capture_ajax() {
     }
     if ( $timezone_id ) {
         $args['timezone_id'] = $timezone_id;
+    }
+    if ( $query_args ) {
+        $args['query_args'] = $query_args;
     }
 
     $result = be_schema_playfair_capture( $target, $args );

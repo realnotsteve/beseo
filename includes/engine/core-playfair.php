@@ -457,7 +457,7 @@ function be_schema_playfair_health( array $settings, $mode = '' ) {
  * Run a Playfair capture for the provided URL.
  *
  * @param string $target_url Target URL or post ID.
- * @param array  $args Optional overrides: mode, profile, wait_ms, include_html, include_logs, locale, timezone_id.
+ * @param array  $args Optional overrides: mode, profile, wait_ms, include_html, include_logs, locale, timezone_id, query_args.
  * @return array
  */
 function be_schema_playfair_capture( $target_url, array $args = array() ) {
@@ -469,12 +469,26 @@ function be_schema_playfair_capture( $target_url, array $args = array() ) {
         );
     }
 
-    if ( is_numeric( $target_url ) ) {
-        $permalink = get_permalink( (int) $target_url );
-        if ( $permalink ) {
-            $target_url = $permalink;
-        }
-    }
+	if ( is_numeric( $target_url ) ) {
+		$permalink = get_permalink( (int) $target_url );
+		if ( $permalink ) {
+			$target_url = $permalink;
+		}
+	}
+
+	if ( ! empty( $args['query_args'] ) && is_array( $args['query_args'] ) ) {
+		$query_args = array();
+		foreach ( $args['query_args'] as $key => $value ) {
+			$key = sanitize_key( $key );
+			if ( '' === $key ) {
+				continue;
+			}
+			$query_args[ $key ] = is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+		}
+		if ( $query_args ) {
+			$target_url = add_query_arg( $query_args, $target_url );
+		}
+	}
 
     $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
 

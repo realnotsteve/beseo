@@ -977,6 +977,10 @@ function be_schema_output_post_schema() {
 		'@graph'   => $graph,
 	);
 
+	if ( function_exists( 'be_schema_apply_preview_marker' ) ) {
+		$payload = be_schema_apply_preview_marker( $payload );
+	}
+
 	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $payload ) . '</script>' . "\n";
 
 	if ( function_exists( 'be_schema_debug_event' ) ) {

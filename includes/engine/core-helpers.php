@@ -197,6 +197,10 @@ function be_schema_engine_get_settings( $force_refresh = false ) {
  * @return bool
  */
 function be_schema_globally_disabled() {
+	if ( be_schema_preview_should_disable_output() ) {
+		return true;
+	}
+
 	if ( defined( 'BE_SCHEMA_DISABLE_ALL' ) && BE_SCHEMA_DISABLE_ALL ) {
 		return true;
 	}
@@ -204,6 +208,124 @@ function be_schema_globally_disabled() {
 	$settings = be_schema_engine_get_settings();
 
 	return ( $settings['enabled'] !== '1' );
+}
+
+/**
+ * Determine if this request is a BE SEO schema preview.
+ *
+ * @return bool
+ */
+function be_schema_is_preview_request() {
+	if ( ! isset( $_GET['beseo_preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return false;
+	}
+
+	$value = sanitize_text_field( wp_unslash( $_GET['beseo_preview'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	return in_array( $value, array( '1', 'true', 'yes', 'on' ), true );
+}
+
+/**
+ * Check if preview requests should suppress BE SEO output.
+ *
+ * @return bool
+ */
+function be_schema_preview_should_disable_output() {
+	if ( ! be_schema_is_preview_request() ) {
+		return false;
+	}
+
+	if ( ! isset( $_GET['beseo_add'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return false;
+	}
+
+	$value = sanitize_text_field( wp_unslash( $_GET['beseo_add'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	return in_array( $value, array( '0', 'false', 'no', 'off' ), true );
+}
+
+/**
+ * Determine whether preview markers should be injected into schema output.
+ *
+ * @return bool
+ */
+function be_schema_preview_marker_enabled() {
+	if ( ! be_schema_is_preview_request() ) {
+		return false;
+	}
+
+	if ( ! isset( $_GET['beseo_marker'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return false;
+	}
+
+	$value = sanitize_text_field( wp_unslash( $_GET['beseo_marker'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	return in_array( $value, array( '1', 'true', 'yes', 'on' ), true );
+}
+
+/**
+ * Return the preview marker value used for BE SEO source attribution.
+ *
+ * @return string
+ */
+function be_schema_preview_marker_value() {
+	return (string) apply_filters( 'be_schema_preview_marker', 'beseo-generated' );
+}
+
+/**
+ * Apply preview marker to a schema node.
+ *
+ * @param array $node Schema node (by reference).
+ * @return void
+ */
+function be_schema_preview_apply_marker_to_node( array &$node ) {
+	$marker = be_schema_preview_marker_value();
+
+	if ( isset( $node['identifier'] ) ) {
+		$identifier = $node['identifier'];
+		if ( is_array( $identifier ) ) {
+			if ( ! in_array( $marker, $identifier, true ) ) {
+				$identifier[] = $marker;
+			}
+			$node['identifier'] = $identifier;
+			return;
+		}
+
+		if ( is_string( $identifier ) && '' !== $identifier ) {
+			if ( $identifier !== $marker ) {
+				$node['identifier'] = array( $identifier, $marker );
+			}
+			return;
+		}
+	}
+
+	$node['identifier'] = $marker;
+}
+
+/**
+ * Apply preview markers to a schema payload, if enabled.
+ *
+ * @param array $payload JSON-LD payload.
+ * @return array
+ */
+function be_schema_apply_preview_marker( array $payload ) {
+	if ( ! be_schema_preview_marker_enabled() ) {
+		return $payload;
+	}
+
+	if ( isset( $payload['@graph'] ) && is_array( $payload['@graph'] ) ) {
+		foreach ( $payload['@graph'] as &$node ) {
+			if ( is_array( $node ) ) {
+				be_schema_preview_apply_marker_to_node( $node );
+			}
+		}
+		unset( $node );
+		return $payload;
+	}
+
+	be_schema_preview_apply_marker_to_node( $payload );
+
+	return $payload;
 }
 
 /**

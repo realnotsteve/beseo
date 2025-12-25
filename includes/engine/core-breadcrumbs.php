@@ -88,6 +88,10 @@ function be_schema_output_breadcrumb_schema() {
         'itemListElement' => $item_list,
     );
 
+    if ( function_exists( 'be_schema_apply_preview_marker' ) ) {
+        $breadcrumb = be_schema_apply_preview_marker( $breadcrumb );
+    }
+
     // Collect for debug logging.
     be_schema_debug_collect( $breadcrumb );
 

@@ -313,6 +313,10 @@ function be_schema_output_homepage_schema() {
 		'@graph'   => $graph,
 	);
 
+	if ( function_exists( 'be_schema_apply_preview_marker' ) ) {
+		$payload = be_schema_apply_preview_marker( $payload );
+	}
+
 	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $payload ) . '</script>' . "\n";
 
 	if ( function_exists( 'be_schema_debug_event' ) ) {
@@ -459,6 +463,10 @@ function be_schema_output_special_page_schema() {
 		'@context' => 'https://schema.org',
 		'@graph'   => $graph,
 	);
+
+	if ( function_exists( 'be_schema_apply_preview_marker' ) ) {
+		$payload = be_schema_apply_preview_marker( $payload );
+	}
 
 	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $payload ) . '</script>' . "\n";
 

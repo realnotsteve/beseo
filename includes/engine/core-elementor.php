@@ -341,6 +341,10 @@ function be_schema_output_elementor_schema() {
         '@graph'   => $nodes,
     );
 
+    if ( function_exists( 'be_schema_apply_preview_marker' ) ) {
+        $output = be_schema_apply_preview_marker( $output );
+    }
+
     echo '<script type="application/ld+json">' . wp_json_encode( $output ) . '</script>' . "\n";
 }
 

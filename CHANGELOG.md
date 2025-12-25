@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.35] - 2025-12-24
+Summary: Schema admin + engine.
+
+### Changed
+- Touched areas: schema admin, engine.
+
+### Files
+- assets/css/schema.css
+- includes/admin/page-schema.php
+- includes/admin/playfair-admin.php
+- includes/admin/schema-view-preview.php
+- includes/engine/core-breadcrumbs.php
+- includes/engine/core-elementor.php
+- includes/engine/core-helpers.php
+- includes/engine/core-playfair.php
+- includes/engine/core-posts.php
+- includes/engine/core-special-pages.php
+
+
 ## [2.1.34] - 2025-12-24
 Summary: Engine.
 
