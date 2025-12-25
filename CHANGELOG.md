@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.38] - 2025-12-25
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- includes/admin/page-tools.php
+- includes/admin/schema-service.php
+
+
 ## [2.1.37] - 2025-12-24
 Summary: Update.
 

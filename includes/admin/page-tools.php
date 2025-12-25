@@ -1088,8 +1088,6 @@ function be_schema_engine_render_tools_page() {
                 $playfair_local_base_url   = isset( $settings['playfair_local_base_url'] ) ? $settings['playfair_local_base_url'] : '';
                 $playfair_mode             = isset( $settings['playfair_mode'] ) ? $settings['playfair_mode'] : 'auto';
                 $playfair_timeout          = isset( $settings['playfair_timeout_seconds'] ) ? (int) $settings['playfair_timeout_seconds'] : 60;
-                $playfair_include_html     = ! empty( $settings['playfair_include_html_default'] );
-                $playfair_include_logs     = ! empty( $settings['playfair_include_logs_default'] );
                 $playfair_default_profile  = isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium';
                 $playfair_default_wait_ms  = isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500;
                 $playfair_default_locale   = isset( $settings['playfair_default_locale'] ) ? $settings['playfair_default_locale'] : '';
@@ -1182,19 +1180,6 @@ function be_schema_engine_render_tools_page() {
                                 <th scope="row"><?php esc_html_e( 'Default timezone', 'beseo' ); ?></th>
                                 <td>
                                     <input type="text" class="regular-text" name="be_schema_playfair_default_timezone" value="<?php echo esc_attr( $playfair_default_timezone ); ?>" placeholder="America/New_York" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php esc_html_e( 'Default options', 'beseo' ); ?></th>
-                                <td>
-                                    <label style="margin-right:12px;">
-                                        <input type="checkbox" name="be_schema_playfair_include_html_default" value="1" <?php checked( $playfair_include_html ); ?> />
-                                        <?php esc_html_e( 'Include HTML', 'beseo' ); ?>
-                                    </label>
-                                    <label>
-                                        <input type="checkbox" name="be_schema_playfair_include_logs_default" value="1" <?php checked( $playfair_include_logs ); ?> />
-                                        <?php esc_html_e( 'Include logs', 'beseo' ); ?>
-                                    </label>
                                 </td>
                             </tr>
                             <tr>

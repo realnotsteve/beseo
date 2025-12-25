@@ -311,8 +311,6 @@ function be_schema_engine_save_playfair_settings() {
         }
         $settings['playfair_timeout_seconds'] = $timeout;
     }
-    $settings['playfair_include_html_default'] = isset( $_POST['be_schema_playfair_include_html_default'] ) ? '1' : '0';
-    $settings['playfair_include_logs_default'] = isset( $_POST['be_schema_playfair_include_logs_default'] ) ? '1' : '0';
     $settings['playfair_allow_private_targets'] = isset( $_POST['be_schema_playfair_allow_private_targets'] ) ? '1' : '0';
     if ( isset( $_POST['be_schema_playfair_default_profile'] ) ) {
         $profile = sanitize_text_field( wp_unslash( $_POST['be_schema_playfair_default_profile'] ) );
