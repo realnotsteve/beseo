@@ -100,3 +100,54 @@ function be_schema_playfair_health_ajax() {
     wp_send_json_success( $result );
 }
 add_action( 'wp_ajax_be_schema_playfair_health', 'be_schema_playfair_health_ajax' );
+
+/**
+ * AJAX: Probe a URL to confirm it is reachable.
+ */
+function be_schema_sites_check_ajax() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'beseo' ) ), 403 );
+    }
+
+    check_ajax_referer( 'be_schema_sites_check', 'nonce' );
+
+    $url = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+    if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid URL.', 'beseo' ) ), 400 );
+    }
+
+    $sslverify = true;
+    if ( function_exists( 'be_schema_playfair_is_private_target' ) && be_schema_playfair_is_private_target( $url ) ) {
+        $sslverify = false;
+    }
+
+    $response = wp_remote_head(
+        $url,
+        array(
+            'timeout'   => 6,
+            'redirection' => 3,
+            'sslverify' => $sslverify,
+        )
+    );
+
+    if ( is_wp_error( $response ) ) {
+        wp_send_json_error(
+            array(
+                'message' => $response->get_error_message(),
+            ),
+            400
+        );
+    }
+
+    $status = (int) wp_remote_retrieve_response_code( $response );
+    if ( $status <= 0 ) {
+        wp_send_json_error( array( 'message' => __( 'No response received.', 'beseo' ) ), 400 );
+    }
+
+    wp_send_json_success(
+        array(
+            'status' => $status,
+        )
+    );
+}
+add_action( 'wp_ajax_be_schema_sites_check', 'be_schema_sites_check_ajax' );

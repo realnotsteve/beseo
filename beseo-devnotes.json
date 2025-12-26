@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.41",
+    "version": "2.1.42",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -64,6 +64,11 @@
       "path": "includes/admin/page-dashboard.php",
       "group": "admin",
       "role": "Dashboard/overview page for the BE SEO plugin (if used)."
+    },
+    {
+      "path": "includes/admin/page-help-text.php",
+      "group": "admin",
+      "role": "Settings submenu Help Text UI: override list, add-new form, and validation helpers."
     },
     {
       "path": "includes/admin/page-schema.php",
@@ -429,7 +434,7 @@
         "remote",
         "local"
       ],
-      "auto_behavior": "try remote first, fall back to local on failure"
+      "auto_behavior": "capture auto routes private/local targets to local, otherwise remote; health checks try remote first then local fallback"
     },
     "security": {
       "ssrf_guard": "block private/local targets unless developer mode enabled",
@@ -446,8 +451,6 @@
         "default_wait_ms",
         "default_locale",
         "default_timezone",
-        "default_include_html",
-        "default_include_logs",
         "allow_private_targets"
       ],
       "tools_actions": [
@@ -466,7 +469,8 @@
     "Social Media dashboard and Facebook/Twitter subtabs now use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks. Facebook/Twitter Content panels now expose optional fields via dropdown + add/remove (Page URL/default image/App ID/notes; handle/default image/notes).",
     "Platforms submenu now includes placeholder tabs for Instagram, TikTok, and LinkedIn.",
     "Added a placeholder Platforms submenu between Open Graph and Tools for future network-specific controls.",
-    "Facebook/Twitter/Instagram/TikTok/LinkedIn tabs now live under Platforms; Open Graph keeps the dashboard only."
+    "Facebook/Twitter/Instagram/TikTok/LinkedIn tabs now live under Platforms; Open Graph keeps the dashboard only.",
+    "Schema > Preview Target now includes Playfair Health Check and Run Test actions (moved from Tools > Playfair)."
   ],
   "validation_notes": [
     "Schema settings: added URL validation (http/https) for Organisation URL, publisher URLs/policies, and numeric copyright year (4 digits), surfacing errors via settings_errors.",
@@ -548,7 +552,14 @@
     "Social: added dry-run toggle (Social Dashboard) that prevents OG/Twitter meta output while logging BE_SOCIAL_DRY_RUN events."
   ],
   "ux_notes_settings": [
-    "Schema > Dashboard tab now uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls."
+    "Schema > Dashboard tab now uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls.",
+    "Settings > Help Text now uses two Global-style boxes (Existing, Add New Override) with a disclosure triangle, plus/minus row controls, and a live override count; Existing is collapsed by default and still shows the count when collapsed.",
+    "Help Text override validation only accepts help/descriptive strings sourced from description-class helper text (labels are ignored).",
+    "Settings > Lists tab now hosts the Websites list used by Analyser; Analyser settings points users to Settings \u2192 Lists.",
+    "Settings > Lists now uses Global-style boxes for Websites and Library; the saved website list renders in Websites while the Library box hosts the entry row.",
+    "Library row order is Save Website, URL, Label, then Local/Remote checks and an Auto-check toggle. Saved sites now render in the Websites box with the same controls. Local/Remote checks probe reachability via admin AJAX and store status per site.",
+    "Settings > Wayfair tab hosts Playfair configuration moved from Schema dashboard; Local File Access toggle controls private/localhost capture allowance.",
+    "Settings tabs now use the standard hash-based nav-tab switching for immediate panel swaps."
   ],
   "debug_notes": [
     "Schema Snapshots tab surfaces the last BE_SCHEMA_DEBUG_GRAPH payload (stored for 24h) with timestamp.",

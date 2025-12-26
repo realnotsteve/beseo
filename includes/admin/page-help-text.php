@@ -255,27 +255,41 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
         .be-schema-help-headers {
             display: flex;
             gap: 12px;
-            font-size: 12px;
-            color: #4b5563;
+            font-size: 11px;
+            color: #9ca3af;
         }
         .be-schema-help-headers span {
             flex: 1 1 0;
+        }
+        #be-schema-help-new-original::placeholder,
+        #be-schema-help-new-override::placeholder {
+            color: #9ca3af;
+        }
+        .be-schema-help-footer {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #4b5563;
+        }
+        .be-schema-help-divider {
+            border: 0;
+            border-top: 1px solid #dcdcde;
+            margin: 8px 0;
         }
     </style>
 
     <form method="post">
         <?php wp_nonce_field( 'be_schema_help_overrides_save', 'be_schema_help_overrides_nonce' ); ?>
         <div class="be-schema-help-layout">
-            <div class="be-schema-global-section be-schema-help-section" id="be-schema-help-existing">
+            <div class="be-schema-global-section be-schema-help-section is-collapsed" id="be-schema-help-existing">
                 <div class="be-schema-section-title">
-                    <button type="button" class="be-schema-help-toggle" aria-expanded="true">
-                        <span class="screen-reader-text"><?php esc_html_e( 'Collapse', 'beseo' ); ?></span>
+                    <button type="button" class="be-schema-help-toggle" aria-expanded="false">
+                        <span class="screen-reader-text"><?php esc_html_e( 'Expand', 'beseo' ); ?></span>
                     </button>
                     <strong><?php esc_html_e( 'Existing', 'beseo' ); ?></strong>
                 </div>
                 <div class="be-schema-help-body">
                     <div class="be-schema-help-headers">
-                        <span><?php esc_html_e( 'Find text', 'beseo' ); ?></span>
+                        <span><?php esc_html_e( 'Text to find', 'beseo' ); ?></span>
                         <span><?php esc_html_e( 'Replacement text', 'beseo' ); ?></span>
                     </div>
                     <div class="be-schema-help-list" id="be-schema-help-list">
@@ -291,6 +305,11 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
+                    <hr class="be-schema-help-divider" />
+                </div>
+                <div class="be-schema-help-footer">
+                    <?php esc_html_e( 'Number of Overrides:', 'beseo' ); ?>
+                    <span id="be-schema-help-count"><?php echo isset( $overrides ) && is_array( $overrides ) ? esc_html( (string) count( $overrides ) ) : '0'; ?></span>
                 </div>
             </div>
 
@@ -301,7 +320,7 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                 <div class="be-schema-help-body">
                     <div class="be-schema-help-row">
                         <button type="button" class="button be-schema-help-button" id="be-schema-help-add" aria-label="<?php esc_attr_e( 'Add override', 'beseo' ); ?>">+</button>
-                        <textarea id="be-schema-help-new-original" class="large-text code" rows="2" placeholder="<?php esc_attr_e( 'Find text', 'beseo' ); ?>"></textarea>
+                        <textarea id="be-schema-help-new-original" class="large-text code" rows="2" placeholder="<?php esc_attr_e( 'Text to find', 'beseo' ); ?>"></textarea>
                         <textarea id="be-schema-help-new-override" class="large-text code" rows="2" placeholder="<?php esc_attr_e( 'Replacement text', 'beseo' ); ?>"></textarea>
                     </div>
                     <p class="description" id="be-schema-help-status"></p>
@@ -355,6 +374,16 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                 }
             }
 
+            function updateOverrideCount() {
+                var list = document.getElementById('be-schema-help-list');
+                var count = document.getElementById('be-schema-help-count');
+                if (!list || !count) {
+                    return;
+                }
+                var rows = list.querySelectorAll('.be-schema-help-row');
+                count.textContent = rows.length;
+            }
+
             function addOverrideRow(findText, replaceText) {
                 var list = document.getElementById('be-schema-help-list');
                 if (!list) {
@@ -400,6 +429,7 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                 row.appendChild(replace);
                 list.appendChild(row);
                 ensureEmptyNotice();
+                updateOverrideCount();
             }
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -413,6 +443,10 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                     toggle.addEventListener('click', function() {
                         var collapsed = existingSection.classList.toggle('is-collapsed');
                         toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                        var sr = toggle.querySelector('.screen-reader-text');
+                        if (sr) {
+                            sr.textContent = collapsed ? '<?php echo esc_js( __( 'Expand', 'beseo' ) ); ?>' : '<?php echo esc_js( __( 'Collapse', 'beseo' ) ); ?>';
+                        }
                     });
                 }
 
@@ -423,6 +457,7 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                         if (row) {
                             row.remove();
                             ensureEmptyNotice();
+                            updateOverrideCount();
                         }
                     });
                 });
@@ -436,12 +471,12 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                     var replaceText = replaceInput.value.trim();
 
                     if (!findText || !replaceText) {
-                        setStatus('<?php echo esc_js( __( 'Enter both Find text and Replacement text.', 'beseo' ) ); ?>');
+                        setStatus('<?php echo esc_js( __( 'Enter both Text to find and Replacement text.', 'beseo' ) ); ?>');
                         return;
                     }
 
                     if (!candidateSet[findText]) {
-                        setStatus('<?php echo esc_js( __( 'Find text must match an existing help text in the plugin.', 'beseo' ) ); ?>');
+                        setStatus('<?php echo esc_js( __( 'Text to find must match an existing help text in the plugin.', 'beseo' ) ); ?>');
                         return;
                     }
 
@@ -452,6 +487,7 @@ function be_schema_help_overrides_render_form( $overrides, $notice = '', $wrap =
                 });
 
                 ensureEmptyNotice();
+                updateOverrideCount();
             });
         })();
     </script>
