@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.42",
+    "version": "2.1.43",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -557,7 +557,7 @@
     "Help Text override validation only accepts help/descriptive strings sourced from description-class helper text (labels are ignored).",
     "Settings > Lists tab now hosts the Websites list used by Analyser; Analyser settings points users to Settings \u2192 Lists.",
     "Settings > Lists now uses Global-style boxes for Websites and Library; the saved website list renders in Websites while the Library box hosts the entry row.",
-    "Library row order is Save Website, URL, Label, then Local/Remote checks and an Auto-check toggle. Saved sites now render in the Websites box with the same controls. Local/Remote checks probe reachability via admin AJAX and store status per site.",
+    "Library row order is Save Website, URL, Label, then Local/Remote checks. Saved sites now render in the Websites box with the same controls plus a per-site Auto-check toggle. Local/Remote checks probe reachability via admin AJAX and store status per site.",
     "Settings > Wayfair tab hosts Playfair configuration moved from Schema dashboard; Local File Access toggle controls private/localhost capture allowance.",
     "Settings tabs now use the standard hash-based nav-tab switching for immediate panel swaps."
   ],

@@ -1104,6 +1104,11 @@ function be_schema_engine_render_tools_page() {
                 font-size: 12px;
                 color: #444;
             }
+            .be-schema-tools-panel input::placeholder,
+            .be-schema-tools-panel textarea::placeholder {
+                color: #9ca3af;
+                opacity: 1;
+            }
             .be-schema-website-list {
                 margin-top: 8px;
                 list-style: none;
@@ -1168,15 +1173,11 @@ function be_schema_engine_render_tools_page() {
                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Library', 'beseo' ); ?></h4>
                     <p class="description"><?php esc_html_e( 'Manage the list of websites used by the Analyser.', 'beseo' ); ?></p>
                     <div class="be-schema-sites-row">
-                        <button class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
+                        <button type="button" class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
                         <input type="text" id="be-schema-sites-url" class="regular-text" placeholder="https://example.com/" />
                         <input type="text" id="be-schema-sites-label" class="regular-text" placeholder="<?php esc_attr_e( 'Label (e.g., Main Site)', 'beseo' ); ?>" />
                         <button type="button" id="be-schema-sites-local" class="be-schema-sites-check"><?php esc_html_e( 'Local', 'beseo' ); ?></button>
                         <button type="button" id="be-schema-sites-remote" class="be-schema-sites-check"><?php esc_html_e( 'Remote', 'beseo' ); ?></button>
-                        <label>
-                            <input type="checkbox" id="be-schema-sites-autocheck" />
-                            <?php esc_html_e( 'Auto-check', 'beseo' ); ?>
-                        </label>
                     </div>
                     <p class="description" id="be-schema-sites-status"></p>
                 </div>
@@ -1547,7 +1548,6 @@ function be_schema_engine_render_tools_page() {
                 };
 
                 var sitesStoreKey = 'be-schema-analyser-sites';
-                var sitesAutoCheckKey = 'be-schema-analyser-sites-autocheck';
                 var sitesList = document.getElementById('be-schema-sites-list');
                 var sitesEmpty = document.getElementById('be-schema-sites-empty');
                 var sitesAdd = document.getElementById('be-schema-sites-add');
@@ -1555,10 +1555,8 @@ function be_schema_engine_render_tools_page() {
                 var sitesUrl = document.getElementById('be-schema-sites-url');
                 var sitesLocalBtn = document.getElementById('be-schema-sites-local');
                 var sitesRemoteBtn = document.getElementById('be-schema-sites-remote');
-                var sitesAutoCheck = document.getElementById('be-schema-sites-autocheck');
                 var sitesStatus = document.getElementById('be-schema-sites-status');
                 var sites = [];
-                var autoCheckEnabled = false;
                 var sitesCheckNonce = '<?php echo esc_js( wp_create_nonce( 'be_schema_sites_check' ) ); ?>';
                 var sitesAjaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                 var playfairLocalBaseUrl = '<?php echo esc_js( $settings['playfair_local_base_url'] ?? '' ); ?>';
@@ -1582,7 +1580,8 @@ function be_schema_engine_render_tools_page() {
                                 label: site.label || '',
                                 url: site.url || '',
                                 localStatus: site.localStatus || 'unknown',
-                                remoteStatus: site.remoteStatus || 'unknown'
+                                remoteStatus: site.remoteStatus || 'unknown',
+                                autoCheck: !!site.autoCheck
                             };
                         });
                     } catch (e) {
@@ -1644,7 +1643,7 @@ function be_schema_engine_render_tools_page() {
                         var autoLabel = document.createElement('label');
                         var autoInput = document.createElement('input');
                         autoInput.type = 'checkbox';
-                        autoInput.checked = autoCheckEnabled;
+                        autoInput.checked = !!site.autoCheck;
                         autoLabel.appendChild(autoInput);
                         autoLabel.appendChild(document.createTextNode(' <?php echo esc_js( __( 'Auto-check', 'beseo' ) ); ?>'));
 
@@ -1683,7 +1682,14 @@ function be_schema_engine_render_tools_page() {
                             runSiteCheck(site, 'remote');
                         });
                         autoInput.addEventListener('change', function() {
-                            setAutoCheck(autoInput.checked);
+                            site.autoCheck = autoInput.checked;
+                            saveSites();
+                            renderSites();
+                            if (site.autoCheck) {
+                                runSiteCheck(site, 'remote').then(function() {
+                                    return runSiteCheck(site, 'local');
+                                });
+                            }
                         });
                         removeBtn.addEventListener('click', function() {
                             sites.splice(idx, 1);
@@ -1701,20 +1707,6 @@ function be_schema_engine_render_tools_page() {
                         li.appendChild(row);
                         sitesList.appendChild(li);
                     });
-                }
-
-                function setAutoCheck(value) {
-                    autoCheckEnabled = !!value;
-                    if (sitesAutoCheck) {
-                        sitesAutoCheck.checked = autoCheckEnabled;
-                    }
-                    try {
-                        localStorage.setItem(sitesAutoCheckKey, autoCheckEnabled ? '1' : '0');
-                    } catch (e) {}
-                    renderSites();
-                    if (autoCheckEnabled) {
-                        runAutoCheck();
-                    }
                 }
 
                 function setCheckButtonState(button, state) {
@@ -1822,9 +1814,12 @@ function be_schema_engine_render_tools_page() {
                             setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
                             return;
                         }
-                        sites.unshift({ label: label, url: url, localStatus: 'unknown', remoteStatus: 'unknown' });
+                        sites.unshift({ label: label, url: url, localStatus: 'unknown', remoteStatus: 'unknown', autoCheck: false });
                         saveSites();
                         renderSites();
+                        if (sitesList && typeof sitesList.scrollIntoView === 'function') {
+                            sitesList.scrollIntoView({ block: 'start' });
+                        }
                         sitesLabel.value = '';
                         sitesUrl.value = '';
                         setSitesStatus('<?php echo esc_js( __( 'Website saved.', 'beseo' ) ); ?>');
@@ -1843,24 +1838,15 @@ function be_schema_engine_render_tools_page() {
                     });
                 }
 
-                try {
-                    autoCheckEnabled = localStorage.getItem(sitesAutoCheckKey) === '1';
-                } catch (e) {
-                    autoCheckEnabled = false;
-                }
-                if (sitesAutoCheck) {
-                    sitesAutoCheck.checked = autoCheckEnabled;
-                    sitesAutoCheck.addEventListener('change', function() {
-                        setAutoCheck(sitesAutoCheck.checked);
-                    });
-                }
-
                 function runAutoCheck() {
                     if (!sites.length) {
                         return;
                     }
                     var chain = Promise.resolve();
                     sites.forEach(function(site) {
+                        if (!site.autoCheck) {
+                            return;
+                        }
                         chain = chain.then(function() {
                             return runSiteCheck(site, 'remote');
                         }).then(function() {
@@ -1871,9 +1857,7 @@ function be_schema_engine_render_tools_page() {
 
                 loadSites();
                 renderSites();
-                if (autoCheckEnabled) {
-                    runAutoCheck();
-                }
+                runAutoCheck();
 
                 function currentMode() {
                         var mode = 'dropdown';
