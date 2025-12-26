@@ -766,6 +766,50 @@
                 gap: 10px;
             }
 
+            .be-schema-preview-selector-label {
+                display: inline-block;
+                font-weight: 600;
+                color: #1d2327;
+                margin: 6px 0 6px;
+            }
+
+            .be-schema-preview-selector-box {
+                border: 1px solid #dfe2e6;
+                border-radius: 6px;
+                padding: 12px;
+                background: #fff;
+            }
+
+            .be-schema-preview-selector-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .be-schema-preview-selector-inline {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12px;
+                color: #50575e;
+            }
+
+            .be-schema-preview-selector-inline input {
+                margin: 0;
+            }
+
+            .be-schema-preview-selector-divider {
+                width: 1px;
+                height: 24px;
+                background: #d0d4d9;
+                margin: 0 4px;
+            }
+
+            .be-schema-preview-url::placeholder {
+                color: #b0b0b0;
+            }
+
             .be-schema-preview-buttons {
                 display: flex;
                 gap: 8px;

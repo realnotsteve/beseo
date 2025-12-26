@@ -17,15 +17,35 @@ function be_schema_engine_render_schema_tab_preview() {
     <div class="be-schema-preview-upper">
         <div class="be-schema-global-section be-schema-preview-target">
             <h4 class="be-schema-section-title"><?php esc_html_e( 'Target', 'beseo' ); ?></h4>
-            <p class="description be-schema-description">
-                <?php esc_html_e( 'Enter a URL or a post ID, then generate schema output with Playfair.', 'beseo' ); ?>
-            </p>
             <div class="be-schema-preview-inputs">
-                <input type="text" id="be-schema-preview-target" class="regular-text" placeholder="<?php esc_attr_e( 'https://example.com/page or 123', 'beseo' ); ?>" />
+                <label class="be-schema-preview-selector-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
+                <div class="be-schema-preview-selector-box">
+                    <div class="be-schema-preview-selector-controls">
+                        <label class="be-schema-preview-selector-inline">
+                            <input type="checkbox" id="be-schema-preview-local" />
+                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                        </label>
+                        <span class="be-schema-preview-selector-divider" aria-hidden="true"></span>
+                        <label><input type="radio" name="be-schema-preview-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                        <label><input type="radio" name="be-schema-preview-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                        <select id="be-schema-preview-site" class="regular-text be-schema-preview-url" style="display:inline-block;">
+                            <option value="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html( home_url( '/' ) ); ?></option>
+                        </select>
+                        <input type="text" id="be-schema-preview-target" class="regular-text be-schema-preview-url" placeholder="<?php esc_attr_e( 'https://example.com/ or 123', 'beseo' ); ?>" style="display:none;" />
+                        <button type="button" class="button button-primary" id="be-schema-preview-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
+                        <label class="be-schema-preview-selector-inline">
+                            <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
+                            <select id="be-schema-preview-subpages" class="regular-text" disabled>
+                                <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
+                            </select>
+                        </label>
+                        <label class="be-schema-preview-selector-inline">
+                            <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
+                            <input type="number" id="be-schema-preview-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
+                        </label>
+                    </div>
+                </div>
                 <div class="be-schema-preview-buttons">
-                    <button type="button" class="button button-secondary" id="be-schema-preview-home">
-                        <?php esc_html_e( 'Use Homepage', 'beseo' ); ?>
-                    </button>
                     <button type="button" class="button" id="be-schema-preview-health">
                         <?php esc_html_e( 'Health Check', 'beseo' ); ?>
                     </button>

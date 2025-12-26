@@ -26,6 +26,44 @@
 .be-schema-analyser-panel.active {
     display: block;
 }
+.be-schema-analyser-section-label {
+    display: inline-block;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 6px 0 6px;
+}
+.be-schema-analyser-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.be-schema-analyser-controls + .be-schema-analyser-controls {
+    margin-top: 8px;
+}
+.be-schema-analyser-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.be-schema-analyser-inline-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #50575e;
+}
+.be-schema-analyser-inline-field input {
+    margin: 0;
+}
+.be-schema-analyser-vertical-divider {
+    width: 1px;
+    height: 24px;
+    background: #d0d4d9;
+    margin: 0 4px;
+}
 .be-schema-issues-layout {
     display: grid;
     grid-template-columns: 220px 1fr;
@@ -115,4 +153,5 @@
     align-items: center;
     margin-top: 6px;
     font-size: 12px;
+    flex-basis: 100%;
 }

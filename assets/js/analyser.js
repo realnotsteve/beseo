@@ -17,6 +17,10 @@
         var siteSelect = document.getElementById('be-schema-analyser-site');
         var targetRadios = document.querySelectorAll('input[name="be-schema-analyser-target-mode"]');
         var limitInput = document.getElementById('be-schema-analyser-limit');
+        var listPagesBtn = document.getElementById('be-schema-analyser-list-pages');
+        var siteLimitInput = document.getElementById('be-schema-analyser-site-limit');
+        var subpagesSelect = document.getElementById('be-schema-analyser-subpages');
+        var localToggle = document.getElementById('be-schema-analyser-local');
         var statusNode = document.getElementById('be-schema-analyser-status');
         var issuesList = document.getElementById('be-schema-issues-list');
         var sitesList = document.getElementById('be-schema-sites-list');
@@ -38,6 +42,9 @@
         var paused = false;
         var crawlTimer = null;
         var lastCrawlData = null;
+        var isRunning = false;
+        var isListing = false;
+        var listReady = false;
 
         function activate(key) {
             tabs.forEach(function(tab) {
@@ -361,12 +368,130 @@
         }
 
         function currentTargetUrl() {
-            var mode = 'site';
-            targetRadios.forEach(function(r) { if (r.checked) { mode = r.value; } });
+            var mode = currentTargetMode();
             if (mode === 'manual') {
                 return urlInput ? urlInput.value.trim() : '';
             }
             return siteSelect ? siteSelect.value.trim() : '';
+        }
+
+        function currentTargetMode() {
+            var mode = 'site';
+            targetRadios.forEach(function(r) { if (r.checked) { mode = r.value; } });
+            return mode;
+        }
+
+        function isLocalSelected() {
+            return !!(localToggle && localToggle.checked);
+        }
+
+        function normalizeUrl(url) {
+            if (!url) {
+                return '';
+            }
+            try {
+                var parsed = new URL(url);
+                var path = parsed.pathname || '/';
+                if (path.length > 1 && path.charAt(path.length - 1) === '/') {
+                    path = path.slice(0, -1);
+                }
+                var host = parsed.host ? parsed.host.toLowerCase() : '';
+                return host + path;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function isHomepageUrl(url) {
+            if (!url) {
+                return false;
+            }
+            try {
+                var parsed = new URL(url);
+                var path = parsed.pathname || '/';
+                return path === '/' || path === '';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function resetSubpages(disabled) {
+            if (!subpagesSelect) {
+                return;
+            }
+            listReady = false;
+            subpagesSelect.innerHTML = '';
+            var noneOption = document.createElement('option');
+            noneOption.value = '';
+            noneOption.textContent = t('subpagesNone', 'None');
+            subpagesSelect.appendChild(noneOption);
+            subpagesSelect.disabled = disabled !== false;
+        }
+
+        function populateSubpages(pages) {
+            if (!subpagesSelect) {
+                return;
+            }
+            resetSubpages(false);
+            if (!pages || !pages.length) {
+                return;
+            }
+            subpagesSelect.innerHTML = '';
+            listReady = true;
+            var homeEntry = pages.find(function(page) { return page && page.is_home; });
+            var remaining = pages.filter(function(page) { return page && !page.is_home; });
+            if (homeEntry) {
+                var homeOption = document.createElement('option');
+                homeOption.value = homeEntry.url || '';
+                homeOption.textContent = homeEntry.label || t('subpagesHome', 'Home page');
+                subpagesSelect.appendChild(homeOption);
+            }
+            if (remaining.length) {
+                var divider = document.createElement('option');
+                divider.textContent = t('subpagesDivider', '────────');
+                divider.disabled = true;
+                subpagesSelect.appendChild(divider);
+                remaining.forEach(function(page) {
+                    var opt = document.createElement('option');
+                    opt.value = page.url || '';
+                    opt.textContent = page.label || page.url || '';
+                    subpagesSelect.appendChild(opt);
+                });
+            }
+            subpagesSelect.disabled = false;
+        }
+
+        function updateTargetModeControls() {
+            var mode = currentTargetMode();
+            var allowList = false;
+            var allowRun = false;
+            if (mode === 'site') {
+                allowList = true;
+                allowRun = listReady && !isListing;
+            } else {
+                var manualUrl = urlInput ? urlInput.value.trim() : '';
+                if (manualUrl && isHomepageUrl(manualUrl)) {
+                    allowList = true;
+                    allowRun = listReady && !isListing;
+                } else {
+                    allowRun = true;
+                }
+            }
+            if (listPagesBtn) {
+                listPagesBtn.disabled = !allowList || isListing;
+            }
+            if (siteLimitInput) {
+                siteLimitInput.disabled = !allowList;
+            }
+                if (limitInput) {
+                    limitInput.disabled = !allowRun;
+                }
+                if (runBtn) {
+                    runBtn.disabled = !(allowRun && !isRunning);
+                }
+            if (!allowList) {
+                resetSubpages(true);
+            }
         }
 
         function pollStep() {
@@ -383,7 +508,8 @@
             }).then(function(resp){ return resp.json(); }).then(function(payload) {
                 if (!payload || !payload.success) {
                     setStatus((payload && payload.data && payload.data.message) ? payload.data.message : t('crawlFailed', 'Crawl failed.'));
-                    if (runBtn) { runBtn.disabled = false; }
+                    isRunning = false;
+                    updateTargetModeControls();
                     if (stopBtn) { stopBtn.disabled = true; }
                     if (pauseBtn) { pauseBtn.disabled = true; }
                     if (resumeBtn) { resumeBtn.disabled = true; }
@@ -413,7 +539,8 @@
                     return;
                 }
                 if (done) {
-                    if (runBtn) { runBtn.disabled = false; }
+                    isRunning = false;
+                    updateTargetModeControls();
                     if (stopBtn) { stopBtn.disabled = true; }
                     if (pauseBtn) { pauseBtn.disabled = true; }
                     if (resumeBtn) { resumeBtn.disabled = true; }
@@ -424,7 +551,8 @@
                 }
             }).catch(function() {
                 setStatus(t('crawlFailed', 'Crawl failed.'));
-                if (runBtn) { runBtn.disabled = false; }
+                isRunning = false;
+                updateTargetModeControls();
                 if (stopBtn) { stopBtn.disabled = true; }
                 if (pauseBtn) { pauseBtn.disabled = true; }
                 if (resumeBtn) { resumeBtn.disabled = true; }
@@ -440,6 +568,8 @@
                     setStatus(t('enterUrl', 'Enter a URL to analyse.'));
                     return;
                 }
+                isRunning = true;
+                updateTargetModeControls();
                 paused = false;
                 lastCrawlData = null;
                 toggleExports(false);
@@ -447,7 +577,6 @@
                 if (elapsedNode) { elapsedNode.textContent = ''; }
                 if (errorsNode) { errorsNode.textContent = ''; }
                 setStatus(t('starting', 'Starting…'));
-                runBtn.disabled = true;
                 if (stopBtn) { stopBtn.disabled = false; }
                 if (pauseBtn) { pauseBtn.disabled = false; }
                 if (resumeBtn) { resumeBtn.disabled = true; }
@@ -455,29 +584,31 @@
                 form.append('action', 'be_schema_analyser_start');
                 form.append('nonce', nonce);
                 form.append('url', url);
+                form.append('local', isLocalSelected() ? '1' : '0');
                 form.append('max', isNaN(limit) ? 10 : limit);
                 fetch(ajaxurl, {
                     method: 'POST',
                     credentials: 'same-origin',
                     body: form
                 }).then(function(resp){ return resp.json(); }).then(function(payload) {
-                    runBtn.disabled = false;
                     if (!payload || !payload.success) {
                         setStatus((payload && payload.data && payload.data.message) ? payload.data.message : t('analysisFailed', 'Analysis failed.'));
+                        isRunning = false;
+                        updateTargetModeControls();
                         if (stopBtn) { stopBtn.disabled = true; }
                         if (pauseBtn) { pauseBtn.disabled = true; }
                         if (resumeBtn) { resumeBtn.disabled = true; }
                         return;
                     }
                     setStatus(t('crawlStarted', 'Crawl started…'));
-                    runBtn.disabled = true;
                     if (stopBtn) { stopBtn.disabled = false; }
                     if (pauseBtn) { pauseBtn.disabled = false; }
                     if (resumeBtn) { resumeBtn.disabled = true; }
                     pollStep();
                     loadHistory();
                 }).catch(function() {
-                    runBtn.disabled = false;
+                    isRunning = false;
+                    updateTargetModeControls();
                     setStatus(t('analysisFailed', 'Analysis failed.'));
                     if (stopBtn) { stopBtn.disabled = true; }
                     if (pauseBtn) { pauseBtn.disabled = true; }
@@ -502,11 +633,74 @@
                     }
                     paused = false;
                     setStatus(t('crawlStopped', 'Crawl stopped.'));
-                    if (runBtn) { runBtn.disabled = false; }
+                    isRunning = false;
+                    updateTargetModeControls();
                     stopBtn.disabled = true;
                     if (pauseBtn) { pauseBtn.disabled = true; }
                     if (resumeBtn) { resumeBtn.disabled = true; }
                     loadHistory();
+                });
+            });
+        }
+
+        if (listPagesBtn) {
+            listPagesBtn.addEventListener('click', function() {
+                if (listPagesBtn.disabled) {
+                    return;
+                }
+                var url = currentTargetUrl();
+                if (!url) {
+                    setStatus(t('enterUrl', 'Enter a URL to analyse.'));
+                    return;
+                }
+                if (currentTargetMode() === 'manual' && !isHomepageUrl(url)) {
+                    setStatus(t('listFailed', 'Failed to list pages.'));
+                    resetSubpages(true);
+                    return;
+                }
+                var max = siteLimitInput ? parseInt(siteLimitInput.value, 10) : 25;
+                max = isNaN(max) ? 25 : max;
+                isListing = true;
+                listReady = false;
+                updateTargetModeControls();
+                setStatus(t('listingPages', 'Listing sitemap pages…'));
+                resetSubpages(true);
+                var form = new FormData();
+                form.append('action', 'be_schema_analyser_list_pages');
+                form.append('nonce', nonce);
+                form.append('url', url);
+                form.append('local', isLocalSelected() ? '1' : '0');
+                form.append('max', max);
+                fetch(ajaxurl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: form
+                }).then(function(resp){ return resp.json(); }).then(function(payload) {
+                    isListing = false;
+                    updateTargetModeControls();
+                    if (!payload || !payload.success) {
+                        setStatus((payload && payload.data && payload.data.message) ? payload.data.message : t('listFailed', 'Failed to list pages.'));
+                        resetSubpages(true);
+                        listReady = false;
+                        updateTargetModeControls();
+                        return;
+                    }
+                    var pages = (payload.data && payload.data.pages) ? payload.data.pages : [];
+                    if (!pages.length) {
+                        setStatus(t('listNoPages', 'No sitemap pages found.'));
+                        resetSubpages(true);
+                        listReady = false;
+                        updateTargetModeControls();
+                        return;
+                    }
+                    populateSubpages(pages);
+                    setStatus(t('listReady', 'Pages loaded.'));
+                    updateTargetModeControls();
+                }).catch(function() {
+                    isListing = false;
+                    updateTargetModeControls();
+                    setStatus(t('listFailed', 'Failed to list pages.'));
+                    resetSubpages(true);
                 });
             });
         }
@@ -618,11 +812,37 @@
                 if (useManual && siteSelect) {
                     siteSelect.value = '';
                 }
+                resetSubpages(true);
+                updateTargetModeControls();
             });
         });
 
         loadSites();
         renderSites();
         loadHistory();
+        updateTargetModeControls();
+
+        if (urlInput) {
+            urlInput.addEventListener('input', function() {
+                resetSubpages(true);
+                updateTargetModeControls();
+            });
+            urlInput.addEventListener('change', function() {
+                resetSubpages(true);
+                updateTargetModeControls();
+            });
+        }
+        if (localToggle) {
+            localToggle.addEventListener('change', function() {
+                resetSubpages(true);
+                updateTargetModeControls();
+            });
+        }
+        if (siteSelect) {
+            siteSelect.addEventListener('change', function() {
+                resetSubpages(true);
+                updateTargetModeControls();
+            });
+        }
     });
 })();

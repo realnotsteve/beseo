@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.44",
+    "version": "2.1.45",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -521,7 +521,18 @@
     "Platforms > Facebook > Tools now hosts the OpenGraph-only dry-run toggle (removed from the Platforms dashboard safety box).",
     "Platforms > Twitter > Tools now shows Dry Run as a standalone section beneath Tools (not nested).",
     "Social Dashboard no longer shows the OpenGraph dry-run safety box (moved to Platforms > Facebook > Tools).",
+    "Analyser > Overview controls now include a List Pages button with Max Site Pages, and the follow-links limit sits to the right of Run Analysis with a Max Follow Links label.",
+    "Analyser > Overview now disables Run Analysis and Max Follow Links by default; List Pages/Max Site Pages enable for Websites or when a manual URL matches the homepage (scheme-agnostic).",
+    "Analyser > Overview now provides a Subpage(s) dropdown populated via sitemap discovery (robots.txt or common sitemap locations) when List Pages is clicked, and enables Run Analysis/Max Follow Links after the list finishes loading.",
+    "Analyser > Overview list controls are back on a single row inside the box (List Pages, Subpage(s), Max Site Pages).",
+    "Analyser > Overview now includes a Local checkbox with a vertical divider before the Websites/Manual radio group.",
+    "Analyser > Overview Local toggle now sends a local flag and maps analyser/list pages requests to the local site base.",
+    "Analyser > Overview now labels the selector box with a \"Selector\" heading.",
+    "Schema > Preview Target now uses the Selector box pattern (Local toggle, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages) and removes the Use Homepage shortcut.",
     "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI."
+  ],
+  "ui_rules": [
+    "Use the \"Selector\" box pattern (as in Analyser > Overview) whenever a user must select a web page."
   ],
   "logic_notes": [
     "Social engine now honors the per-network enable toggles: Open Graph output depends on social_enable_og, Twitter Cards on social_enable_twitter, and both keys now have defaults to avoid notices on fresh installs.",

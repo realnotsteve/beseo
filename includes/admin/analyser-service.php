@@ -12,6 +12,7 @@ add_action( 'wp_ajax_be_schema_analyser_start', 'be_schema_engine_handle_analyse
 add_action( 'wp_ajax_be_schema_analyser_step', 'be_schema_engine_handle_analyser_step' );
 add_action( 'wp_ajax_be_schema_analyser_stop', 'be_schema_engine_handle_analyser_stop' );
 add_action( 'wp_ajax_be_schema_analyser_history', 'be_schema_engine_handle_analyser_history' );
+add_action( 'wp_ajax_be_schema_analyser_list_pages', 'be_schema_engine_handle_analyser_list_pages' );
 
 /**
  * Simple per-user analyser state storage.
@@ -71,8 +72,16 @@ function be_schema_engine_handle_analyser_run() {
     check_ajax_referer( 'be_schema_analyser', 'nonce' );
 
     $url = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+    $local = ! empty( $_POST['local'] );
     if ( ! $url || ! wp_http_validate_url( $url ) ) {
         wp_send_json_error( array( 'message' => __( 'Provide a valid URL (http/https).', 'beseo' ) ) );
+    }
+
+    if ( $local ) {
+        $mapped = be_schema_engine_analyser_map_to_local( $url );
+        if ( $mapped ) {
+            $url = $mapped;
+        }
     }
 
     $result = be_schema_engine_analyse_url( $url );
@@ -88,10 +97,17 @@ function be_schema_engine_handle_analyser_start() {
     }
     check_ajax_referer( 'be_schema_analyser', 'nonce' );
     $url      = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+    $local    = ! empty( $_POST['local'] );
     $max      = isset( $_POST['max'] ) ? (int) $_POST['max'] : 20;
     $max      = max( 1, min( 100, $max ) );
     if ( ! $url || ! wp_http_validate_url( $url ) ) {
         wp_send_json_error( array( 'message' => __( 'Provide a valid URL.', 'beseo' ) ) );
+    }
+    if ( $local ) {
+        $mapped = be_schema_engine_analyser_map_to_local( $url );
+        if ( $mapped ) {
+            $url = $mapped;
+        }
     }
     $parsed = wp_parse_url( $url );
     if ( ! $parsed || empty( $parsed['host'] ) ) {
@@ -297,6 +313,438 @@ function be_schema_engine_handle_analyser_history() {
     check_ajax_referer( 'be_schema_analyser', 'nonce' );
     $history = be_schema_engine_analyser_history_get();
     wp_send_json_success( array( 'history' => $history ) );
+}
+
+/**
+ * AJAX: List sitemap pages for a site.
+ */
+function be_schema_engine_handle_analyser_list_pages() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Not allowed.', 'beseo' ) ), 403 );
+    }
+
+    check_ajax_referer( 'be_schema_analyser', 'nonce' );
+
+    $url = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+    $local = ! empty( $_POST['local'] );
+    $max = isset( $_POST['max'] ) ? (int) $_POST['max'] : 25;
+    $max = max( 1, min( 500, $max ) );
+
+    $parsed = wp_parse_url( $url );
+    if ( empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
+        wp_send_json_error( array( 'message' => __( 'Provide a valid URL.', 'beseo' ) ), 400 );
+    }
+    $scheme = strtolower( (string) $parsed['scheme'] );
+    if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+        wp_send_json_error( array( 'message' => __( 'Provide a valid URL (http/https).', 'beseo' ) ), 400 );
+    }
+
+    if ( $local ) {
+        $mapped = be_schema_engine_analyser_map_to_local( $url );
+        if ( $mapped ) {
+            $url = $mapped;
+        }
+    }
+
+    $base_url = be_schema_engine_analyser_base_url( $url );
+    if ( ! $base_url ) {
+        wp_send_json_error( array( 'message' => __( 'Unable to determine the site base URL.', 'beseo' ) ), 400 );
+    }
+
+    $sitemap_url = be_schema_engine_analyser_discover_sitemap( $base_url );
+    if ( ! $sitemap_url ) {
+        wp_send_json_error( array( 'message' => __( 'No sitemap was found for this site.', 'beseo' ) ), 400 );
+    }
+
+    $urls = be_schema_engine_analyser_collect_sitemap_urls( $sitemap_url, $max, $base_url );
+    if ( empty( $urls ) ) {
+        wp_send_json_error( array( 'message' => __( 'No sitemap pages were found.', 'beseo' ) ), 400 );
+    }
+
+    $pages = be_schema_engine_analyser_build_page_list( $urls, $base_url, $max );
+    if ( empty( $pages ) ) {
+        wp_send_json_error( array( 'message' => __( 'No sitemap pages were found.', 'beseo' ) ), 400 );
+    }
+
+    wp_send_json_success(
+        array(
+            'sitemap' => $sitemap_url,
+            'pages'   => $pages,
+            'count'   => count( $pages ),
+        )
+    );
+}
+
+/**
+ * Normalize base URL.
+ *
+ * @param string $url Input URL.
+ * @return string
+ */
+function be_schema_engine_analyser_base_url( $url ) {
+    $parsed = wp_parse_url( $url );
+    if ( ! $parsed || empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
+        return '';
+    }
+    $base = $parsed['scheme'] . '://' . $parsed['host'];
+    if ( ! empty( $parsed['port'] ) ) {
+        $base .= ':' . $parsed['port'];
+    }
+    return trailingslashit( $base );
+}
+
+/**
+ * Map a URL to the local site base while preserving the path/query/fragment.
+ *
+ * @param string $url Target URL.
+ * @return string
+ */
+function be_schema_engine_analyser_map_to_local( $url ) {
+    $local_base = be_schema_engine_analyser_base_url( home_url( '/' ) );
+    if ( ! $local_base ) {
+        return '';
+    }
+    $parsed = wp_parse_url( $url );
+    if ( ! $parsed ) {
+        return '';
+    }
+    $path = isset( $parsed['path'] ) ? (string) $parsed['path'] : '/';
+    if ( '' === $path ) {
+        $path = '/';
+    }
+    $query = isset( $parsed['query'] ) ? '?' . $parsed['query'] : '';
+    $fragment = isset( $parsed['fragment'] ) ? '#' . $parsed['fragment'] : '';
+    return rtrim( $local_base, '/' ) . $path . $query . $fragment;
+}
+
+/**
+ * Discover sitemap URL from robots.txt or common defaults.
+ *
+ * @param string $base_url Base site URL.
+ * @return string
+ */
+function be_schema_engine_analyser_discover_sitemap( $base_url ) {
+    $robots_url = trailingslashit( $base_url ) . 'robots.txt';
+    $robots = be_schema_engine_analyser_fetch_url( $robots_url );
+    if ( $robots['ok'] && ! empty( $robots['body'] ) ) {
+        $lines = preg_split( '/\\r\\n|\\r|\\n/', $robots['body'] );
+        foreach ( $lines as $line ) {
+            if ( preg_match( '/^\\s*sitemap\\s*:\\s*(\\S+)/i', $line, $matches ) ) {
+                $candidate = trim( $matches[1] );
+                if ( wp_http_validate_url( $candidate ) ) {
+                    return $candidate;
+                }
+            }
+        }
+    }
+
+    $candidates = array(
+        trailingslashit( $base_url ) . 'sitemap_index.xml',
+        trailingslashit( $base_url ) . 'sitemap.xml',
+        trailingslashit( $base_url ) . 'wp-sitemap.xml',
+    );
+    foreach ( $candidates as $candidate ) {
+        $response = be_schema_engine_analyser_fetch_url( $candidate );
+        if ( $response['ok'] && ! empty( $response['body'] ) ) {
+            return $candidate;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Fetch a URL for sitemap discovery.
+ *
+ * @param string $url Target URL.
+ * @return array {ok, body}
+ */
+function be_schema_engine_analyser_fetch_url( $url ) {
+    $sslverify = true;
+    if ( function_exists( 'be_schema_playfair_is_private_target' ) && be_schema_playfair_is_private_target( $url ) ) {
+        $sslverify = false;
+    }
+    $response = wp_remote_get(
+        $url,
+        array(
+            'timeout'     => 10,
+            'redirection' => 3,
+            'sslverify'   => $sslverify,
+        )
+    );
+    if ( is_wp_error( $response ) ) {
+        return array(
+            'ok'   => false,
+            'body' => '',
+        );
+    }
+    $status = (int) wp_remote_retrieve_response_code( $response );
+    if ( $status < 200 || $status >= 400 ) {
+        return array(
+            'ok'   => false,
+            'body' => '',
+        );
+    }
+    $body = (string) wp_remote_retrieve_body( $response );
+    if ( '' === $body ) {
+        return array(
+            'ok'   => false,
+            'body' => '',
+        );
+    }
+
+    $decoded = be_schema_engine_analyser_maybe_decode_gzip( $body, $response, $url );
+    return array(
+        'ok'   => true,
+        'body' => $decoded,
+    );
+}
+
+/**
+ * Attempt to decode gzip sitemap responses.
+ *
+ * @param string $body Response body.
+ * @param array  $response HTTP response.
+ * @param string $url Target URL.
+ * @return string
+ */
+function be_schema_engine_analyser_maybe_decode_gzip( $body, $response, $url ) {
+    $encoding = wp_remote_retrieve_header( $response, 'content-encoding' );
+    $content_type = wp_remote_retrieve_header( $response, 'content-type' );
+    $looks_gz = ( false !== strpos( (string) $encoding, 'gzip' ) ) || ( false !== strpos( (string) $content_type, 'gzip' ) );
+    if ( ! $looks_gz && substr( $body, 0, 2 ) === "\x1f\x8b" ) {
+        $looks_gz = true;
+    }
+    if ( ! $looks_gz && substr( $url, -3 ) === '.gz' ) {
+        $looks_gz = true;
+    }
+    if ( $looks_gz && function_exists( 'gzdecode' ) ) {
+        $decoded = gzdecode( $body );
+        if ( false !== $decoded ) {
+            return $decoded;
+        }
+    }
+    return $body;
+}
+
+/**
+ * Collect URLs from sitemap(s).
+ *
+ * @param string $sitemap_url Sitemap URL.
+ * @param int    $max Max URLs.
+ * @param string $base_url Base site URL.
+ * @return array
+ */
+function be_schema_engine_analyser_collect_sitemap_urls( $sitemap_url, $max, $base_url ) {
+    $queue = array( $sitemap_url );
+    $seen = array();
+    $urls = array();
+    $base_host = wp_parse_url( $base_url, PHP_URL_HOST );
+    $max = max( 1, (int) $max );
+
+    while ( ! empty( $queue ) && count( $urls ) < $max ) {
+        $current = array_shift( $queue );
+        if ( isset( $seen[ $current ] ) ) {
+            continue;
+        }
+        $seen[ $current ] = true;
+
+        $response = be_schema_engine_analyser_fetch_url( $current );
+        if ( ! $response['ok'] || empty( $response['body'] ) ) {
+            continue;
+        }
+
+        $parsed = be_schema_engine_analyser_parse_sitemap( $response['body'] );
+        if ( ! empty( $parsed['urls'] ) ) {
+            foreach ( $parsed['urls'] as $entry ) {
+                if ( count( $urls ) >= $max ) {
+                    break;
+                }
+                if ( ! wp_http_validate_url( $entry ) ) {
+                    continue;
+                }
+                $entry_host = wp_parse_url( $entry, PHP_URL_HOST );
+                if ( $base_host && $entry_host && strtolower( $entry_host ) !== strtolower( (string) $base_host ) ) {
+                    continue;
+                }
+                if ( ! isset( $seen[ $entry ] ) ) {
+                    $urls[] = $entry;
+                    $seen[ $entry ] = true;
+                }
+            }
+            continue;
+        }
+        if ( ! empty( $parsed['sitemaps'] ) ) {
+            foreach ( $parsed['sitemaps'] as $child ) {
+                if ( ! isset( $seen[ $child ] ) ) {
+                    $queue[] = $child;
+                }
+            }
+        }
+    }
+
+    return $urls;
+}
+
+/**
+ * Parse sitemap XML into URL lists.
+ *
+ * @param string $body XML body.
+ * @return array
+ */
+function be_schema_engine_analyser_parse_sitemap( $body ) {
+    $urls = array();
+    $sitemaps = array();
+    if ( '' === $body ) {
+        return array(
+            'urls'     => $urls,
+            'sitemaps' => $sitemaps,
+        );
+    }
+    libxml_use_internal_errors( true );
+    $doc = new DOMDocument();
+    if ( ! $doc->loadXML( $body ) ) {
+        libxml_clear_errors();
+        return array(
+            'urls'     => $urls,
+            'sitemaps' => $sitemaps,
+        );
+    }
+    $xpath = new DOMXPath( $doc );
+    $loc_nodes = $xpath->query( '//*[local-name()="url"]/*[local-name()="loc"]' );
+    if ( $loc_nodes && $loc_nodes->length ) {
+        foreach ( $loc_nodes as $node ) {
+            $value = trim( $node->textContent );
+            if ( $value ) {
+                $urls[] = $value;
+            }
+        }
+        libxml_clear_errors();
+        return array(
+            'urls'     => $urls,
+            'sitemaps' => $sitemaps,
+        );
+    }
+    $sitemap_nodes = $xpath->query( '//*[local-name()="sitemap"]/*[local-name()="loc"]' );
+    if ( $sitemap_nodes && $sitemap_nodes->length ) {
+        foreach ( $sitemap_nodes as $node ) {
+            $value = trim( $node->textContent );
+            if ( $value ) {
+                $sitemaps[] = $value;
+            }
+        }
+    }
+    libxml_clear_errors();
+    return array(
+        'urls'     => $urls,
+        'sitemaps' => $sitemaps,
+    );
+}
+
+/**
+ * Build display list from sitemap URLs.
+ *
+ * @param array  $urls Sitemap URLs.
+ * @param string $base_url Base site URL.
+ * @param int    $max Max results.
+ * @return array
+ */
+function be_schema_engine_analyser_build_page_list( $urls, $base_url, $max ) {
+    $max = max( 1, (int) $max );
+    $base_host = wp_parse_url( $base_url, PHP_URL_HOST );
+    $home_norm = be_schema_engine_analyser_normalize_url( $base_url );
+
+    $pages = array();
+    $home_url = $base_url;
+    foreach ( $urls as $url ) {
+        if ( ! wp_http_validate_url( $url ) ) {
+            continue;
+        }
+        $host = wp_parse_url( $url, PHP_URL_HOST );
+        if ( $base_host && $host && strtolower( $host ) !== strtolower( (string) $base_host ) ) {
+            continue;
+        }
+        $norm = be_schema_engine_analyser_normalize_url( $url );
+        if ( $norm && $home_norm && $norm === $home_norm ) {
+            $home_url = $url;
+            continue;
+        }
+        $pages[] = array(
+            'url'   => $url,
+            'label' => be_schema_engine_analyser_label_from_url( $url ),
+        );
+    }
+
+    usort(
+        $pages,
+        function( $a, $b ) {
+            return strcasecmp( (string) $a['label'], (string) $b['label'] );
+        }
+    );
+
+    $remaining_limit = max( 0, $max - 1 );
+    if ( count( $pages ) > $remaining_limit ) {
+        $pages = array_slice( $pages, 0, $remaining_limit );
+    }
+
+    array_unshift(
+        $pages,
+        array(
+            'url'     => $home_url,
+            'label'   => __( 'Home page', 'beseo' ),
+            'is_home' => true,
+        )
+    );
+
+    return $pages;
+}
+
+/**
+ * Normalize URL for comparisons (host + path, no trailing slash).
+ *
+ * @param string $url URL to normalize.
+ * @return string
+ */
+function be_schema_engine_analyser_normalize_url( $url ) {
+    $parsed = wp_parse_url( $url );
+    if ( ! $parsed || empty( $parsed['host'] ) ) {
+        return '';
+    }
+    $host = strtolower( (string) $parsed['host'] );
+    $path = isset( $parsed['path'] ) ? (string) $parsed['path'] : '/';
+    if ( '/' !== $path ) {
+        $path = rtrim( $path, '/' );
+    }
+    return $host . $path;
+}
+
+/**
+ * Create a readable label from URL path.
+ *
+ * @param string $url URL to label.
+ * @return string
+ */
+function be_schema_engine_analyser_label_from_url( $url ) {
+    $path = wp_parse_url( $url, PHP_URL_PATH );
+    if ( ! $path ) {
+        return __( 'Home page', 'beseo' );
+    }
+    $path = trim( (string) $path, '/' );
+    if ( '' === $path ) {
+        return __( 'Home page', 'beseo' );
+    }
+    $segments = explode( '/', $path );
+    $labels = array();
+    foreach ( $segments as $segment ) {
+        $segment = urldecode( $segment );
+        $segment = str_replace( array( '-', '_' ), ' ', $segment );
+        $segment = trim( preg_replace( '/\\s+/', ' ', $segment ) );
+        if ( '' === $segment ) {
+            continue;
+        }
+        $labels[] = ucwords( $segment );
+    }
+    return $labels ? implode( ' / ', $labels ) : __( 'Home page', 'beseo' );
 }
 
 /**

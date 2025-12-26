@@ -765,11 +765,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     var playfairTestUrl = preview.playfairTestUrl || 'https://example.com';
                     var homeUrl = preview.homeUrl || '';
                     var marker = preview.marker || 'beseo-generated';
+                    var listPagesNonce = preview.listPagesNonce || '';
 
                     var targetInput = document.getElementById('be-schema-preview-target');
                     var targetHelp = document.getElementById('be-schema-preview-target-help');
                     var targetStatus = document.getElementById('be-schema-preview-target-status');
-                    var homeBtn = document.getElementById('be-schema-preview-home');
+                    var targetModeInputs = previewRoot.querySelectorAll('input[name="be-schema-preview-target-mode"]');
+                    var siteSelect = document.getElementById('be-schema-preview-site');
+                    var listPagesBtn = document.getElementById('be-schema-preview-list-pages');
+                    var subpagesSelect = document.getElementById('be-schema-preview-subpages');
+                    var siteLimitInput = document.getElementById('be-schema-preview-site-limit');
+                    var localToggle = document.getElementById('be-schema-preview-local');
                     var healthBtn = document.getElementById('be-schema-preview-health');
                     var testBtn = document.getElementById('be-schema-preview-test');
                     var createBtn = document.getElementById('be-schema-preview-create');
@@ -795,6 +801,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         diffState: null
                     };
                     var state = loadState();
+                    var sitesStoreKey = 'be-schema-analyser-sites';
+                    var sites = [];
+                    var listReady = false;
+                    var isListing = false;
 
                     function loadState() {
                         var fallback = { columns: [], cache: {}, lastTarget: '' };
@@ -850,6 +860,222 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputs.forEach(function (input) {
                             input.checked = input.value === value;
                         });
+                    }
+
+                    function loadSites() {
+                        if (!window.localStorage) {
+                            sites = [];
+                            return;
+                        }
+                        try {
+                            var raw = window.localStorage.getItem(sitesStoreKey);
+                            sites = raw ? JSON.parse(raw) : [];
+                            if (!Array.isArray(sites)) {
+                                sites = [];
+                            }
+                        } catch (err) {
+                            sites = [];
+                        }
+                    }
+
+                    function renderSites() {
+                        if (!siteSelect) {
+                            return;
+                        }
+                        siteSelect.innerHTML = '';
+                        if (!sites.length) {
+                            if (homeUrl) {
+                                var optHome = document.createElement('option');
+                                optHome.value = homeUrl;
+                                optHome.textContent = homeUrl;
+                                siteSelect.appendChild(optHome);
+                            }
+                            return;
+                        }
+                        sites.forEach(function (site) {
+                            if (!site || !site.url) {
+                                return;
+                            }
+                            var opt = document.createElement('option');
+                            opt.value = site.url;
+                            opt.textContent = site.label ? (site.label + ' (' + site.url + ')') : site.url;
+                            siteSelect.appendChild(opt);
+                        });
+                    }
+
+                    function currentTargetMode() {
+                        var mode = 'site';
+                        targetModeInputs.forEach(function (input) {
+                            if (input.checked) {
+                                mode = input.value;
+                            }
+                        });
+                        return mode;
+                    }
+
+                    function isLocalSelected() {
+                        return !!(localToggle && localToggle.checked);
+                    }
+
+                    function isHomepageUrl(url) {
+                        if (!url) {
+                            return false;
+                        }
+                        try {
+                            var parsed = new URL(url);
+                            var path = parsed.pathname || '/';
+                            return path === '/' || path === '';
+                        } catch (err) {
+                            return false;
+                        }
+                    }
+
+                    function resetSubpages(disabled) {
+                        if (!subpagesSelect) {
+                            return;
+                        }
+                        listReady = false;
+                        subpagesSelect.innerHTML = '';
+                        var noneOption = document.createElement('option');
+                        noneOption.value = '';
+                        noneOption.textContent = 'None';
+                        subpagesSelect.appendChild(noneOption);
+                        subpagesSelect.disabled = disabled !== false;
+                    }
+
+                    function populateSubpages(pages) {
+                        if (!subpagesSelect) {
+                            return;
+                        }
+                        resetSubpages(false);
+                        if (!pages || !pages.length) {
+                            return;
+                        }
+                        subpagesSelect.innerHTML = '';
+                        listReady = true;
+                        var homeEntry = pages.find(function (page) { return page && page.is_home; });
+                        var remaining = pages.filter(function (page) { return page && !page.is_home; });
+                        if (homeEntry) {
+                            var homeOption = document.createElement('option');
+                            homeOption.value = homeEntry.url || '';
+                            homeOption.textContent = homeEntry.label || 'Home page';
+                            subpagesSelect.appendChild(homeOption);
+                        }
+                        if (remaining.length) {
+                            var divider = document.createElement('option');
+                            divider.textContent = '────────';
+                            divider.disabled = true;
+                            subpagesSelect.appendChild(divider);
+                            remaining.forEach(function (page) {
+                                var opt = document.createElement('option');
+                                opt.value = page.url || '';
+                                opt.textContent = page.label || page.url || '';
+                                subpagesSelect.appendChild(opt);
+                            });
+                        }
+                        subpagesSelect.disabled = false;
+                    }
+
+                    function updateTargetModeControls() {
+                        var mode = currentTargetMode();
+                        var allowList = false;
+                        if (mode === 'site') {
+                            allowList = !!(siteSelect && siteSelect.value);
+                        } else {
+                            var manualUrl = targetInput ? targetInput.value.trim() : '';
+                            if (manualUrl && isHomepageUrl(manualUrl)) {
+                                allowList = true;
+                            }
+                        }
+                        if (listPagesBtn) {
+                            listPagesBtn.disabled = !allowList || isListing;
+                        }
+                        if (siteLimitInput) {
+                            siteLimitInput.disabled = !allowList;
+                        }
+                        if (!allowList) {
+                            resetSubpages(true);
+                        }
+                    }
+
+                    function currentTargetUrl() {
+                        var mode = currentTargetMode();
+                        if (mode === 'manual') {
+                            return targetInput ? targetInput.value.trim() : '';
+                        }
+                        return siteSelect ? siteSelect.value.trim() : '';
+                    }
+
+                    function currentSelectedTarget() {
+                        var subpage = subpagesSelect && !subpagesSelect.disabled ? (subpagesSelect.value || '').trim() : '';
+                        if (subpage) {
+                            return subpage;
+                        }
+                        return currentTargetUrl();
+                    }
+
+                    function mapToLocalTarget(value) {
+                        if (!value || !homeUrl) {
+                            return value;
+                        }
+                        if (/^\d+$/.test(value)) {
+                            return value;
+                        }
+                        try {
+                            var parsed = new URL(value);
+                            var local = new URL(homeUrl);
+                            if (parsed.host === local.host) {
+                                return value;
+                            }
+                            return local.origin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                        } catch (err) {
+                            return value;
+                        }
+                    }
+
+                    function applyTargetMode(mode) {
+                        var useManual = mode === 'manual';
+                        targetModeInputs.forEach(function (input) {
+                            input.checked = input.value === mode;
+                        });
+                        if (targetInput) {
+                            targetInput.style.display = useManual ? 'inline-block' : 'none';
+                            targetInput.disabled = !useManual;
+                        }
+                        if (siteSelect) {
+                            siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                            siteSelect.disabled = useManual;
+                        }
+                        if (useManual && siteSelect) {
+                            siteSelect.value = '';
+                        }
+                        resetSubpages(true);
+                        updateTargetModeControls();
+                    }
+
+                    function restoreLastTarget() {
+                        if (!state.lastTarget) {
+                            return;
+                        }
+                        var matched = false;
+                        if (siteSelect) {
+                            Array.prototype.forEach.call(siteSelect.options, function (option) {
+                                if (option.value === state.lastTarget) {
+                                    matched = true;
+                                }
+                            });
+                        }
+                        if (matched) {
+                            applyTargetMode('site');
+                            if (siteSelect) {
+                                siteSelect.value = state.lastTarget;
+                            }
+                        } else {
+                            applyTargetMode('manual');
+                            if (targetInput) {
+                                targetInput.value = state.lastTarget;
+                            }
+                        }
                     }
 
                     function getCriteria() {
@@ -981,21 +1207,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function getTargetValue() {
-                        var value = targetInput ? targetInput.value.trim() : '';
+                        var value = currentSelectedTarget();
+                        if (isLocalSelected()) {
+                            value = mapToLocalTarget(value);
+                        }
                         if (targetHelp) {
-                            targetHelp.textContent = value ? '' : 'Enter a URL or post ID.';
+                            targetHelp.textContent = value ? '' : 'Select a website, subpage, or enter a URL/post ID.';
                         }
                         return value;
-                    }
-
-                    function setTargetValue(value) {
-                        if (!targetInput) {
-                            return;
-                        }
-                        targetInput.value = value || '';
-                        if (targetHelp) {
-                            targetHelp.textContent = '';
-                        }
                     }
 
                     function formatTime(iso) {
@@ -2177,12 +2396,110 @@ document.addEventListener('DOMContentLoaded', function () {
                             addBeseoInput.addEventListener('change', applyAvailability);
                         }
 
-                        if (homeBtn) {
-                            homeBtn.addEventListener('click', function (event) {
+                        targetModeInputs.forEach(function (radio) {
+                            radio.addEventListener('change', function () {
+                                applyTargetMode(radio.value);
+                                getTargetValue();
+                            });
+                        });
+
+                        if (targetInput) {
+                            targetInput.addEventListener('input', function () {
+                                resetSubpages(true);
+                                updateTargetModeControls();
+                                getTargetValue();
+                            });
+                            targetInput.addEventListener('change', function () {
+                                resetSubpages(true);
+                                updateTargetModeControls();
+                                getTargetValue();
+                            });
+                        }
+
+                        if (siteSelect) {
+                            siteSelect.addEventListener('change', function () {
+                                resetSubpages(true);
+                                updateTargetModeControls();
+                                getTargetValue();
+                            });
+                        }
+
+                        if (subpagesSelect) {
+                            subpagesSelect.addEventListener('change', function () {
+                                getTargetValue();
+                            });
+                        }
+
+                        if (localToggle) {
+                            localToggle.addEventListener('change', function () {
+                                resetSubpages(true);
+                                updateTargetModeControls();
+                            });
+                        }
+
+                        if (listPagesBtn) {
+                            listPagesBtn.addEventListener('click', function (event) {
                                 event.preventDefault();
-                                if (homeUrl) {
-                                    setTargetValue(homeUrl);
+                                if (listPagesBtn.disabled) {
+                                    return;
                                 }
+                                if (!listPagesNonce) {
+                                    setTargetStatus('List Pages is not configured.', 'is-error');
+                                    return;
+                                }
+                                var url = currentTargetUrl();
+                                if (!url) {
+                                    setTargetStatus('Select a target URL first.', 'is-error');
+                                    return;
+                                }
+                                if (currentTargetMode() === 'manual' && !isHomepageUrl(url)) {
+                                    setTargetStatus('List Pages requires a homepage URL.', 'is-warning');
+                                    resetSubpages(true);
+                                    return;
+                                }
+                                var max = siteLimitInput ? parseInt(siteLimitInput.value, 10) : 25;
+                                max = isNaN(max) ? 25 : max;
+                                isListing = true;
+                                listReady = false;
+                                updateTargetModeControls();
+                                setTargetStatus('Listing sitemap pages…');
+                                resetSubpages(true);
+                                postAction(
+                                    {
+                                        action: 'be_schema_analyser_list_pages',
+                                        nonce: listPagesNonce,
+                                        url: url,
+                                        local: isLocalSelected() ? '1' : '',
+                                        max: max
+                                    },
+                                    function (response) {
+                                        isListing = false;
+                                        updateTargetModeControls();
+                                        if (!response || !response.success) {
+                                            var msg = response && response.data && response.data.message ? response.data.message : 'Failed to list pages.';
+                                            setTargetStatus(msg, 'is-error');
+                                            resetSubpages(true);
+                                            listReady = false;
+                                            return;
+                                        }
+                                        var pages = response.data && response.data.pages ? response.data.pages : [];
+                                        if (!pages.length) {
+                                            setTargetStatus('No sitemap pages found.', 'is-warning');
+                                            resetSubpages(true);
+                                            listReady = false;
+                                            return;
+                                        }
+                                        populateSubpages(pages);
+                                        setTargetStatus('Pages loaded.');
+                                        updateTargetModeControls();
+                                    },
+                                    function () {
+                                        isListing = false;
+                                        updateTargetModeControls();
+                                        setTargetStatus('Failed to list pages.', 'is-error');
+                                        resetSubpages(true);
+                                    }
+                                );
                             });
                         }
 
@@ -2290,10 +2607,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
 
-                    if (targetInput && state.lastTarget) {
-                        targetInput.value = state.lastTarget;
-                    }
-
+                    loadSites();
+                    renderSites();
+                    applyTargetMode(currentTargetMode());
+                    restoreLastTarget();
+                    updateTargetModeControls();
+                    getTargetValue();
                     applyAvailability();
                     initEventListeners();
                     renderAll();
