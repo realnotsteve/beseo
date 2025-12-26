@@ -793,7 +793,7 @@
                 border: 1px solid #dfe2e6;
                 border-radius: 6px;
                 padding: 12px;
-                background: #f6f7f7;
+                background: #f9fafb;
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
@@ -846,16 +846,24 @@
 
             .be-schema-preview-local-column {
                 display: flex;
+                align-self: stretch;
             }
 
             .be-schema-preview-local-box {
-                display: inline-flex;
-                align-items: center;
-                padding: 4px 8px;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: center;
+                gap: 0;
+                padding: 6px 10px;
                 border-radius: 4px;
                 border: 1px solid #d0d4d9;
                 background: #fff;
-                height: 100%;
+                flex: 1;
+                box-sizing: border-box;
+            }
+            .be-schema-preview-local-box .be-schema-preview-selector-inline {
+                flex: 1;
             }
 
             .be-schema-preview-url::placeholder {

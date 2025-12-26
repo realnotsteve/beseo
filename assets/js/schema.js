@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     var listPagesBtn = document.getElementById('be-schema-preview-list-pages');
                     var subpagesSelect = document.getElementById('be-schema-preview-subpages');
                     var siteLimitInput = document.getElementById('be-schema-preview-site-limit');
-                    var localToggle = document.getElementById('be-schema-preview-local');
+                    var envInputs = previewRoot.querySelectorAll('input[name="be-schema-preview-env"]');
                     var includePostsToggle = document.getElementById('be-schema-preview-include-posts');
                     var maxPostsInput = document.getElementById('be-schema-preview-max-posts');
                     var healthBtn = document.getElementById('be-schema-preview-health');
@@ -921,7 +921,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function isLocalSelected() {
-                        return !!(localToggle && localToggle.checked);
+                        return getRadioValue(envInputs) === 'local';
                     }
 
                     function isHomepageUrl(url) {
@@ -2506,10 +2506,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             });
                         }
 
-                        if (localToggle) {
-                            localToggle.addEventListener('change', function () {
-                                resetSubpages(true);
-                                updateTargetModeControls();
+                        if (envInputs.length) {
+                            envInputs.forEach(function (input) {
+                                input.addEventListener('change', function () {
+                                    resetSubpages(true);
+                                    updateTargetModeControls();
+                                });
                             });
                         }
 

@@ -24,8 +24,12 @@ function be_schema_engine_render_schema_tab_preview() {
                         <div class="be-schema-preview-local-column">
                             <div class="be-schema-preview-local-box">
                                 <label class="be-schema-preview-selector-inline">
-                                    <input type="checkbox" id="be-schema-preview-local" />
+                                    <input type="radio" name="be-schema-preview-env" id="be-schema-preview-env-local" value="local" checked />
                                     <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                                </label>
+                                <label class="be-schema-preview-selector-inline">
+                                    <input type="radio" name="be-schema-preview-env" id="be-schema-preview-env-remote" value="remote" />
+                                    <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
                                 </label>
                             </div>
                         </div>
