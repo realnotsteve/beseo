@@ -20,11 +20,13 @@ function be_schema_engine_render_schema_tab_preview() {
             <div class="be-schema-preview-inputs">
                 <label class="be-schema-preview-selector-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
                 <div class="be-schema-preview-selector-box">
-                    <div class="be-schema-preview-selector-controls">
-                        <label class="be-schema-preview-selector-inline">
-                            <input type="checkbox" id="be-schema-preview-local" />
-                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
-                        </label>
+                    <div class="be-schema-preview-selector-row">
+                        <div class="be-schema-preview-local-box">
+                            <label class="be-schema-preview-selector-inline">
+                                <input type="checkbox" id="be-schema-preview-local" />
+                                <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                            </label>
+                        </div>
                         <span class="be-schema-preview-selector-divider" aria-hidden="true"></span>
                         <label><input type="radio" name="be-schema-preview-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
                         <label><input type="radio" name="be-schema-preview-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
@@ -32,6 +34,8 @@ function be_schema_engine_render_schema_tab_preview() {
                             <option value="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html( home_url( '/' ) ); ?></option>
                         </select>
                         <input type="text" id="be-schema-preview-target" class="regular-text be-schema-preview-url" placeholder="<?php esc_attr_e( 'https://example.com/ or 123', 'beseo' ); ?>" style="display:none;" />
+                    </div>
+                    <div class="be-schema-preview-selector-row">
                         <button type="button" class="button button-primary" id="be-schema-preview-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
                         <label class="be-schema-preview-selector-inline">
                             <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>

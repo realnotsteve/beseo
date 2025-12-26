@@ -761,7 +761,7 @@ function be_schema_engine_render_social_media_page() {
                             <a href="#be-schema-social-tab-validator"
                                class="be-schema-social-tab-link"
                                data-social-tab="validator">
-                                <?php esc_html_e( 'Validator', 'beseo' ); ?>
+                                <?php esc_html_e( 'Tests', 'beseo' ); ?>
                             </a>
                         </li>
                         <li>
@@ -1161,7 +1161,7 @@ function be_schema_engine_render_social_media_page() {
                     </div>
                 </div>
                 <div id="be-schema-social-tab-validator" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Validator', 'beseo' ); ?></h2>
+                    <h2><?php esc_html_e( 'Tests', 'beseo' ); ?></h2>
                     <?php
                     $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
                     $validator_panel  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-panel.php';
@@ -1173,7 +1173,7 @@ function be_schema_engine_render_social_media_page() {
                     if ( file_exists( $validator_panel ) ) {
                         include $validator_panel;
                     } else {
-                        echo '<p class="description">' . esc_html__( 'Validator unavailable.', 'beseo' ) . '</p>';
+                        echo '<p class="description">' . esc_html__( 'Tests unavailable.', 'beseo' ) . '</p>';
                     }
                     if ( file_exists( $validator_script ) ) {
                         include $validator_script;

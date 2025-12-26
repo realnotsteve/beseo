@@ -1002,7 +1002,7 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-overview"
                            class="be-schema-tab-link be-schema-tab-active"
                            data-schema-tab="overview">
-                            <?php esc_html_e( 'Status', 'beseo' ); ?>
+                            <?php esc_html_e( 'Dashboard', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
@@ -1037,7 +1037,7 @@ function be_schema_engine_render_schema_page() {
 
                 <!-- OVERVIEW TAB -->
                 <div id="be-schema-tab-overview" class="be-schema-tab-panel be-schema-tab-panel-active">
-                    <h2><?php esc_html_e( 'Status', 'beseo' ); ?></h2>
+                    <h2><?php esc_html_e( 'Dashboard', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
                             'Operational controls plus read-only views of the schema engine state, WordPress overrides, and site health.',

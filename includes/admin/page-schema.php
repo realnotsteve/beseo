@@ -42,6 +42,7 @@ function be_schema_engine_enqueue_schema_assets() {
                 'nonce'   => wp_create_nonce( 'be_schema_preview_graph' ),
                 'homeUrl' => home_url( '/' ),
                 'listPagesNonce' => wp_create_nonce( 'be_schema_analyser' ),
+                'playfairDefaultProfile' => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
                 'playfairNonce' => wp_create_nonce( 'be_schema_playfair_capture' ),
                 'playfairAction' => 'be_schema_playfair_capture',
                 'marker' => function_exists( 'be_schema_preview_marker_value' ) ? be_schema_preview_marker_value() : 'beseo-generated',
