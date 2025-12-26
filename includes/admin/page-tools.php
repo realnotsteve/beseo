@@ -1117,6 +1117,12 @@ function be_schema_engine_render_tools_page() {
             .be-schema-website-list li {
                 margin-bottom: 6px;
             }
+            .be-schema-sites-status-divider {
+                display: none;
+                border: 0;
+                border-top: 1px solid #e2e4e7;
+                margin: 10px 0;
+            }
         </style>
 
         <h2 class="nav-tab-wrapper">
@@ -1179,6 +1185,7 @@ function be_schema_engine_render_tools_page() {
                         <button type="button" id="be-schema-sites-local" class="be-schema-sites-check"><?php esc_html_e( 'Local', 'beseo' ); ?></button>
                         <button type="button" id="be-schema-sites-remote" class="be-schema-sites-check"><?php esc_html_e( 'Remote', 'beseo' ); ?></button>
                     </div>
+                    <hr class="be-schema-sites-status-divider" id="be-schema-sites-status-divider" />
                     <p class="description" id="be-schema-sites-status"></p>
                 </div>
             </div>
@@ -1485,87 +1492,24 @@ function be_schema_engine_render_tools_page() {
     </script>
     <script>
         (function() {
-            var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
-            var validatorPosts = <?php echo wp_json_encode( $validator_post_data ); ?>;
-            var validatorAjax = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-            var validatorNonce = '<?php echo wp_create_nonce( 'be_schema_validator' ); ?>';
-
-            var validatorStorageKey = 'be-schema-validator-state';
-            var lastData = null;
-
-            document.addEventListener('DOMContentLoaded', function () {
-                var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
-                var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
-                var validatorSelect = document.getElementById('be-schema-validator-select');
-                var validatorManual = document.getElementById('be-schema-validator-manual');
-                var searchWrap = document.querySelector('.be-schema-validator-search');
-                var searchInput = document.getElementById('be-schema-validator-search');
-                var includePosts = document.getElementById('be-schema-validator-include-posts');
-                var ogCheckbox = document.getElementById('be-schema-validator-og');
-                var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
-                var cropsCheckbox = document.getElementById('be-schema-validator-crops');
-                var serviceSelect = document.getElementById('be-schema-validator-service');
-                var copyCheckbox = document.getElementById('be-schema-validator-copy');
-                var openNewCheckbox = document.getElementById('be-schema-validator-open-new');
-                var validateBtn = document.getElementById('be-schema-validator-run');
-                var reRunBtn = document.getElementById('be-schema-validator-rerun');
-                var copySummaryBtn = document.getElementById('be-schema-validator-copy-summary');
-                var toggleTwitter = document.getElementById('be-schema-toggle-twitter');
-                var toggleOg = document.getElementById('be-schema-toggle-og');
-                var validatorNote = document.getElementById('be-schema-validator-note');
-                var warningList = document.getElementById('be-schema-warning-list');
-                var sourceMap = document.getElementById('be-schema-source-map');
-                var contextUrl = document.getElementById('be-schema-context-url');
-                var contextPlatforms = document.getElementById('be-schema-context-platforms');
-                var contextTime = document.getElementById('be-schema-context-time');
-                var contextResult = document.getElementById('be-schema-context-result');
-                var miniBadges = document.getElementById('be-schema-mini-badges');
-                var fetchLog = {
-                    container: document.getElementById('be-schema-fetch-log'),
-                    pageStatus: document.getElementById('be-schema-log-page-status'),
-                    pageTime: document.getElementById('be-schema-log-page-time'),
-                    redirects: document.getElementById('be-schema-log-redirects'),
-                    imageStatus: document.getElementById('be-schema-log-image-status'),
-                    imageTime: document.getElementById('be-schema-log-image-time'),
-                    imageType: document.getElementById('be-schema-log-image-type'),
-                    imageSize: document.getElementById('be-schema-log-image-size')
-                };
-
-                var previewTwitter = {
-                    wrap: document.getElementById('be-schema-preview-twitter'),
-                    img: document.getElementById('be-schema-preview-twitter-img'),
-                    title: document.getElementById('be-schema-preview-twitter-title'),
-                        desc: document.getElementById('be-schema-preview-twitter-desc'),
-                        domain: document.getElementById('be-schema-preview-twitter-domain'),
-                        card: document.getElementById('be-schema-preview-twitter-card')
-                    };
-                var previewOg = {
-                    wrap: document.getElementById('be-schema-preview-og'),
-                    img: document.getElementById('be-schema-preview-og-img'),
-                    title: document.getElementById('be-schema-preview-og-title'),
-                    desc: document.getElementById('be-schema-preview-og-desc'),
-                    domain: document.getElementById('be-schema-preview-og-domain')
-                };
-
+            function initSitesList() {
                 var sitesStoreKey = 'be-schema-analyser-sites';
-                var sitesList = document.getElementById('be-schema-sites-list');
-                var sitesEmpty = document.getElementById('be-schema-sites-empty');
-                var sitesAdd = document.getElementById('be-schema-sites-add');
-                var sitesLabel = document.getElementById('be-schema-sites-label');
-                var sitesUrl = document.getElementById('be-schema-sites-url');
-                var sitesLocalBtn = document.getElementById('be-schema-sites-local');
-                var sitesRemoteBtn = document.getElementById('be-schema-sites-remote');
-                var sitesStatus = document.getElementById('be-schema-sites-status');
                 var sites = [];
                 var sitesCheckNonce = '<?php echo esc_js( wp_create_nonce( 'be_schema_sites_check' ) ); ?>';
                 var sitesAjaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
                 var playfairLocalBaseUrl = '<?php echo esc_js( $settings['playfair_local_base_url'] ?? '' ); ?>';
+                var localSiteBaseUrl = '<?php echo esc_js( home_url() ); ?>';
 
                 function setSitesStatus(message) {
+                    var sitesStatus = document.getElementById('be-schema-sites-status');
+                    var statusDivider = document.getElementById('be-schema-sites-status-divider');
                     if (!sitesStatus) {
                         return;
                     }
                     sitesStatus.textContent = message || '';
+                    if (statusDivider) {
+                        statusDivider.style.display = message ? 'block' : 'none';
+                    }
                 }
 
                 function loadSites() {
@@ -1595,7 +1539,208 @@ function be_schema_engine_render_tools_page() {
                     } catch (e) {}
                 }
 
+                function setCheckButtonState(button, state) {
+                    if (!button) {
+                        return;
+                    }
+                    button.classList.remove('is-success', 'is-error', 'is-pending');
+                    if (state === 'ok') {
+                        button.classList.add('is-success');
+                    } else if (state === 'fail') {
+                        button.classList.add('is-error');
+                    } else if (state === 'pending') {
+                        button.classList.add('is-pending');
+                    }
+                }
+
+                function isPrivateIpv4(host) {
+                    var parts = host.split('.');
+                    if (parts.length !== 4) {
+                        return false;
+                    }
+                    var nums = [];
+                    for (var i = 0; i < parts.length; i++) {
+                        var value = Number(parts[i]);
+                        if (!Number.isFinite(value) || value < 0 || value > 255) {
+                            return false;
+                        }
+                        nums.push(value);
+                    }
+                    if (nums[0] === 10) {
+                        return true;
+                    }
+                    if (nums[0] === 127) {
+                        return true;
+                    }
+                    if (nums[0] === 169 && nums[1] === 254) {
+                        return true;
+                    }
+                    if (nums[0] === 192 && nums[1] === 168) {
+                        return true;
+                    }
+                    if (nums[0] === 172 && nums[1] >= 16 && nums[1] <= 31) {
+                        return true;
+                    }
+                    return false;
+                }
+
+                function isLocalHost(host) {
+                    var normalized = (host || '').toLowerCase();
+                    if (!normalized) {
+                        return false;
+                    }
+                    if (normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1') {
+                        return true;
+                    }
+                    if (normalized.slice(-6) === '.local') {
+                        return true;
+                    }
+                    if (/^\\d{1,3}(?:\\.\\d{1,3}){3}$/.test(normalized)) {
+                        return isPrivateIpv4(normalized);
+                    }
+                    return false;
+                }
+
+                function resolveLocalBaseUrl() {
+                    if (playfairLocalBaseUrl) {
+                        try {
+                            var parsedBase = new URL(playfairLocalBaseUrl);
+                            var baseHost = parsedBase.hostname.toLowerCase();
+                            var basePort = parsedBase.port;
+                            var looksLikePlayfair = (basePort === '3719') || baseHost.indexOf('playfair') !== -1 || baseHost === 'host.docker.internal';
+                            if (!looksLikePlayfair) {
+                                return playfairLocalBaseUrl;
+                            }
+                        } catch (e) {
+                            // ignore and fall through
+                        }
+                    }
+                    return localSiteBaseUrl || playfairLocalBaseUrl || '';
+                }
+
+                function computeLocalUrl(targetUrl) {
+                    var parsedTarget;
+                    try {
+                        parsedTarget = new URL(targetUrl);
+                    } catch (e) {
+                        return targetUrl;
+                    }
+                    if (isLocalHost(parsedTarget.hostname)) {
+                        return targetUrl;
+                    }
+                    var localBase = resolveLocalBaseUrl();
+                    if (!localBase) {
+                        return targetUrl;
+                    }
+                    try {
+                        var base = new URL(localBase);
+                        return base.origin + parsedTarget.pathname + parsedTarget.search + parsedTarget.hash;
+                    } catch (e) {
+                        return targetUrl;
+                    }
+                }
+
+                function isHttpUrl(value) {
+                    return !!value && (value.indexOf('http://') === 0 || value.indexOf('https://') === 0);
+                }
+
+                function probeUrl(targetUrl, kind) {
+                    var form = new FormData();
+                    form.append('action', 'be_schema_sites_check');
+                    form.append('nonce', sitesCheckNonce);
+                    form.append('url', targetUrl);
+                    form.append('kind', kind || '');
+                    return fetch(sitesAjaxUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: form
+                    }).then(function(response) {
+                        return response.json().then(function(payload) {
+                            if (payload && payload.success) {
+                                return { ok: true, message: '' };
+                            }
+                            var message = '';
+                            if (payload && payload.data && payload.data.message) {
+                                message = payload.data.message;
+                            } else if (payload && payload.message) {
+                                message = payload.message;
+                            }
+                            if (!message && response && response.status) {
+                                message = 'HTTP ' + response.status;
+                            }
+                            return { ok: false, message: message };
+                        }).catch(function() {
+                            return { ok: false, message: response && response.status ? ('HTTP ' + response.status) : 'Request failed.' };
+                        });
+                    }).catch(function(error) {
+                        return { ok: false, message: error && error.message ? error.message : 'Request failed.' };
+                    });
+                }
+
+                function updateSiteStatus(site, kind, status) {
+                    if (!site) {
+                        return;
+                    }
+                    if (kind === 'local') {
+                        site.localStatus = status;
+                    } else {
+                        site.remoteStatus = status;
+                    }
+                    saveSites();
+                    renderSites();
+                }
+
+                function runSiteCheck(site, kind) {
+                    if (!site || !site.url) {
+                        return Promise.resolve(false);
+                    }
+                    var targetUrl = (kind === 'local') ? computeLocalUrl(site.url) : site.url;
+                    updateSiteStatus(site, kind, 'pending');
+                    return probeUrl(targetUrl, kind).then(function(result) {
+                        var ok = result && result.ok;
+                        updateSiteStatus(site, kind, ok ? 'ok' : 'fail');
+                        if (!ok && result && result.message) {
+                            setSitesStatus(result.message);
+                        } else if (ok) {
+                            setSitesStatus('');
+                        }
+                        return ok;
+                    });
+                }
+
+                function runInputCheck(kind, button) {
+                    var sitesUrl = document.getElementById('be-schema-sites-url');
+                    var url = sitesUrl ? sitesUrl.value.trim() : '';
+                    if (!url) {
+                        setSitesStatus('<?php echo esc_js( __( 'Enter a URL first.', 'beseo' ) ); ?>');
+                        setCheckButtonState(button, 'fail');
+                        return;
+                    }
+                    if (!isHttpUrl(url)) {
+                        setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
+                        setCheckButtonState(button, 'fail');
+                        return;
+                    }
+                    var targetUrl = (kind === 'local') ? computeLocalUrl(url) : url;
+                    setCheckButtonState(button, 'pending');
+                    probeUrl(targetUrl, kind).then(function(result) {
+                        var ok = result && result.ok;
+                        setCheckButtonState(button, ok ? 'ok' : 'fail');
+                        if (!ok && result && result.message) {
+                            setSitesStatus(result.message);
+                        } else if (ok) {
+                            setSitesStatus('');
+                        }
+                        var match = sites.find(function(site) { return site.url === url; });
+                        if (match) {
+                            updateSiteStatus(match, kind, ok ? 'ok' : 'fail');
+                        }
+                    });
+                }
+
                 function renderSites() {
+                    var sitesList = document.getElementById('be-schema-sites-list');
+                    var sitesEmpty = document.getElementById('be-schema-sites-empty');
                     if (!sitesList) {
                         return;
                     }
@@ -1655,13 +1800,22 @@ function be_schema_engine_render_tools_page() {
                         saveBtn.addEventListener('click', function() {
                             var newUrl = urlInput.value.trim();
                             var newLabel = labelInput.value.trim();
-                            if (!newLabel || !newUrl) {
-                                setSitesStatus('<?php echo esc_js( __( 'Enter a label and URL.', 'beseo' ) ); ?>');
+                            if (!newUrl) {
+                                setSitesStatus('<?php echo esc_js( __( 'Enter a URL.', 'beseo' ) ); ?>');
                                 return;
                             }
-                            if (!/^https?:\\/\\//i.test(newUrl)) {
+                            if (!isHttpUrl(newUrl)) {
                                 setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
                                 return;
+                            }
+                            if (!newLabel) {
+                                try {
+                                    var parsedLabel = new URL(newUrl);
+                                    newLabel = parsedLabel.hostname.replace(/^www\\./i, '');
+                                } catch (e) {
+                                    newLabel = '<?php echo esc_js( __( 'Website', 'beseo' ) ); ?>';
+                                }
+                                labelInput.value = newLabel;
                             }
                             var urlChanged = newUrl !== site.url;
                             site.url = newUrl;
@@ -1709,135 +1863,6 @@ function be_schema_engine_render_tools_page() {
                     });
                 }
 
-                function setCheckButtonState(button, state) {
-                    if (!button) {
-                        return;
-                    }
-                    button.classList.remove('is-success', 'is-error', 'is-pending');
-                    if (state === 'ok') {
-                        button.classList.add('is-success');
-                    } else if (state === 'fail') {
-                        button.classList.add('is-error');
-                    } else if (state === 'pending') {
-                        button.classList.add('is-pending');
-                    }
-                }
-
-                function computeLocalUrl(targetUrl) {
-                    if (!playfairLocalBaseUrl) {
-                        return targetUrl;
-                    }
-                    try {
-                        var parsed = new URL(targetUrl);
-                        var base = new URL(playfairLocalBaseUrl);
-                        return base.origin + parsed.pathname + parsed.search + parsed.hash;
-                    } catch (e) {
-                        return targetUrl;
-                    }
-                }
-
-                function probeUrl(targetUrl) {
-                    var form = new FormData();
-                    form.append('action', 'be_schema_sites_check');
-                    form.append('nonce', sitesCheckNonce);
-                    form.append('url', targetUrl);
-                    return fetch(sitesAjaxUrl, {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        body: form
-                    }).then(function(response) {
-                        return response.json();
-                    }).then(function(payload) {
-                        return payload && payload.success;
-                    }).catch(function() {
-                        return false;
-                    });
-                }
-
-                function updateSiteStatus(site, kind, status) {
-                    if (!site) {
-                        return;
-                    }
-                    if (kind === 'local') {
-                        site.localStatus = status;
-                    } else {
-                        site.remoteStatus = status;
-                    }
-                    saveSites();
-                    renderSites();
-                }
-
-                function runSiteCheck(site, kind) {
-                    if (!site || !site.url) {
-                        return Promise.resolve(false);
-                    }
-                    var targetUrl = (kind === 'local') ? computeLocalUrl(site.url) : site.url;
-                    updateSiteStatus(site, kind, 'pending');
-                    return probeUrl(targetUrl).then(function(ok) {
-                        updateSiteStatus(site, kind, ok ? 'ok' : 'fail');
-                        return ok;
-                    });
-                }
-
-                function runInputCheck(kind, button) {
-                    var url = sitesUrl ? sitesUrl.value.trim() : '';
-                    if (!url) {
-                        setSitesStatus('<?php echo esc_js( __( 'Enter a URL first.', 'beseo' ) ); ?>');
-                        setCheckButtonState(button, 'fail');
-                        return;
-                    }
-                    if (!/^https?:\\/\\//i.test(url)) {
-                        setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
-                        setCheckButtonState(button, 'fail');
-                        return;
-                    }
-                    var targetUrl = (kind === 'local') ? computeLocalUrl(url) : url;
-                    setCheckButtonState(button, 'pending');
-                    probeUrl(targetUrl).then(function(ok) {
-                        setCheckButtonState(button, ok ? 'ok' : 'fail');
-                        var match = sites.find(function(site) { return site.url === url; });
-                        if (match) {
-                            updateSiteStatus(match, kind, ok ? 'ok' : 'fail');
-                        }
-                    });
-                }
-
-                if (sitesAdd && sitesLabel && sitesUrl) {
-                    sitesAdd.addEventListener('click', function() {
-                        var label = sitesLabel.value.trim();
-                        var url = sitesUrl.value.trim();
-                        if (!label || !url) {
-                            setSitesStatus('<?php echo esc_js( __( 'Enter a label and URL.', 'beseo' ) ); ?>');
-                            return;
-                        }
-                        if (!/^https?:\\/\\//i.test(url)) {
-                            setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
-                            return;
-                        }
-                        sites.unshift({ label: label, url: url, localStatus: 'unknown', remoteStatus: 'unknown', autoCheck: false });
-                        saveSites();
-                        renderSites();
-                        if (sitesList && typeof sitesList.scrollIntoView === 'function') {
-                            sitesList.scrollIntoView({ block: 'start' });
-                        }
-                        sitesLabel.value = '';
-                        sitesUrl.value = '';
-                        setSitesStatus('<?php echo esc_js( __( 'Website saved.', 'beseo' ) ); ?>');
-                    });
-                }
-
-                if (sitesLocalBtn) {
-                    sitesLocalBtn.addEventListener('click', function() {
-                        runInputCheck('local', sitesLocalBtn);
-                    });
-                }
-
-                if (sitesRemoteBtn) {
-                    sitesRemoteBtn.addEventListener('click', function() {
-                        runInputCheck('remote', sitesRemoteBtn);
-                    });
-                }
-
                 function runAutoCheck() {
                     if (!sites.length) {
                         return;
@@ -1855,9 +1880,135 @@ function be_schema_engine_render_tools_page() {
                     });
                 }
 
+                document.addEventListener('click', function(event) {
+                    var target = event && event.target ? event.target : null;
+                    if (!target) {
+                        return;
+                    }
+                    var addButton = target.closest('#be-schema-sites-add');
+                    if (addButton) {
+                        event.preventDefault();
+                        var sitesLabel = document.getElementById('be-schema-sites-label');
+                        var sitesUrl = document.getElementById('be-schema-sites-url');
+                        if (!sitesLabel || !sitesUrl) {
+                            return;
+                        }
+                        var label = sitesLabel.value.trim();
+                        var url = sitesUrl.value.trim();
+                        if (!url) {
+                            setSitesStatus('<?php echo esc_js( __( 'Enter a URL.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (!isHttpUrl(url)) {
+                            setSitesStatus('<?php echo esc_js( __( 'Use http/https URLs only.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (!label) {
+                            try {
+                                var parsed = new URL(url);
+                                label = parsed.hostname.replace(/^www\\./i, '');
+                            } catch (e) {
+                                label = '<?php echo esc_js( __( 'Website', 'beseo' ) ); ?>';
+                            }
+                        }
+                        sites.unshift({ label: label, url: url, localStatus: 'unknown', remoteStatus: 'unknown', autoCheck: false });
+                        saveSites();
+                        renderSites();
+                        var sitesList = document.getElementById('be-schema-sites-list');
+                        if (sitesList && typeof sitesList.scrollIntoView === 'function') {
+                            sitesList.scrollIntoView({ block: 'start' });
+                        }
+                        sitesLabel.value = '';
+                        sitesUrl.value = '';
+                        setSitesStatus('<?php echo esc_js( __( 'Website saved.', 'beseo' ) ); ?>');
+                        return;
+                    }
+                    var localButton = target.closest('#be-schema-sites-local');
+                    if (localButton) {
+                        runInputCheck('local', localButton);
+                        return;
+                    }
+                    var remoteButton = target.closest('#be-schema-sites-remote');
+                    if (remoteButton) {
+                        runInputCheck('remote', remoteButton);
+                    }
+                });
+
                 loadSites();
                 renderSites();
                 runAutoCheck();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSitesList);
+            } else {
+                initSitesList();
+            }
+        })();
+    </script>
+    <script>
+        (function() {
+            var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
+            var validatorPosts = <?php echo wp_json_encode( $validator_post_data ); ?>;
+            var validatorAjax = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            var validatorNonce = '<?php echo wp_create_nonce( 'be_schema_validator' ); ?>';
+
+            var validatorStorageKey = 'be-schema-validator-state';
+            var lastData = null;
+
+            function initToolsPage() {
+                var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
+                var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
+                var validatorSelect = document.getElementById('be-schema-validator-select');
+                var validatorManual = document.getElementById('be-schema-validator-manual');
+                var searchWrap = document.querySelector('.be-schema-validator-search');
+                var searchInput = document.getElementById('be-schema-validator-search');
+                var includePosts = document.getElementById('be-schema-validator-include-posts');
+                var ogCheckbox = document.getElementById('be-schema-validator-og');
+                var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
+                var cropsCheckbox = document.getElementById('be-schema-validator-crops');
+                var serviceSelect = document.getElementById('be-schema-validator-service');
+                var copyCheckbox = document.getElementById('be-schema-validator-copy');
+                var openNewCheckbox = document.getElementById('be-schema-validator-open-new');
+                var validateBtn = document.getElementById('be-schema-validator-run');
+                var reRunBtn = document.getElementById('be-schema-validator-rerun');
+                var copySummaryBtn = document.getElementById('be-schema-validator-copy-summary');
+                var toggleTwitter = document.getElementById('be-schema-toggle-twitter');
+                var toggleOg = document.getElementById('be-schema-toggle-og');
+                var validatorNote = document.getElementById('be-schema-validator-note');
+                var warningList = document.getElementById('be-schema-warning-list');
+                var sourceMap = document.getElementById('be-schema-source-map');
+                var contextUrl = document.getElementById('be-schema-context-url');
+                var contextPlatforms = document.getElementById('be-schema-context-platforms');
+                var contextTime = document.getElementById('be-schema-context-time');
+                var contextResult = document.getElementById('be-schema-context-result');
+                var miniBadges = document.getElementById('be-schema-mini-badges');
+                var fetchLog = {
+                    container: document.getElementById('be-schema-fetch-log'),
+                    pageStatus: document.getElementById('be-schema-log-page-status'),
+                    pageTime: document.getElementById('be-schema-log-page-time'),
+                    redirects: document.getElementById('be-schema-log-redirects'),
+                    imageStatus: document.getElementById('be-schema-log-image-status'),
+                    imageTime: document.getElementById('be-schema-log-image-time'),
+                    imageType: document.getElementById('be-schema-log-image-type'),
+                    imageSize: document.getElementById('be-schema-log-image-size')
+                };
+
+                var previewTwitter = {
+                    wrap: document.getElementById('be-schema-preview-twitter'),
+                    img: document.getElementById('be-schema-preview-twitter-img'),
+                    title: document.getElementById('be-schema-preview-twitter-title'),
+                        desc: document.getElementById('be-schema-preview-twitter-desc'),
+                        domain: document.getElementById('be-schema-preview-twitter-domain'),
+                        card: document.getElementById('be-schema-preview-twitter-card')
+                    };
+                var previewOg = {
+                    wrap: document.getElementById('be-schema-preview-og'),
+                    img: document.getElementById('be-schema-preview-og-img'),
+                    title: document.getElementById('be-schema-preview-og-title'),
+                    desc: document.getElementById('be-schema-preview-og-desc'),
+                    domain: document.getElementById('be-schema-preview-og-domain')
+                };
 
                 function currentMode() {
                         var mode = 'dropdown';
@@ -2553,7 +2704,13 @@ function be_schema_engine_render_tools_page() {
                 updateButtonState();
                 toggleCrops();
                 applyPreviewToggles();
-            });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initToolsPage);
+            } else {
+                initToolsPage();
+            }
         })();
     </script>
     <script>

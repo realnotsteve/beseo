@@ -111,9 +111,33 @@ function be_schema_sites_check_ajax() {
 
     check_ajax_referer( 'be_schema_sites_check', 'nonce' );
 
-    $url = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
-    if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+    $url  = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+    $kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+    $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
+
+    if ( '' === $url ) {
         wp_send_json_error( array( 'message' => __( 'Invalid URL.', 'beseo' ) ), 400 );
+    }
+
+    $parsed = wp_parse_url( $url );
+    if ( empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid URL.', 'beseo' ) ), 400 );
+    }
+    if ( ! in_array( strtolower( $parsed['scheme'] ), array( 'http', 'https' ), true ) ) {
+        wp_send_json_error( array( 'message' => __( 'Invalid URL.', 'beseo' ) ), 400 );
+    }
+
+    $allow_private = ( 'local' === $kind );
+    if ( ! $allow_private && ! empty( $settings['playfair_allow_private_targets'] ) ) {
+        $allow_private = true;
+    }
+    if ( ! $allow_private && function_exists( 'be_schema_playfair_is_private_target' ) && be_schema_playfair_is_private_target( $url ) ) {
+        wp_send_json_error(
+            array(
+                'message' => __( 'Private/local URLs require Local File Access to be enabled.', 'beseo' ),
+            ),
+            400
+        );
     }
 
     $sslverify = true;
