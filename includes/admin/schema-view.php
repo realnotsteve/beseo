@@ -5,11 +5,11 @@
  * Submenu: BE SEO → Schema
  *
  * Tabs:
- *  - Dashboard (global plugin toggles, Elementor toggle, debug)
- *  - Status    (snapshots + health check)
+ *  - Status    (operation, snapshots, health check)
  *  - Preview   (graph preview for a specific page)
  *  - Website   (site identity mode plus site entities: Global / Person / Organisation / Publisher)
- *  - Settings  (global author defaults)
+ *  - Defaults  (global author defaults)
+ *  - Options   (debug + safety toggles)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -999,15 +999,8 @@ function be_schema_engine_render_schema_page() {
             <div class="be-schema-tabs">
                 <ul class="be-schema-tabs-nav">
                     <li>
-                        <a href="#be-schema-tab-settings"
-                           class="be-schema-tab-link be-schema-tab-active"
-                           data-schema-tab="settings">
-                            <?php esc_html_e( 'Dashboard', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
                         <a href="#be-schema-tab-overview"
-                           class="be-schema-tab-link"
+                           class="be-schema-tab-link be-schema-tab-active"
                            data-schema-tab="overview">
                             <?php esc_html_e( 'Status', 'beseo' ); ?>
                         </a>
@@ -1016,7 +1009,7 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-preview"
                            class="be-schema-tab-link"
                            data-schema-tab="preview">
-                            <?php esc_html_e( 'Preview', 'beseo' ); ?>
+                            <?php esc_html_e( 'Tests', 'beseo' ); ?>
                         </a>
                     </li>
                     <li>
@@ -1030,33 +1023,24 @@ function be_schema_engine_render_schema_page() {
                         <a href="#be-schema-tab-settings-author"
                            class="be-schema-tab-link"
                            data-schema-tab="settings-author">
-                            <?php esc_html_e( 'Settings', 'beseo' ); ?>
+                            <?php esc_html_e( 'Defaults', 'beseo' ); ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#be-schema-tab-options"
+                           class="be-schema-tab-link"
+                           data-schema-tab="options">
+                            <?php esc_html_e( 'Options', 'beseo' ); ?>
                         </a>
                     </li>
                 </ul>
 
-                <!-- DASHBOARD TAB -->
-                <div id="be-schema-tab-settings"
-                     class="be-schema-tab-panel be-schema-tab-panel-active">
-                    <?php
-                        be_schema_engine_render_schema_tab_settings(
-                            $settings,
-                            $wp_debug,
-                            $debug_enabled,
-                            $dry_run,
-                            $enabled,
-                            $elementor_enabled,
-                            $image_validation_enabled
-                        );
-                    ?>
-                </div>
-
                 <!-- OVERVIEW TAB -->
-                <div id="be-schema-tab-overview" class="be-schema-tab-panel">
+                <div id="be-schema-tab-overview" class="be-schema-tab-panel be-schema-tab-panel-active">
                     <h2><?php esc_html_e( 'Status', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
-                            'Quick, read-only views of the schema engine state, WordPress overrides, and site health.',
+                            'Operational controls plus read-only views of the schema engine state, WordPress overrides, and site health.',
                             'beseo'
                         ); ?>
                     </p>
@@ -1064,6 +1048,13 @@ function be_schema_engine_render_schema_page() {
                     <div class="be-schema-overview-layout">
                         <div class="be-schema-overview-nav">
                             <ul>
+                                <li>
+                                    <a href="#be-schema-overview-operation"
+                                       class="be-schema-overview-tab-link"
+                                       data-overview-tab="operation">
+                                        <?php esc_html_e( 'Operation', 'beseo' ); ?>
+                                    </a>
+                                </li>
                                 <li>
                                     <a href="#be-schema-overview-health"
                                        class="be-schema-overview-tab-link"
@@ -1089,6 +1080,27 @@ function be_schema_engine_render_schema_page() {
                         </div>
 
                         <div class="be-schema-overview-panels">
+                            <div id="be-schema-overview-operation" class="be-schema-overview-panel">
+                                <div class="be-schema-global-section">
+                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Operation', 'beseo' ); ?></h4>
+                                    <table class="form-table">
+                                        <tr>
+                                            <th scope="row"><?php esc_html_e( 'Enable BE Schema Engine', 'beseo' ); ?></th>
+                                            <td>
+                                                <label><input type="checkbox" name="be_schema_enabled" value="1" <?php checked( $enabled ); ?> /> <?php esc_html_e( 'Enable schema output', 'beseo' ); ?></label>
+                                                <p class="description"><?php esc_html_e( 'Toggle global schema output on your site.', 'beseo' ); ?></p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row"><?php esc_html_e( 'Elementor integration', 'beseo' ); ?></th>
+                                            <td>
+                                                <label><input type="checkbox" name="be_schema_elementor_enabled" value="1" <?php checked( $elementor_enabled ); ?> /> <?php esc_html_e( 'Enable Elementor widgets', 'beseo' ); ?></label>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
                                 <div class="be-schema-global-section">
@@ -1502,6 +1514,11 @@ function be_schema_engine_render_schema_page() {
                             </tr>
                         </table>
                     </div>
+                </div>
+
+                <!-- OPTIONS TAB -->
+                <div id="be-schema-tab-options" class="be-schema-tab-panel">
+                    <?php be_schema_engine_render_schema_tab_options( $wp_debug, $debug_enabled, $dry_run, $image_validation_enabled ); ?>
                 </div>
 
                 <?php include BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-website.php'; ?>

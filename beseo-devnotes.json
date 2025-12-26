@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.45",
+    "version": "2.1.46",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -521,6 +521,8 @@
     "Platforms > Facebook > Tools now hosts the OpenGraph-only dry-run toggle (removed from the Platforms dashboard safety box).",
     "Platforms > Twitter > Tools now shows Dry Run as a standalone section beneath Tools (not nested).",
     "Social Dashboard no longer shows the OpenGraph dry-run safety box (moved to Platforms > Facebook > Tools).",
+    "Schema > Status now includes an Operation subtab for global output + Elementor toggles; Schema > Defaults replaces the Settings label; Options now hosts debug, dry-run, and image validation toggles.",
+    "Schema Dashboard tab removed; Status is now the first tab in the Schema submenu. Preview tab renamed to Tests.",
     "Analyser > Overview controls now include a List Pages button with Max Site Pages, and the follow-links limit sits to the right of Run Analysis with a Max Follow Links label.",
     "Analyser > Overview now disables Run Analysis and Max Follow Links by default; List Pages/Max Site Pages enable for Websites or when a manual URL matches the homepage (scheme-agnostic).",
     "Analyser > Overview now provides a Subpage(s) dropdown populated via sitemap discovery (robots.txt or common sitemap locations) when List Pages is clicked, and enables Run Analysis/Max Follow Links after the list finishes loading.",

@@ -1,6 +1,6 @@
 <?php
 /**
- * Schema view partial: Settings tab.
+ * Schema view partial: Dashboard + Options tabs.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,22 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 function be_schema_engine_render_schema_tab_settings( $settings, $wp_debug, $debug_enabled, $dry_run, $enabled, $elementor_enabled, $image_validation_enabled ) {
     ?>
     <div id="be-schema-settings" class="be-schema-tab <?php echo ( isset( $_GET['tab'] ) && 'website' !== $_GET['tab'] ) ? 'active' : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">
-        <h2><?php esc_html_e( 'Settings', 'beseo' ); ?></h2>
+        <h2><?php esc_html_e( 'Dashboard', 'beseo' ); ?></h2>
+        <p class="description"><?php esc_html_e( 'Operational toggles now live under Status → Operation, and advanced switches are under Options.', 'beseo' ); ?></p>
+    </div>
+    <?php
+}
 
+function be_schema_engine_render_schema_tab_options( $wp_debug, $debug_enabled, $dry_run, $image_validation_enabled ) {
+    ?>
+    <h2><?php esc_html_e( 'Options', 'beseo' ); ?></h2>
+    <div class="be-schema-global-section">
+        <h4 class="be-schema-section-title"><?php esc_html_e( 'Debug & Safety', 'beseo' ); ?></h4>
         <table class="form-table">
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Enable BE Schema Engine', 'beseo' ); ?></th>
-                <td>
-                    <label><input type="checkbox" name="be_schema_enabled" value="1" <?php checked( $enabled ); ?> /> <?php esc_html_e( 'Enable schema output', 'beseo' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'Toggle global schema output on your site.', 'beseo' ); ?></p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Elementor integration', 'beseo' ); ?></th>
-                <td>
-                    <label><input type="checkbox" name="be_schema_elementor_enabled" value="1" <?php checked( $elementor_enabled ); ?> /> <?php esc_html_e( 'Enable Elementor widgets', 'beseo' ); ?></label>
-                </td>
-            </tr>
             <tr>
                 <th scope="row"><?php esc_html_e( 'Debug logging', 'beseo' ); ?></th>
                 <td>
