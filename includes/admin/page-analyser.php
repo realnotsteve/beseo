@@ -89,6 +89,7 @@ function be_schema_engine_enqueue_analyser_assets() {
                 'listFailed'     => __( 'Failed to list pages.', 'beseo' ),
                 'listNoPages'    => __( 'No sitemap pages found.', 'beseo' ),
                 'listReady'      => __( 'Pages loaded.', 'beseo' ),
+                'subpagesSearch' => __( 'Search pages/posts', 'beseo' ),
                 'subpagesNone'   => __( 'None', 'beseo' ),
                 'subpagesHome'   => __( 'Home page', 'beseo' ),
                 'subpagesDivider'=> __( '────────', 'beseo' ),
@@ -131,33 +132,48 @@ function be_schema_engine_render_analyser_page() {
             <p class="description"><?php esc_html_e( 'The analyser performs a lightweight fetch and inspects metadata, headings, canonicals, robots, and link counts. It will expand to multi-page crawls in the future.', 'beseo' ); ?></p>
             <label class="be-schema-analyser-section-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
             <div class="be-schema-issues-list be-schema-selector-box">
-                <div class="be-schema-analyser-controls">
-                    <div class="be-schema-analyser-local-box">
-                        <label class="be-schema-analyser-inline-field">
-                            <input type="checkbox" id="be-schema-analyser-local" />
-                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
-                        </label>
+                <div class="be-schema-selector-grid">
+                    <div class="be-schema-analyser-local-column">
+                        <div class="be-schema-analyser-local-box">
+                            <label class="be-schema-analyser-inline-field">
+                                <input type="checkbox" id="be-schema-analyser-local" />
+                                <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                            </label>
+                        </div>
                     </div>
-                    <span class="be-schema-analyser-vertical-divider" aria-hidden="true"></span>
-                    <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
-                    <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                    <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url" style="display:inline-block;">
-                        <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
-                    </select>
-                    <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="https://example.com/" style="display:none;" />
-                </div>
-                <div class="be-schema-analyser-controls">
-                    <button type="button" class="button button-primary" id="be-schema-analyser-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
-                    <label class="be-schema-analyser-inline-field">
-                        <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
-                        <select id="be-schema-analyser-subpages" class="regular-text" disabled>
-                            <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
-                        </select>
-                    </label>
-                    <label class="be-schema-analyser-inline-field">
-                        <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
-                        <input type="number" id="be-schema-analyser-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
-                    </label>
+                    <span class="be-schema-analyser-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
+                    <div class="be-schema-selector-rows">
+                        <div class="be-schema-analyser-controls be-schema-selector-row">
+                            <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                            <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                            <label><input type="radio" name="be-schema-analyser-target-mode" value="search" /> <?php esc_html_e( 'Search', 'beseo' ); ?></label>
+                            <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url" style="display:inline-block;">
+                                <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
+                            </select>
+                            <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
+                            <label class="be-schema-analyser-inline-field">
+                                <input type="checkbox" id="be-schema-analyser-include-posts" />
+                                <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
+                            </label>
+                            <label class="be-schema-analyser-inline-field">
+                                <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
+                                <input type="number" id="be-schema-analyser-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
+                            </label>
+                        </div>
+                        <div class="be-schema-analyser-controls be-schema-selector-row">
+                            <button type="button" class="button button-primary" id="be-schema-analyser-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
+                            <label class="be-schema-analyser-inline-field">
+                                <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
+                                <select id="be-schema-analyser-subpages" class="regular-text" disabled>
+                                    <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
+                                </select>
+                            </label>
+                            <label class="be-schema-analyser-inline-field">
+                                <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
+                                <input type="number" id="be-schema-analyser-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="be-schema-analyser-actions">

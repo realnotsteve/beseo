@@ -44,6 +44,23 @@
 .be-schema-selector-box {
     background: #f9fafb;
 }
+.be-schema-selector-grid {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+.be-schema-selector-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+.be-schema-selector-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
 .be-schema-analyser-actions {
     margin-top: 10px;
     display: flex;
@@ -67,13 +84,21 @@
     background: #d0d4d9;
     margin: 0 4px;
 }
+.be-schema-selector-divider {
+    align-self: stretch;
+    height: auto;
+}
+.be-schema-analyser-local-column {
+    display: flex;
+}
 .be-schema-analyser-local-box {
     display: inline-flex;
     align-items: center;
     padding: 4px 8px;
     border-radius: 4px;
     border: 1px solid #d0d4d9;
-    background: #f6f7f7;
+    background: #fff;
+    height: 100%;
 }
 .be-schema-issues-layout {
     display: grid;
@@ -97,6 +122,9 @@
     border-radius: 6px;
     padding: 12px;
     background: #fff;
+}
+.be-schema-issues-list.be-schema-selector-box {
+    background: #f9fafb;
 }
 .be-schema-issues-list ul {
     margin: 0;
