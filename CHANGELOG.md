@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.48] - 2025-12-26
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- assets/css/analyser.css
+- assets/css/schema.css
+- beseo-devnotes.json
+- includes/admin/page-analyser.php
+
+
 ## [2.1.47] - 2025-12-26
 Summary: Devnotes + schema admin + social admin.
 

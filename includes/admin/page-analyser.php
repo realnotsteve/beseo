@@ -130,12 +130,14 @@ function be_schema_engine_render_analyser_page() {
             </div>
             <p class="description"><?php esc_html_e( 'The analyser performs a lightweight fetch and inspects metadata, headings, canonicals, robots, and link counts. It will expand to multi-page crawls in the future.', 'beseo' ); ?></p>
             <label class="be-schema-analyser-section-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
-            <div class="be-schema-issues-list">
+            <div class="be-schema-issues-list be-schema-selector-box">
                 <div class="be-schema-analyser-controls">
-                    <label class="be-schema-analyser-inline-field">
-                        <input type="checkbox" id="be-schema-analyser-local" />
-                        <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
-                    </label>
+                    <div class="be-schema-analyser-local-box">
+                        <label class="be-schema-analyser-inline-field">
+                            <input type="checkbox" id="be-schema-analyser-local" />
+                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                        </label>
+                    </div>
                     <span class="be-schema-analyser-vertical-divider" aria-hidden="true"></span>
                     <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
                     <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
@@ -143,6 +145,8 @@ function be_schema_engine_render_analyser_page() {
                         <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
                     </select>
                     <input type="text" id="be-schema-analyser-url" class="regular-text be-schema-analyser-url" value="<?php echo esc_url( $home_url ); ?>" placeholder="https://example.com/" style="display:none;" />
+                </div>
+                <div class="be-schema-analyser-controls">
                     <button type="button" class="button button-primary" id="be-schema-analyser-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
                     <label class="be-schema-analyser-inline-field">
                         <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
