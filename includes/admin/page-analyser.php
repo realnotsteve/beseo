@@ -89,7 +89,6 @@ function be_schema_engine_enqueue_analyser_assets() {
                 'listFailed'     => __( 'Failed to list pages.', 'beseo' ),
                 'listNoPages'    => __( 'No sitemap pages found.', 'beseo' ),
                 'listReady'      => __( 'Pages loaded.', 'beseo' ),
-                'subpagesSearch' => __( 'Search pages/posts', 'beseo' ),
                 'subpagesNone'   => __( 'None', 'beseo' ),
                 'subpagesHome'   => __( 'Home page', 'beseo' ),
                 'subpagesDivider'=> __( '────────', 'beseo' ),
@@ -146,7 +145,6 @@ function be_schema_engine_render_analyser_page() {
                         <div class="be-schema-analyser-controls be-schema-selector-row">
                             <label><input type="radio" name="be-schema-analyser-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
                             <label><input type="radio" name="be-schema-analyser-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                            <label><input type="radio" name="be-schema-analyser-target-mode" value="search" /> <?php esc_html_e( 'Search', 'beseo' ); ?></label>
                             <select id="be-schema-analyser-site" class="regular-text be-schema-analyser-url" style="display:inline-block;">
                                 <option value="<?php echo esc_url( $home_url ); ?>"><?php echo esc_html( $home_url ); ?></option>
                             </select>

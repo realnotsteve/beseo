@@ -812,8 +812,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     var sites = [];
                     var listReady = false;
                     var isListing = false;
-                    var subpagesData = [];
-                    var manualPlaceholder = targetInput ? targetInput.getAttribute('placeholder') : '';
 
                     function loadState() {
                         var fallback = { columns: [], cache: {}, lastTarget: '' };
@@ -944,7 +942,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             return;
                         }
                         listReady = false;
-                        subpagesData = [];
                         subpagesSelect.innerHTML = '';
                         var noneOption = document.createElement('option');
                         noneOption.value = '';
@@ -957,7 +954,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (!subpagesSelect) {
                             return;
                         }
-                        subpagesData = pages || [];
                         resetSubpages(false);
                         if (!pages || !pages.length) {
                             return;
@@ -987,27 +983,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         subpagesSelect.disabled = false;
                     }
 
-                    function filterSubpages(term) {
-                        if (!subpagesSelect || !subpagesData.length) {
-                            return;
-                        }
-                        var value = (term || '').toLowerCase();
-                        if (!value) {
-                            populateSubpages(subpagesData);
-                            return;
-                        }
-                        var filtered = subpagesData.filter(function (page) {
-                            var label = (page.label || '').toLowerCase();
-                            var url = (page.url || '').toLowerCase();
-                            return label.indexOf(value) !== -1 || url.indexOf(value) !== -1;
-                        });
-                        populateSubpages(filtered);
-                    }
-
                     function updateTargetModeControls() {
                         var mode = currentTargetMode();
                         var allowList = false;
-                        if (mode === 'site' || mode === 'search') {
+                        if (mode === 'site') {
                             allowList = !!(siteSelect && siteSelect.value);
                         } else {
                             var manualUrl = targetInput ? targetInput.value.trim() : '';
@@ -1030,9 +1009,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         var mode = currentTargetMode();
                         if (mode === 'manual') {
                             return targetInput ? targetInput.value.trim() : '';
-                        }
-                        if (mode === 'search') {
-                            return siteSelect ? siteSelect.value.trim() : '';
                         }
                         return siteSelect ? siteSelect.value.trim() : '';
                     }
@@ -1079,36 +1055,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function applyTargetMode(mode) {
-                        var useManual = mode !== 'site';
+                        var useManual = mode === 'manual';
                         targetModeInputs.forEach(function (input) {
                             input.checked = input.value === mode;
                         });
                         if (targetInput) {
                             targetInput.style.display = useManual ? 'inline-block' : 'none';
                             targetInput.disabled = !useManual;
-                            if (mode === 'search') {
-                                targetInput.setAttribute('placeholder', 'Search pages/posts');
-                            } else if (manualPlaceholder) {
-                                targetInput.setAttribute('placeholder', manualPlaceholder);
-                            }
                         }
                         if (siteSelect) {
-                            var showSelect = mode !== 'manual';
-                            siteSelect.style.display = showSelect ? 'inline-block' : 'none';
-                            siteSelect.disabled = !showSelect;
+                            siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                            siteSelect.disabled = useManual;
                         }
                         if (mode === 'manual' && siteSelect) {
                             siteSelect.value = '';
                         }
-                        if (mode === 'search' && subpagesData.length) {
-                            populateSubpages(subpagesData);
-                        } else {
-                            resetSubpages(true);
-                        }
+                        resetSubpages(true);
                         updateTargetModeControls();
-                        if (mode !== 'search') {
-                            filterSubpages('');
-                        }
                     }
 
                     function restoreLastTarget() {
@@ -2518,21 +2481,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         if (targetInput) {
                             targetInput.addEventListener('input', function () {
-                                if (currentTargetMode() === 'search') {
-                                    filterSubpages(targetInput.value);
-                                } else {
-                                    resetSubpages(true);
-                                    updateTargetModeControls();
-                                }
+                                resetSubpages(true);
+                                updateTargetModeControls();
                                 getTargetValue();
                             });
                             targetInput.addEventListener('change', function () {
-                                if (currentTargetMode() === 'search') {
-                                    filterSubpages(targetInput.value);
-                                } else {
-                                    resetSubpages(true);
-                                    updateTargetModeControls();
-                                }
+                                resetSubpages(true);
+                                updateTargetModeControls();
                                 getTargetValue();
                             });
                         }
@@ -2618,9 +2573,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                             return;
                                         }
                                         populateSubpages(pages);
-                                        if (currentTargetMode() === 'search' && targetInput && targetInput.value) {
-                                            filterSubpages(targetInput.value);
-                                        }
                                         setTargetStatus('Pages loaded.');
                                         updateTargetModeControls();
                                     },

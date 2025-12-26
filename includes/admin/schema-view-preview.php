@@ -34,7 +34,6 @@ function be_schema_engine_render_schema_tab_preview() {
                             <div class="be-schema-preview-selector-row">
                                 <label><input type="radio" name="be-schema-preview-target-mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
                                 <label><input type="radio" name="be-schema-preview-target-mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                                <label><input type="radio" name="be-schema-preview-target-mode" value="search" /> <?php esc_html_e( 'Search', 'beseo' ); ?></label>
                                 <select id="be-schema-preview-site" class="regular-text be-schema-preview-url" style="display:inline-block;">
                                     <option value="<?php echo esc_url( home_url( '/' ) ); ?>"><?php echo esc_html( home_url( '/' ) ); ?></option>
                                 </select>

@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.49",
+    "version": "2.1.50",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -525,7 +525,7 @@
     "Schema Dashboard tab removed; Dashboard is now the first tab in the Schema submenu. Preview tab renamed to Tests.",
     "Schema > Tests now adds browser profile selection per output column and adds spacing above the Diff panel.",
     "Selector box now uses a two-row flex layout; the Analyser selector background matches the Schema Global Identity box while the Local toggle box matches the Overview tab background.",
-    "Selector box now supports a Search mode, include-posts toggle with Max Posts, and a full-height Local column spanning both rows.",
+    "Selector box now supports the include-posts toggle with Max Posts and a full-height Local column spanning both rows.",
     "Open Graph (Social) Validator tab renamed to Tests.",
     "Analyser > Overview controls now include a List Pages button with Max Site Pages, and the follow-links limit sits to the right of Run Analysis with a Max Follow Links label.",
     "Analyser > Overview now disables Run Analysis and Max Follow Links by default; List Pages/Max Site Pages enable for Websites or when a manual URL matches the homepage (scheme-agnostic).",

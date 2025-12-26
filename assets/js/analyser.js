@@ -47,8 +47,6 @@
         var isRunning = false;
         var isListing = false;
         var listReady = false;
-        var subpagesData = [];
-        var manualPlaceholder = urlInput ? urlInput.getAttribute('placeholder') : '';
 
         function activate(key) {
             tabs.forEach(function(tab) {
@@ -376,9 +374,6 @@
             if (mode === 'manual') {
                 return urlInput ? urlInput.value.trim() : '';
             }
-            if (mode === 'search') {
-                return siteSelect ? siteSelect.value.trim() : '';
-            }
             return siteSelect ? siteSelect.value.trim() : '';
         }
 
@@ -427,7 +422,6 @@
                 return;
             }
             listReady = false;
-            subpagesData = [];
             subpagesSelect.innerHTML = '';
             var noneOption = document.createElement('option');
             noneOption.value = '';
@@ -440,7 +434,6 @@
             if (!subpagesSelect) {
                 return;
             }
-            subpagesData = pages || [];
             resetSubpages(false);
             if (!pages || !pages.length) {
                 return;
@@ -470,28 +463,11 @@
             subpagesSelect.disabled = false;
         }
 
-        function filterSubpages(term) {
-            if (!subpagesSelect || !subpagesData.length) {
-                return;
-            }
-            var value = (term || '').toLowerCase();
-            if (!value) {
-                populateSubpages(subpagesData);
-                return;
-            }
-            var filtered = subpagesData.filter(function(page) {
-                var label = (page.label || '').toLowerCase();
-                var url = (page.url || '').toLowerCase();
-                return label.indexOf(value) !== -1 || url.indexOf(value) !== -1;
-            });
-            populateSubpages(filtered);
-        }
-
         function updateTargetModeControls() {
             var mode = currentTargetMode();
             var allowList = false;
             var allowRun = false;
-            if (mode === 'site' || mode === 'search') {
+            if (mode === 'site') {
                 allowList = true;
                 allowRun = listReady && !isListing;
             } else {
@@ -720,9 +696,6 @@
                         return;
                     }
                     populateSubpages(pages);
-                    if (currentTargetMode() === 'search' && urlInput && urlInput.value) {
-                        filterSubpages(urlInput.value);
-                    }
                     setStatus(t('listReady', 'Pages loaded.'));
                     updateTargetModeControls();
                 }).catch(function() {
@@ -829,33 +802,20 @@
         targetRadios.forEach(function(radio) {
             radio.addEventListener('change', function() {
                 var mode = radio.value;
-                var useManual = (mode !== 'site');
+                var useManual = (mode === 'manual');
                 if (urlInput) {
                     urlInput.style.display = useManual ? 'inline-block' : 'none';
                     urlInput.disabled = !useManual;
-                    if (mode === 'search') {
-                        urlInput.setAttribute('placeholder', t('subpagesSearch', 'Search pages/posts'));
-                    } else if (manualPlaceholder) {
-                        urlInput.setAttribute('placeholder', manualPlaceholder);
-                    }
                 }
                 if (siteSelect) {
-                    var showSelect = mode !== 'manual';
-                    siteSelect.style.display = showSelect ? 'inline-block' : 'none';
-                    siteSelect.disabled = !showSelect;
+                    siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                    siteSelect.disabled = useManual;
                 }
                 if (mode === 'manual' && siteSelect) {
                     siteSelect.value = '';
                 }
-                if (mode === 'search' && subpagesData.length) {
-                    populateSubpages(subpagesData);
-                } else {
-                    resetSubpages(true);
-                }
+                resetSubpages(true);
                 updateTargetModeControls();
-                if (mode !== 'search') {
-                    filterSubpages('');
-                }
             });
         });
 
@@ -866,20 +826,12 @@
 
         if (urlInput) {
             urlInput.addEventListener('input', function() {
-                if (currentTargetMode() === 'search') {
-                    filterSubpages(urlInput.value);
-                } else {
-                    resetSubpages(true);
-                    updateTargetModeControls();
-                }
+                resetSubpages(true);
+                updateTargetModeControls();
             });
             urlInput.addEventListener('change', function() {
-                if (currentTargetMode() === 'search') {
-                    filterSubpages(urlInput.value);
-                } else {
-                    resetSubpages(true);
-                    updateTargetModeControls();
-                }
+                resetSubpages(true);
+                updateTargetModeControls();
             });
         }
         if (localToggle) {
