@@ -135,8 +135,12 @@ function be_schema_engine_render_analyser_page() {
                     <div class="be-schema-analyser-local-column">
                         <div class="be-schema-analyser-local-box">
                             <label class="be-schema-analyser-inline-field">
-                                <input type="checkbox" id="be-schema-analyser-local" />
+                                <input type="radio" name="be-schema-analyser-env" id="be-schema-analyser-env-local" value="local" checked />
                                 <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                            </label>
+                            <label class="be-schema-analyser-inline-field">
+                                <input type="radio" name="be-schema-analyser-env" id="be-schema-analyser-env-remote" value="remote" />
+                                <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
                             </label>
                         </div>
                     </div>

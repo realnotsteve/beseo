@@ -20,7 +20,7 @@
         var listPagesBtn = document.getElementById('be-schema-analyser-list-pages');
         var siteLimitInput = document.getElementById('be-schema-analyser-site-limit');
         var subpagesSelect = document.getElementById('be-schema-analyser-subpages');
-        var localToggle = document.getElementById('be-schema-analyser-local');
+        var envRadios = document.querySelectorAll('input[name="be-schema-analyser-env"]');
         var includePostsToggle = document.getElementById('be-schema-analyser-include-posts');
         var maxPostsInput = document.getElementById('be-schema-analyser-max-posts');
         var statusNode = document.getElementById('be-schema-analyser-status');
@@ -384,7 +384,13 @@
         }
 
         function isLocalSelected() {
-            return !!(localToggle && localToggle.checked);
+            var mode = 'local';
+            envRadios.forEach(function(radio) {
+                if (radio.checked) {
+                    mode = radio.value;
+                }
+            });
+            return mode === 'local';
         }
 
         function normalizeUrl(url) {
@@ -834,10 +840,12 @@
                 updateTargetModeControls();
             });
         }
-        if (localToggle) {
-            localToggle.addEventListener('change', function() {
-                resetSubpages(true);
-                updateTargetModeControls();
+        if (envRadios && envRadios.length) {
+            envRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    resetSubpages(true);
+                    updateTargetModeControls();
+                });
             });
         }
         if (siteSelect) {
