@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var data = window.beSchemaSchemaData || {};
     var labels = data.labels || {};
     var imageValidationEnabled = !!data.imageValidationEnabled;
+    var selector = window.beSchemaSelector || {};
 
     var labelUndefined = labels.undefined || 'Undefined';
     var labelVerified = labels.verified || 'Verified';
@@ -868,44 +869,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function loadSites() {
-                        if (!window.localStorage) {
-                            sites = [];
+                        if (selector.loadSites) {
+                            sites = selector.loadSites(sitesStoreKey);
                             return;
                         }
-                        try {
-                            var raw = window.localStorage.getItem(sitesStoreKey);
-                            sites = raw ? JSON.parse(raw) : [];
-                            if (!Array.isArray(sites)) {
-                                sites = [];
-                            }
-                        } catch (err) {
-                            sites = [];
-                        }
+                        sites = [];
                     }
 
                     function renderSites() {
-                        if (!siteSelect) {
-                            return;
+                        if (selector.renderSitesSelect) {
+                            selector.renderSitesSelect(siteSelect, sites, homeUrl);
                         }
-                        siteSelect.innerHTML = '';
-                        if (!sites.length) {
-                            if (homeUrl) {
-                                var optHome = document.createElement('option');
-                                optHome.value = homeUrl;
-                                optHome.textContent = homeUrl;
-                                siteSelect.appendChild(optHome);
-                            }
-                            return;
-                        }
-                        sites.forEach(function (site) {
-                            if (!site || !site.url) {
-                                return;
-                            }
-                            var opt = document.createElement('option');
-                            opt.value = site.url;
-                            opt.textContent = site.label ? (site.label + ' (' + site.url + ')') : site.url;
-                            siteSelect.appendChild(opt);
-                        });
                     }
 
                     function currentTargetMode() {
@@ -923,62 +897,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function isHomepageUrl(url) {
-                        if (!url) {
-                            return false;
-                        }
-                        try {
-                            var parsed = new URL(url);
-                            var path = parsed.pathname || '/';
-                            return path === '/' || path === '';
-                        } catch (err) {
-                            return false;
-                        }
+                        return selector.isHomepageUrl ? selector.isHomepageUrl(url) : false;
                     }
 
                     function resetSubpages(disabled) {
-                        if (!subpagesSelect) {
-                            return;
-                        }
                         listReady = false;
-                        subpagesSelect.innerHTML = '';
-                        var noneOption = document.createElement('option');
-                        noneOption.value = '';
-                        noneOption.textContent = 'None';
-                        subpagesSelect.appendChild(noneOption);
-                        subpagesSelect.disabled = disabled !== false;
+                        if (selector.resetSubpages) {
+                            selector.resetSubpages(subpagesSelect, 'None', disabled);
+                        }
                     }
 
                     function populateSubpages(pages) {
-                        if (!subpagesSelect) {
+                        if (!selector.populateSubpages) {
                             return;
                         }
-                        resetSubpages(false);
-                        if (!pages || !pages.length) {
-                            return;
-                        }
-                        subpagesSelect.innerHTML = '';
-                        listReady = true;
-                        var homeEntry = pages.find(function (page) { return page && page.is_home; });
-                        var remaining = pages.filter(function (page) { return page && !page.is_home; });
-                        if (homeEntry) {
-                            var homeOption = document.createElement('option');
-                            homeOption.value = homeEntry.url || '';
-                            homeOption.textContent = homeEntry.label || 'Home page';
-                            subpagesSelect.appendChild(homeOption);
-                        }
-                        if (remaining.length) {
-                            var divider = document.createElement('option');
-                            divider.textContent = '────────';
-                            divider.disabled = true;
-                            subpagesSelect.appendChild(divider);
-                            remaining.forEach(function (page) {
-                                var opt = document.createElement('option');
-                                opt.value = page.url || '';
-                                opt.textContent = page.label || page.url || '';
-                                subpagesSelect.appendChild(opt);
-                            });
-                        }
-                        subpagesSelect.disabled = false;
+                        listReady = selector.populateSubpages(subpagesSelect, pages, {
+                            noneLabel: 'None',
+                            homeLabel: 'Home page',
+                            dividerLabel: '────────'
+                        });
                     }
 
                     function updateTargetModeControls() {
@@ -2545,42 +2482,46 @@ document.addEventListener('DOMContentLoaded', function () {
                                 updateTargetModeControls();
                                 setTargetStatus('Listing sitemap pages…');
                                 resetSubpages(true);
-                                postAction(
-                                    {
-                                        action: 'be_schema_analyser_list_pages',
-                                        nonce: listPagesNonce,
-                                        url: url,
-                                        local: isLocalSelected() ? '1' : '',
-                                        max: max
-                                    },
-                                    function (response) {
-                                        isListing = false;
-                                        updateTargetModeControls();
-                                        if (!response || !response.success) {
-                                            var msg = response && response.data && response.data.message ? response.data.message : 'Failed to list pages.';
-                                            setTargetStatus(msg, 'is-error');
-                                            resetSubpages(true);
-                                            listReady = false;
-                                            return;
-                                        }
-                                        var pages = response.data && response.data.pages ? response.data.pages : [];
-                                        if (!pages.length) {
-                                            setTargetStatus('No sitemap pages found.', 'is-warning');
-                                            resetSubpages(true);
-                                            listReady = false;
-                                            return;
-                                        }
-                                        populateSubpages(pages);
-                                        setTargetStatus('Pages loaded.');
-                                        updateTargetModeControls();
-                                    },
-                                    function () {
-                                        isListing = false;
-                                        updateTargetModeControls();
-                                        setTargetStatus('Failed to list pages.', 'is-error');
+                                var requestListPages = selector.requestListPages;
+                                if (!requestListPages) {
+                                    setTargetStatus('Failed to list pages.', 'is-error');
+                                    resetSubpages(true);
+                                    isListing = false;
+                                    updateTargetModeControls();
+                                    return;
+                                }
+                                requestListPages({
+                                    ajaxUrl: ajaxUrl,
+                                    nonce: listPagesNonce,
+                                    url: url,
+                                    local: isLocalSelected(),
+                                    max: max
+                                }).then(function (response) {
+                                    isListing = false;
+                                    updateTargetModeControls();
+                                    if (!response || !response.success) {
+                                        var msg = response && response.data && response.data.message ? response.data.message : 'Failed to list pages.';
+                                        setTargetStatus(msg, 'is-error');
                                         resetSubpages(true);
+                                        listReady = false;
+                                        return;
                                     }
-                                );
+                                    var pages = response.data && response.data.pages ? response.data.pages : [];
+                                    if (!pages.length) {
+                                        setTargetStatus('No sitemap pages found.', 'is-warning');
+                                        resetSubpages(true);
+                                        listReady = false;
+                                        return;
+                                    }
+                                    populateSubpages(pages);
+                                    setTargetStatus('Pages loaded.');
+                                    updateTargetModeControls();
+                                }).catch(function () {
+                                    isListing = false;
+                                    updateTargetModeControls();
+                                    setTargetStatus('Failed to list pages.', 'is-error');
+                                    resetSubpages(true);
+                                });
                             });
                         }
 

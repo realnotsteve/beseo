@@ -25,9 +25,17 @@ function be_schema_engine_enqueue_schema_assets() {
     );
 
     wp_enqueue_script(
+        'be-schema-selector',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+
+    wp_enqueue_script(
         'be-schema-admin',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/js/schema.js',
-        array( 'media-editor' ),
+        array( 'media-editor', 'be-schema-selector' ),
         BE_SCHEMA_ENGINE_VERSION,
         true
     );

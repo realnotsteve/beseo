@@ -14,6 +14,7 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
             var isListing = false;
 
             document.addEventListener('DOMContentLoaded', function () {
+                var selector = window.beSchemaSelector || {};
                 var tabs = document.querySelectorAll('.nav-tab-wrapper a[data-tools-tab]');
                 var panels = document.querySelectorAll('.be-schema-tools-panel');
                 var defaultTab = 'validator';
@@ -219,62 +220,25 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 }
 
                 function resetSubpages(disabled) {
-                    if (!subpagesSelect) {
-                        return;
-                    }
                     listReady = false;
-                    subpagesSelect.innerHTML = '';
-                    var noneOption = document.createElement('option');
-                    noneOption.value = '';
-                    noneOption.textContent = '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>';
-                    subpagesSelect.appendChild(noneOption);
-                    subpagesSelect.disabled = disabled !== false;
+                    if (selector.resetSubpages) {
+                        selector.resetSubpages(subpagesSelect, '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>', disabled);
+                    }
                 }
 
                 function populateSubpages(pages) {
-                    if (!subpagesSelect) {
+                    if (!selector.populateSubpages) {
                         return;
                     }
-                    resetSubpages(false);
-                    if (!pages || !pages.length) {
-                        return;
-                    }
-                    subpagesSelect.innerHTML = '';
-                    listReady = true;
-                    var homeEntry = pages.find(function (page) { return page && page.is_home; });
-                    var remaining = pages.filter(function (page) { return page && !page.is_home; });
-                    if (homeEntry) {
-                        var homeOption = document.createElement('option');
-                        homeOption.value = homeEntry.url || '';
-                        homeOption.textContent = homeEntry.label || '<?php echo esc_js( __( 'Home page', 'beseo' ) ); ?>';
-                        subpagesSelect.appendChild(homeOption);
-                    }
-                    if (remaining.length) {
-                        var divider = document.createElement('option');
-                        divider.textContent = '────────';
-                        divider.disabled = true;
-                        subpagesSelect.appendChild(divider);
-                        remaining.forEach(function (page) {
-                            var opt = document.createElement('option');
-                            opt.value = page.url || '';
-                            opt.textContent = page.label || page.url || '';
-                            subpagesSelect.appendChild(opt);
-                        });
-                    }
-                    subpagesSelect.disabled = false;
+                    listReady = selector.populateSubpages(subpagesSelect, pages, {
+                        noneLabel: '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>',
+                        homeLabel: '<?php echo esc_js( __( 'Home page', 'beseo' ) ); ?>',
+                        dividerLabel: '────────'
+                    });
                 }
 
                 function isHomepageUrl(url) {
-                    if (!url) {
-                        return false;
-                    }
-                    try {
-                        var parsed = new URL(url);
-                        var path = parsed.pathname || '/';
-                        return path === '/' || path === '';
-                    } catch (err) {
-                        return false;
-                    }
+                    return selector.isHomepageUrl ? selector.isHomepageUrl(url) : false;
                 }
 
                 function updateTargetModeControls() {
@@ -364,44 +328,17 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 }
 
                 function loadSites() {
-                    if (!window.localStorage) {
-                        sites = [];
+                    if (selector.loadSites) {
+                        sites = selector.loadSites(sitesStoreKey);
                         return;
                     }
-                    try {
-                        var raw = window.localStorage.getItem(sitesStoreKey);
-                        sites = raw ? JSON.parse(raw) : [];
-                        if (!Array.isArray(sites)) {
-                            sites = [];
-                        }
-                    } catch (err) {
-                        sites = [];
-                    }
+                    sites = [];
                 }
 
                 function renderSites() {
-                    if (!siteSelect) {
-                        return;
+                    if (selector.renderSitesSelect) {
+                        selector.renderSitesSelect(siteSelect, sites, validatorHomeUrl);
                     }
-                    siteSelect.innerHTML = '';
-                    if (!sites.length) {
-                        if (validatorHomeUrl) {
-                            var optHome = document.createElement('option');
-                            optHome.value = validatorHomeUrl;
-                            optHome.textContent = validatorHomeUrl;
-                            siteSelect.appendChild(optHome);
-                        }
-                        return;
-                    }
-                    sites.forEach(function (site) {
-                        if (!site || !site.url) {
-                            return;
-                        }
-                        var opt = document.createElement('option');
-                        opt.value = site.url;
-                        opt.textContent = site.label ? (site.label + ' (' + site.url + ')') : site.url;
-                        siteSelect.appendChild(opt);
-                    });
                 }
 
                 function syncValidatorMode() {
@@ -917,19 +854,20 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                         updateTargetModeControls();
                         setSelectorStatus('<?php echo esc_js( __( 'Listing sitemap pages…', 'beseo' ) ); ?>');
                         resetSubpages(true);
-                        var form = new FormData();
-                        form.append('action', 'be_schema_analyser_list_pages');
-                        form.append('nonce', validatorListPagesNonce);
-                        form.append('url', url);
-                        form.append('local', isLocalSelected() ? '1' : '');
-                        form.append('max', max);
-                        var endpoint = validatorAjax || (window.ajaxurl || '');
-                        fetch(endpoint, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            body: form
-                        }).then(function(response) {
-                            return response.json();
+                        var requestListPages = selector.requestListPages;
+                        if (!requestListPages) {
+                            isListing = false;
+                            updateTargetModeControls();
+                            setSelectorStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                            return;
+                        }
+                        requestListPages({
+                            ajaxUrl: validatorAjax,
+                            nonce: validatorListPagesNonce,
+                            url: url,
+                            local: isLocalSelected(),
+                            max: max
                         }).then(function(payload) {
                             isListing = false;
                             updateTargetModeControls();

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.55] - 2025-12-27
+Summary: Schema admin + social admin.
+
+### Changed
+- Touched areas: schema admin, social admin.
+
+### Files
+- assets/js/analyser.js
+- assets/js/schema.js
+- includes/admin/admin-helpers.php
+- includes/admin/js/be-selector.js
+- includes/admin/page-analyser.php
+- includes/admin/page-schema.php
+- includes/admin/page-social-media.php
+- includes/admin/partials/validator-script.php
+- includes/admin/schema-service.php
+- includes/admin/schema-view.php
+
+
 ## [2.1.54] - 2025-12-26
 Summary: Devnotes.
 

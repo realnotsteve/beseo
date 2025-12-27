@@ -2,6 +2,7 @@
     var data = window.beSchemaAnalyserData || {};
     var strings = data.strings || {};
     var nonce = data.nonce || '';
+    var selector = window.beSchemaSelector || {};
 
     function t(key, fallback) {
         return strings[key] || fallback || '';
@@ -300,15 +301,11 @@
         }
 
         function loadSites() {
-            try {
-                var raw = localStorage.getItem(sitesStoreKey);
-                sites = raw ? JSON.parse(raw) : [];
-                if (!Array.isArray(sites)) {
-                    sites = [];
-                }
-            } catch (e) {
-                sites = [];
+            if (selector.loadSites) {
+                sites = selector.loadSites(sitesStoreKey);
+                return;
             }
+            sites = [];
         }
 
         function saveSites() {
@@ -319,54 +316,38 @@
 
         function renderSites() {
             var hasList = !!sitesList;
-            var hasSelect = !!siteSelect;
-            if (!hasList && !hasSelect) {
+            if (!hasList && !siteSelect) {
                 return;
             }
             if (hasList) {
                 sitesList.innerHTML = '';
             }
-            if (hasSelect) {
-                siteSelect.innerHTML = '';
-            }
-            if (!sites.length) {
-                if (hasList) {
+            if (hasList) {
+                if (!sites.length) {
                     var li = document.createElement('li');
                     li.textContent = t('noSavedSites', 'No saved websites yet.');
                     sitesList.appendChild(li);
-                }
-                if (hasSelect) {
-                    var optHome = document.createElement('option');
-                    optHome.value = data.homeUrl || '';
-                    optHome.textContent = data.homeUrl || '';
-                    siteSelect.appendChild(optHome);
-                }
-                return;
-            }
-            sites.forEach(function(site, idx) {
-                if (hasList) {
-                    var li = document.createElement('li');
-                    li.textContent = site.label + ' — ' + site.url;
-                    var btn = document.createElement('button');
-                    btn.className = 'button button-secondary';
-                    btn.style.marginLeft = '8px';
-                    btn.textContent = t('remove', 'Remove');
-                    btn.addEventListener('click', function() {
-                        sites.splice(idx, 1);
-                        saveSites();
-                        renderSites();
+                } else {
+                    sites.forEach(function(site, idx) {
+                        var li = document.createElement('li');
+                        li.textContent = site.label + ' — ' + site.url;
+                        var btn = document.createElement('button');
+                        btn.className = 'button button-secondary';
+                        btn.style.marginLeft = '8px';
+                        btn.textContent = t('remove', 'Remove');
+                        btn.addEventListener('click', function() {
+                            sites.splice(idx, 1);
+                            saveSites();
+                            renderSites();
+                        });
+                        li.appendChild(btn);
+                        sitesList.appendChild(li);
                     });
-                    li.appendChild(btn);
-                    sitesList.appendChild(li);
                 }
-
-                if (hasSelect) {
-                    var opt = document.createElement('option');
-                    opt.value = site.url;
-                    opt.textContent = site.label + ' (' + site.url + ')';
-                    siteSelect.appendChild(opt);
-                }
-            });
+            }
+            if (selector.renderSitesSelect) {
+                selector.renderSitesSelect(siteSelect, sites, data.homeUrl || '');
+            }
         }
 
         function currentTargetUrl() {
@@ -411,62 +392,25 @@
         }
 
         function isHomepageUrl(url) {
-            if (!url) {
-                return false;
-            }
-            try {
-                var parsed = new URL(url);
-                var path = parsed.pathname || '/';
-                return path === '/' || path === '';
-            } catch (e) {
-                return false;
-            }
+            return selector.isHomepageUrl ? selector.isHomepageUrl(url) : false;
         }
 
         function resetSubpages(disabled) {
-            if (!subpagesSelect) {
-                return;
-            }
             listReady = false;
-            subpagesSelect.innerHTML = '';
-            var noneOption = document.createElement('option');
-            noneOption.value = '';
-            noneOption.textContent = t('subpagesNone', 'None');
-            subpagesSelect.appendChild(noneOption);
-            subpagesSelect.disabled = disabled !== false;
+            if (selector.resetSubpages) {
+                selector.resetSubpages(subpagesSelect, t('subpagesNone', 'None'), disabled);
+            }
         }
 
         function populateSubpages(pages) {
-            if (!subpagesSelect) {
+            if (!selector.populateSubpages) {
                 return;
             }
-            resetSubpages(false);
-            if (!pages || !pages.length) {
-                return;
-            }
-            subpagesSelect.innerHTML = '';
-            listReady = true;
-            var homeEntry = pages.find(function(page) { return page && page.is_home; });
-            var remaining = pages.filter(function(page) { return page && !page.is_home; });
-            if (homeEntry) {
-                var homeOption = document.createElement('option');
-                homeOption.value = homeEntry.url || '';
-                homeOption.textContent = homeEntry.label || t('subpagesHome', 'Home page');
-                subpagesSelect.appendChild(homeOption);
-            }
-            if (remaining.length) {
-                var divider = document.createElement('option');
-                divider.textContent = t('subpagesDivider', '────────');
-                divider.disabled = true;
-                subpagesSelect.appendChild(divider);
-                remaining.forEach(function(page) {
-                    var opt = document.createElement('option');
-                    opt.value = page.url || '';
-                    opt.textContent = page.label || page.url || '';
-                    subpagesSelect.appendChild(opt);
-                });
-            }
-            subpagesSelect.disabled = false;
+            listReady = selector.populateSubpages(subpagesSelect, pages, {
+                noneLabel: t('subpagesNone', 'None'),
+                homeLabel: t('subpagesHome', 'Home page'),
+                dividerLabel: t('subpagesDivider', '--------')
+            });
         }
 
         function updateTargetModeControls() {
@@ -673,17 +617,21 @@
                 updateTargetModeControls();
                 setStatus(t('listingPages', 'Listing sitemap pages…'));
                 resetSubpages(true);
-                var form = new FormData();
-                form.append('action', 'be_schema_analyser_list_pages');
-                form.append('nonce', nonce);
-                form.append('url', url);
-                form.append('local', isLocalSelected() ? '1' : '0');
-                form.append('max', max);
-                fetch(ajaxurl, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    body: form
-                }).then(function(resp){ return resp.json(); }).then(function(payload) {
+                var requestListPages = selector.requestListPages;
+                if (!requestListPages) {
+                    isListing = false;
+                    updateTargetModeControls();
+                    setStatus(t('listFailed', 'Failed to list pages.'));
+                    resetSubpages(true);
+                    return;
+                }
+                requestListPages({
+                    ajaxUrl: typeof ajaxurl !== 'undefined' ? ajaxurl : '',
+                    nonce: nonce,
+                    url: url,
+                    local: isLocalSelected(),
+                    max: max
+                }).then(function(payload) {
                     isListing = false;
                     updateTargetModeControls();
                     if (!payload || !payload.success) {

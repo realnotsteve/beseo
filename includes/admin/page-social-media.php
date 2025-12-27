@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/admin-helpers.php';
+
 /**
  * Save BE Social Media settings.
  *
@@ -25,18 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 if ( ! function_exists( 'be_schema_social_validate_url_field' ) ) {
     function be_schema_social_validate_url_field( $raw_value, $label, &$errors ) {
-        $raw_value = isset( $raw_value ) ? trim( (string) $raw_value ) : '';
-        if ( '' === $raw_value ) {
-            return '';
-        }
-
-        $sanitized = esc_url_raw( $raw_value );
-        if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
-            $errors[] = sprintf( /* translators: %s: field label */ __( '%s must be a valid URL (http/https).', 'beseo' ), $label );
-            return '';
-        }
-
-        return $sanitized;
+        return be_schema_admin_validate_url_field( $raw_value, $label, $errors );
     }
 }
 
@@ -242,6 +233,13 @@ function be_schema_engine_render_social_media_page() {
     wp_enqueue_script(
         'be-schema-help-accent',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-help-accent.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
+    wp_enqueue_script(
+        'be-schema-selector',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
         array(),
         BE_SCHEMA_ENGINE_VERSION,
         true
