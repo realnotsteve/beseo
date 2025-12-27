@@ -791,13 +791,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     var columnsWrap = document.getElementById('be-schema-preview-columns');
                     var diffBody = document.getElementById('be-schema-preview-diff-body');
 
-                    var locationInputs = previewRoot.querySelectorAll('input[name="be_schema_preview_location"]');
                     var captureInputs = previewRoot.querySelectorAll('input[name="be_schema_preview_capture"]');
                     var viewInputs = previewRoot.querySelectorAll('input[name="be_schema_preview_view"]');
                     var colourSelect = document.getElementById('be-schema-preview-colour');
                     var addBeseoInput = document.getElementById('be-schema-preview-add-beseo');
 
-                    var locationHelp = document.getElementById('be-schema-preview-location-help');
                     var colourHelp = document.getElementById('be-schema-preview-colour-help');
                     var beseoHelp = document.getElementById('be-schema-preview-beseo-help');
 
@@ -1101,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     function getCriteria() {
                         return {
-                            location: getRadioValue(locationInputs) || 'internal',
+                            location: isLocalSelected() ? 'internal' : 'external',
                             capture: getRadioValue(captureInputs) || 'server',
                             view: getRadioValue(viewInputs) || 'graph',
                             colour: colourSelect ? colourSelect.value : 'keyword',
@@ -2456,9 +2454,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     function initEventListeners() {
-                        locationInputs.forEach(function (input) {
-                            input.addEventListener('change', applyAvailability);
-                        });
                         captureInputs.forEach(function (input) {
                             input.addEventListener('change', applyAvailability);
                         });
@@ -2511,6 +2506,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 input.addEventListener('change', function () {
                                     resetSubpages(true);
                                     updateTargetModeControls();
+                                    applyAvailability();
                                 });
                             });
                         }
