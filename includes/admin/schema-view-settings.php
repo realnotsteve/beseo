@@ -20,23 +20,8 @@ function be_schema_engine_render_schema_tab_options( $wp_debug, $debug_enabled, 
     ?>
     <h2><?php esc_html_e( 'Options', 'beseo' ); ?></h2>
     <div class="be-schema-global-section">
-        <h4 class="be-schema-section-title"><?php esc_html_e( 'Debug & Safety', 'beseo' ); ?></h4>
+        <h4 class="be-schema-section-title"><?php esc_html_e( 'Safety', 'beseo' ); ?></h4>
         <table class="form-table">
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Debug logging', 'beseo' ); ?></th>
-                <td>
-                    <label><input type="checkbox" name="be_schema_debug" value="1" <?php checked( $debug_enabled ); ?> /> <?php esc_html_e( 'Enable debug output (WP_DEBUG required)', 'beseo' ); ?></label>
-                    <?php if ( ! $wp_debug ) : ?>
-                        <p class="description" style="color:#b00;"><?php esc_html_e( 'WP_DEBUG is off; enable in wp-config.php to capture debug logs.', 'beseo' ); ?></p>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Dry run', 'beseo' ); ?></th>
-                <td>
-                    <label><input type="checkbox" name="be_schema_dry_run" value="1" <?php checked( $dry_run ); ?> /> <?php esc_html_e( 'Generate but do not output schema', 'beseo' ); ?></label>
-                </td>
-            </tr>
             <tr>
                 <th scope="row"><?php esc_html_e( 'Image validation', 'beseo' ); ?></th>
                 <td>

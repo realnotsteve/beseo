@@ -5,11 +5,12 @@
  * Submenu: BE SEO → Schema
  *
  * Tabs:
- *  - Status    (operation, snapshots, health check)
- *  - Preview   (graph preview for a specific page)
+ *  - Dashboard (operation, snapshots, health check)
+ *  - Tests     (graph preview for a specific page)
  *  - Website   (site identity mode plus site entities: Global / Person / Organisation / Publisher)
  *  - Defaults  (global author defaults)
- *  - Options   (debug + safety toggles)
+ *  - Options   (image validation toggle)
+ *  - Debug     (debug/dry-run toggles, overrides, snapshots)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -73,6 +74,9 @@ function be_schema_engine_render_schema_page() {
     $dry_run           = ! empty( $settings['dry_run'] ) && '1' === $settings['dry_run'];
     $image_validation_enabled = isset( $settings['image_validation_enabled'] ) ? '1' === (string) $settings['image_validation_enabled'] : true;
     $wp_debug          = defined( 'WP_DEBUG' ) && WP_DEBUG;
+    $override_disable_all       = ! empty( $settings['override_disable_all'] ) && '1' === $settings['override_disable_all'];
+    $override_disable_elementor = ! empty( $settings['override_disable_elementor'] ) && '1' === $settings['override_disable_elementor'];
+    $override_debug             = ! empty( $settings['override_debug'] ) && '1' === $settings['override_debug'];
 
     // Ensure debug_enabled mirrors debug for consistency in code.
     if ( isset( $settings['debug'] ) ) {
@@ -514,6 +518,13 @@ function be_schema_engine_render_schema_page() {
                             <?php esc_html_e( 'Options', 'beseo' ); ?>
                         </a>
                     </li>
+                    <li>
+                        <a href="#be-schema-tab-debug"
+                           class="be-schema-tab-link"
+                           data-schema-tab="debug">
+                            <?php esc_html_e( 'Debug', 'beseo' ); ?>
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- OVERVIEW TAB -->
@@ -521,7 +532,7 @@ function be_schema_engine_render_schema_page() {
                     <h2><?php esc_html_e( 'Dashboard', 'beseo' ); ?></h2>
                     <p class="description be-schema-description">
                         <?php esc_html_e(
-                            'Operational controls plus read-only views of the schema engine state, WordPress overrides, and site health.',
+                            'Operational controls plus read-only views of the schema engine state and site health.',
                             'beseo'
                         ); ?>
                     </p>
@@ -548,13 +559,6 @@ function be_schema_engine_render_schema_page() {
                                        class="be-schema-overview-tab-link be-schema-overview-tab-active"
                                        data-overview-tab="snapshots">
                                         <?php esc_html_e( 'Individual Schema', 'beseo' ); ?>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#be-schema-overview-wordpress"
-                                       class="be-schema-overview-tab-link"
-                                       data-overview-tab="wordpress">
-                                        <?php esc_html_e( 'WordPress', 'beseo' ); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -584,29 +588,6 @@ function be_schema_engine_render_schema_page() {
 
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Last Debug Snapshot', 'beseo' ); ?></h4>
-                                    <?php
-                                    $last_debug = get_transient( 'be_schema_last_debug_graph' );
-                                    if ( $last_debug && isset( $last_debug['graph'] ) ) :
-                                        $last_debug_time = isset( $last_debug['time'] ) ? (int) $last_debug['time'] : 0;
-                                        ?>
-                                        <p class="description be-schema-description">
-                                            <?php
-                                            if ( $last_debug_time ) {
-                                                /* translators: %s: human time diff */
-                                                printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_debug_time, time() ) ) );
-                                            } else {
-                                                esc_html_e( 'Captured recently.', 'beseo' );
-                                            }
-                                            ?>
-                                        </p>
-                                        <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_debug['graph'], JSON_PRETTY_PRINT ) ); ?></pre>
-                                    <?php else : ?>
-                                        <p><em><?php esc_html_e( 'No debug snapshot found. Enable debug to capture the next graph.', 'beseo' ); ?></em></p>
-                                    <?php endif; ?>
-                                </div>
-
                                 <div class="be-schema-global-section">
                                     <h4 class="be-schema-section-title"><?php esc_html_e( 'Individual Schema', 'beseo' ); ?></h4>
                                     <div class="be-schema-settings-snapshot">
@@ -662,51 +643,6 @@ function be_schema_engine_render_schema_page() {
                                 </div>
                             </div>
 
-                            <div id="be-schema-overview-wordpress" class="be-schema-overview-panel">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'wp-config Overrides', 'beseo' ); ?></h4>
-                                    <div class="be-schema-settings-snapshot">
-                                        <ul class="be-schema-description">
-                                            <li>
-                                                <code>BE_SCHEMA_DISABLE_ALL</code>:
-                                                <?php esc_html_e(
-                                                    'When true, disables all schema output from this plugin, regardless of admin settings.',
-                                                    'beseo'
-                                                ); ?>
-                                                <?php if ( $const_disable_all ) : ?>
-                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                                <?php endif; ?>
-                                            </li>
-                                            <li>
-                                                <code>BE_SCHEMA_DISABLE_ELEMENTOR</code>:
-                                                <?php esc_html_e(
-                                                    'When true, disables only Elementor-specific schema.',
-                                                    'beseo'
-                                                ); ?>
-                                                <?php if ( $const_disable_elementor ) : ?>
-                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                                <?php endif; ?>
-                                            </li>
-                                            <li>
-                                                <code>BE_SCHEMA_DEBUG</code>:
-                                                <?php esc_html_e(
-                                                    'When true, forces debug logging even if the admin setting is off.',
-                                                    'beseo'
-                                                ); ?>
-                                                <?php if ( $const_debug ) : ?>
-                                                    <strong><?php esc_html_e( '(Currently active)', 'beseo' ); ?></strong>
-                                                <?php endif; ?>
-                                            </li>
-                                        </ul>
-                                        <p class="description be-schema-description">
-                                            <?php esc_html_e(
-                                                'Use these constants sparingly, for emergency switches or local development. For day-to-day control, prefer the admin settings above.',
-                                                'beseo'
-                                            ); ?>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
 
                             <div id="be-schema-overview-health" class="be-schema-overview-panel">
                                 <div class="be-schema-global-section">
@@ -1000,6 +936,109 @@ function be_schema_engine_render_schema_page() {
                 <!-- OPTIONS TAB -->
                 <div id="be-schema-tab-options" class="be-schema-tab-panel">
                     <?php be_schema_engine_render_schema_tab_options( $wp_debug, $debug_enabled, $dry_run, $image_validation_enabled ); ?>
+                </div>
+
+                <!-- DEBUG TAB -->
+                <div id="be-schema-tab-debug" class="be-schema-tab-panel">
+                    <h2><?php esc_html_e( 'Debug', 'beseo' ); ?></h2>
+                    <p class="description be-schema-description">
+                        <?php esc_html_e( 'Last captured schema graph and debug visibility tools.', 'beseo' ); ?>
+                    </p>
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Debug & Dry Run', 'beseo' ); ?></h4>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Debug logging', 'beseo' ); ?></th>
+                                <td>
+                                    <label><input type="checkbox" name="be_schema_debug" value="1" <?php checked( $debug_enabled ); ?> /> <?php esc_html_e( 'Enable debug output (WP_DEBUG required)', 'beseo' ); ?></label>
+                                    <?php if ( ! $wp_debug ) : ?>
+                                        <p class="description" style="color:#b00;"><?php esc_html_e( 'WP_DEBUG is off; enable in wp-config.php to capture debug logs.', 'beseo' ); ?></p>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Dry run', 'beseo' ); ?></th>
+                                <td>
+                                    <label><input type="checkbox" name="be_schema_dry_run" value="1" <?php checked( $dry_run ); ?> /> <?php esc_html_e( 'Generate but do not output schema', 'beseo' ); ?></label>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'wp-config Overrides', 'beseo' ); ?></h4>
+                        <p class="description be-schema-description">
+                            <?php esc_html_e( 'Check a box to apply an admin override when wp-config.php does not define the constant. wp-config.php constants always take priority.', 'beseo' ); ?>
+                        </p>
+                        <ul class="be-schema-description">
+                            <li>
+                                <label>
+                                    <input type="checkbox" name="be_schema_override_disable_all" value="1" <?php checked( $override_disable_all ); ?> />
+                                    <code>BE_SCHEMA_DISABLE_ALL</code>
+                                </label>
+                                <p class="description be-schema-description">
+                                    <?php esc_html_e( 'When true, disables all schema output from this plugin, regardless of admin settings.', 'beseo' ); ?>
+                                </p>
+                                <?php if ( $const_disable_all ) : ?>
+                                    <p class="description be-schema-description">
+                                        <?php esc_html_e( 'Currently active via wp-config.php; admin toggle is ignored.', 'beseo' ); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="checkbox" name="be_schema_override_disable_elementor" value="1" <?php checked( $override_disable_elementor ); ?> />
+                                    <code>BE_SCHEMA_DISABLE_ELEMENTOR</code>
+                                </label>
+                                <p class="description be-schema-description">
+                                    <?php esc_html_e( 'When true, disables only Elementor-specific schema.', 'beseo' ); ?>
+                                </p>
+                                <?php if ( $const_disable_elementor ) : ?>
+                                    <p class="description be-schema-description">
+                                        <?php esc_html_e( 'Currently active via wp-config.php; admin toggle is ignored.', 'beseo' ); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="checkbox" name="be_schema_override_debug" value="1" <?php checked( $override_debug ); ?> />
+                                    <code>BE_SCHEMA_DEBUG</code>
+                                </label>
+                                <p class="description be-schema-description">
+                                    <?php esc_html_e( 'When true, forces debug logging even if the admin setting is off.', 'beseo' ); ?>
+                                </p>
+                                <?php if ( $const_debug ) : ?>
+                                    <p class="description be-schema-description">
+                                        <?php esc_html_e( 'Currently active via wp-config.php; admin toggle is ignored.', 'beseo' ); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </li>
+                        </ul>
+                        <p class="description be-schema-description">
+                            <?php esc_html_e( 'Use these overrides sparingly, for emergency switches or local development. For day-to-day control, prefer the admin settings above.', 'beseo' ); ?>
+                        </p>
+                    </div>
+                    <div class="be-schema-global-section">
+                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Last Debug Snapshot', 'beseo' ); ?></h4>
+                        <?php
+                        $last_debug = get_transient( 'be_schema_last_debug_graph' );
+                        if ( $last_debug && isset( $last_debug['graph'] ) ) :
+                            $last_debug_time = isset( $last_debug['time'] ) ? (int) $last_debug['time'] : 0;
+                            ?>
+                            <p class="description be-schema-description">
+                                <?php
+                                if ( $last_debug_time ) {
+                                    /* translators: %s: human time diff */
+                                    printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_debug_time, time() ) ) );
+                                } else {
+                                    esc_html_e( 'Captured recently.', 'beseo' );
+                                }
+                                ?>
+                            </p>
+                            <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_debug['graph'], JSON_PRETTY_PRINT ) ); ?></pre>
+                        <?php else : ?>
+                            <p><em><?php esc_html_e( 'No debug snapshot found. Enable debug to capture the next graph.', 'beseo' ); ?></em></p>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <?php include BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-website.php'; ?>

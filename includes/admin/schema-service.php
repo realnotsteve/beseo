@@ -117,6 +117,9 @@ function be_schema_engine_save_settings() {
     $settings['elementor_enabled'] = isset( $_POST['be_schema_elementor_enabled'] ) ? '1' : '0';
     $settings['debug']             = isset( $_POST['be_schema_debug'] ) ? '1' : '0';
     $settings['dry_run']           = isset( $_POST['be_schema_dry_run'] ) ? '1' : '0';
+    $settings['override_disable_all']       = isset( $_POST['be_schema_override_disable_all'] ) && '1' === $_POST['be_schema_override_disable_all'] ? '1' : '0';
+    $settings['override_disable_elementor'] = isset( $_POST['be_schema_override_disable_elementor'] ) && '1' === $_POST['be_schema_override_disable_elementor'] ? '1' : '0';
+    $settings['override_debug']             = isset( $_POST['be_schema_override_debug'] ) && '1' === $_POST['be_schema_override_debug'] ? '1' : '0';
     $settings['image_validation_enabled'] = isset( $_POST['be_schema_image_validation_enabled'] ) ? '1' : '0';
     $settings['global_creator_name']      = isset( $_POST['be_schema_global_creator_name'] ) ? sanitize_text_field( wp_unslash( $_POST['be_schema_global_creator_name'] ) ) : '';
     if ( isset( $_POST['be_schema_global_creator_type'] ) ) {

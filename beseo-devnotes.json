@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.57",
+    "version": "2.1.58",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -547,7 +547,8 @@
   ],
   "logic_notes": [
     "Social engine now honors the per-network enable toggles: Open Graph output depends on social_enable_og, Twitter Cards on social_enable_twitter, and both keys now have defaults to avoid notices on fresh installs.",
-    "The master social enable flag now mirrors the per-network toggles so Open Graph/Twitter output no longer stops early when the legacy master flag was unset."
+    "The master social enable flag now mirrors the per-network toggles so Open Graph/Twitter output no longer stops early when the legacy master flag was unset.",
+    "Schema engine now honors admin override flags for BE_SCHEMA_DISABLE_ALL, BE_SCHEMA_DISABLE_ELEMENTOR, and BE_SCHEMA_DEBUG when wp-config constants are not set."
   ],
   "refactor_notes": [
     "Centralized social settings defaults/merging into includes/engine/core-social-settings.php; core-social.php and the admin save now share a single source of truth for default keys and merges.",
@@ -578,6 +579,9 @@
   ],
   "ux_notes_settings": [
     "Schema > Dashboard tab now uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls.",
+    "Schema > Debug tab now hosts the Debug logging and Dry run toggles; Options now only includes Image validation.",
+    "Schema > Debug now includes wp-config Overrides with admin checkboxes for BE_SCHEMA_DISABLE_ALL, BE_SCHEMA_DISABLE_ELEMENTOR, and BE_SCHEMA_DEBUG.",
+    "Schema > Dashboard no longer shows a WordPress subtab (wp-config info moved to Debug).",
     "Settings > Help Text now uses two Global-style boxes (Existing, Add New Override) with a disclosure triangle, plus/minus row controls, and a live override count; Existing is collapsed by default and still shows the count when collapsed.",
     "Help Text override validation only accepts help/descriptive strings sourced from description-class helper text (labels are ignored).",
     "Settings > Lists tab now hosts the Websites list used by Analyser; Analyser settings points users to Settings \u2192 Lists.",

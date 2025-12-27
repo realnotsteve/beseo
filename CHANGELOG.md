@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.58] - 2025-12-27
+Summary: Devnotes + engine.
+
+### Changed
+- Touched areas: devnotes, engine.
+
+### Files
+- beseo-devnotes.json
+- includes/admin/schema-service.php
+- includes/admin/schema-view-settings.php
+- includes/admin/schema-view.php
+- includes/engine/core-debug.php
+- includes/engine/core-helpers.php
+
+
 ## [2.1.57] - 2025-12-27
 Summary: Devnotes.
 

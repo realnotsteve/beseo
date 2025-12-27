@@ -49,6 +49,9 @@ function be_schema_engine_get_settings( $force_refresh = false ) {
 		// Debug flag (in addition to WP_DEBUG / BE_SCHEMA_DEBUG).
 		'debug'             => '0',
 		'dry_run'           => '0',
+		'override_disable_all'       => '0',
+		'override_disable_elementor' => '0',
+		'override_debug'             => '0',
 
 		// Entity toggles.
 		'person_enabled'        => '0',
@@ -206,6 +209,9 @@ function be_schema_globally_disabled() {
 	}
 
 	$settings = be_schema_engine_get_settings();
+	if ( ! empty( $settings['override_disable_all'] ) ) {
+		return true;
+	}
 
 	return ( $settings['enabled'] !== '1' );
 }
@@ -395,6 +401,9 @@ function be_schema_elementor_disabled() {
 	}
 
 	$settings = be_schema_engine_get_settings();
+	if ( ! empty( $settings['override_disable_elementor'] ) ) {
+		return true;
+	}
 
 	return ( $settings['elementor_enabled'] !== '1' );
 }

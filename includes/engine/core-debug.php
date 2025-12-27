@@ -38,8 +38,17 @@ function be_schema_is_debug_enabled() {
 		return true;
 	}
 
-	$settings = get_option( 'be_schema_engine_settings', array() );
-	if ( ! empty( $settings['debug_enabled'] ) ) {
+	if ( function_exists( 'be_schema_engine_get_settings' ) ) {
+		$settings = be_schema_engine_get_settings();
+	} else {
+		$settings = get_option( 'be_schema_engine_settings', array() );
+	}
+
+	if ( ! empty( $settings['override_debug'] ) ) {
+		return true;
+	}
+
+	if ( ! empty( $settings['debug_enabled'] ) || ! empty( $settings['debug'] ) ) {
 		return true;
 	}
 
