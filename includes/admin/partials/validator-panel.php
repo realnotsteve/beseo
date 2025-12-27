@@ -11,19 +11,54 @@
                 </div>
                 <div class="be-schema-header-grid">
                     <div class="be-schema-header-section">
-                       <div class="be-schema-validator-rowline">
-                           <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                           <label><input type="radio" name="be_schema_validator_mode" value="dropdown" checked /> <?php esc_html_e( 'Site Page', 'beseo' ); ?></label>
-                            <label><input type="checkbox" id="be-schema-validator-include-posts" /> <?php esc_html_e( 'Include Posts', 'beseo' ); ?></label>
+                        <label class="be-schema-validator-selector-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
+                        <div class="be-schema-validator-selector-box">
+                            <div class="be-schema-selector-grid">
+                                <div class="be-schema-validator-local-column">
+                                    <div class="be-schema-validator-local-box">
+                                        <label class="be-schema-validator-inline-field">
+                                            <input type="radio" name="be-schema-validator-env" value="local" checked />
+                                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                                        </label>
+                                        <label class="be-schema-validator-inline-field">
+                                            <input type="radio" name="be-schema-validator-env" value="remote" />
+                                            <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <span class="be-schema-validator-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
+                                <div class="be-schema-selector-rows">
+                                    <div class="be-schema-validator-controls be-schema-selector-row">
+                                        <label><input type="radio" name="be_schema_validator_mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                                        <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                                        <select id="be-schema-validator-site" class="regular-text be-schema-validator-url"></select>
+                                        <input type="text" id="be-schema-validator-manual" class="regular-text be-schema-validator-url" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
+                                        <label class="be-schema-validator-inline-field">
+                                            <input type="checkbox" id="be-schema-validator-include-posts" />
+                                            <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
+                                        </label>
+                                        <label class="be-schema-validator-inline-field">
+                                            <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
+                                            <input type="number" id="be-schema-validator-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
+                                        </label>
+                                    </div>
+                                    <div class="be-schema-validator-controls be-schema-selector-row">
+                                        <button type="button" class="button button-primary" id="be-schema-validator-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
+                                        <label class="be-schema-validator-inline-field">
+                                            <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
+                                            <select id="be-schema-validator-subpages" class="regular-text" disabled>
+                                                <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
+                                            </select>
+                                        </label>
+                                        <label class="be-schema-validator-inline-field">
+                                            <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
+                                            <input type="number" id="be-schema-validator-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="be-schema-validator-select-wrap">
-                            <select id="be-schema-validator-select" class="regular-text"></select>
-                            <input type="text" id="be-schema-validator-manual" class="regular-text" placeholder="https://" style="display:none;" />
-                        </div>
-                        <div class="be-schema-validator-search">
-                            <label class="screen-reader-text" for="be-schema-validator-search"><?php esc_html_e( 'Search pages/posts', 'beseo' ); ?></label>
-                            <input type="text" id="be-schema-validator-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search pages/posts', 'beseo' ); ?>" />
-                        </div>
+                        <p class="description be-schema-validator-selector-status" id="be-schema-validator-selector-status"></p>
                     </div>
                     <div class="be-schema-header-section">
                         <div class="be-schema-engine-row">

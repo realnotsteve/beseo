@@ -3,9 +3,15 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
             var validatorPosts = <?php echo wp_json_encode( $validator_post_data ); ?>;
             var validatorAjax = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
             var validatorNonce = '<?php echo wp_create_nonce( 'be_schema_validator' ); ?>';
+            var validatorListPagesNonce = '<?php echo wp_create_nonce( 'be_schema_analyser' ); ?>';
+            var validatorHomeUrl = '<?php echo esc_js( home_url( '/' ) ); ?>';
 
             var validatorStorageKey = 'be-schema-validator-state';
             var lastData = null;
+            var sitesStoreKey = 'be-schema-analyser-sites';
+            var sites = [];
+            var listReady = false;
+            var isListing = false;
 
             document.addEventListener('DOMContentLoaded', function () {
                 var tabs = document.querySelectorAll('.nav-tab-wrapper a[data-tools-tab]');
@@ -14,11 +20,15 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
 
                 var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
                 var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
-                var validatorSelect = document.getElementById('be-schema-validator-select');
+                var siteSelect = document.getElementById('be-schema-validator-site');
                 var validatorManual = document.getElementById('be-schema-validator-manual');
-                var searchWrap = document.querySelector('.be-schema-validator-search');
-                var searchInput = document.getElementById('be-schema-validator-search');
                 var includePosts = document.getElementById('be-schema-validator-include-posts');
+                var maxPostsInput = document.getElementById('be-schema-validator-max-posts');
+                var listPagesBtn = document.getElementById('be-schema-validator-list-pages');
+                var subpagesSelect = document.getElementById('be-schema-validator-subpages');
+                var siteLimitInput = document.getElementById('be-schema-validator-site-limit');
+                var envInputs = document.querySelectorAll('input[name="be-schema-validator-env"]');
+                var selectorStatus = document.getElementById('be-schema-validator-selector-status');
                 var ogCheckbox = document.getElementById('be-schema-validator-og');
                 var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
                 var cropsCheckbox = document.getElementById('be-schema-validator-crops');
@@ -91,14 +101,18 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
 
                 activateTab(defaultTab || 'dashboard');
 
-                    function currentMode() {
-                        var mode = 'dropdown';
-                        validatorMode.forEach(function (radio) {
-                            if (radio.checked) {
-                                mode = radio.value;
+                    function getRadioValue(inputs) {
+                        var selected = '';
+                        inputs.forEach(function (input) {
+                            if (input.checked) {
+                                selected = input.value;
                             }
                         });
-                        return mode;
+                        return selected;
+                    }
+
+                    function currentMode() {
+                        return getRadioValue(validatorMode) || 'site';
                     }
 
                 function currentValidationType() {
@@ -115,16 +129,19 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                     var state = {
                         mode: currentMode(),
                         type: currentValidationType(),
+                        env: getRadioValue(envInputs),
                         includePosts: includePosts ? includePosts.checked : false,
+                        maxPosts: maxPostsInput ? maxPostsInput.value : '',
                         og: ogCheckbox ? ogCheckbox.checked : false,
                         twitter: twitterCheckbox ? twitterCheckbox.checked : false,
                         crops: cropsCheckbox ? cropsCheckbox.checked : false,
                         copy: copyCheckbox ? copyCheckbox.checked : false,
                         openNew: openNewCheckbox ? openNewCheckbox.checked : false,
                         url: currentUrl(),
-                        selectValue: validatorSelect ? validatorSelect.value : '',
+                        siteValue: siteSelect ? siteSelect.value : '',
                         manualValue: validatorManual ? validatorManual.value : '',
-                        search: searchInput ? searchInput.value : '',
+                        subpageValue: subpagesSelect ? subpagesSelect.value : '',
+                        siteLimit: siteLimitInput ? siteLimitInput.value : '',
                         showTwitter: toggleTwitter ? toggleTwitter.checked : true,
                         showOg: toggleOg ? toggleOg.checked : true,
                         service: serviceSelect ? serviceSelect.value : ''
@@ -142,13 +159,20 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                         if (!raw) { return; }
                         var state = JSON.parse(raw);
                         if (state.mode && validatorMode) {
-                            validatorMode.forEach(function(r){ r.checked = (r.value === state.mode); });
+                            var modeValue = state.mode === 'dropdown' ? 'site' : state.mode;
+                            validatorMode.forEach(function(r){ r.checked = (r.value === modeValue); });
                         }
                         if (state.type && validatorType) {
                             validatorType.forEach(function(r){ r.checked = (r.value === state.type); });
                         }
+                        if (state.env && envInputs) {
+                            envInputs.forEach(function(r){ r.checked = (r.value === state.env); });
+                        }
                         if (includePosts && typeof state.includePosts !== 'undefined') {
                             includePosts.checked = state.includePosts;
+                        }
+                        if (maxPostsInput && typeof state.maxPosts !== 'undefined') {
+                            maxPostsInput.value = state.maxPosts;
                         }
                         if (ogCheckbox && typeof state.og !== 'undefined') { ogCheckbox.checked = state.og; }
                         if (twitterCheckbox && typeof state.twitter !== 'undefined') { twitterCheckbox.checked = state.twitter; }
@@ -158,9 +182,10 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                         if (toggleTwitter && typeof state.showTwitter !== 'undefined') { toggleTwitter.checked = state.showTwitter; }
                         if (toggleOg && typeof state.showOg !== 'undefined') { toggleOg.checked = state.showOg; }
                         if (serviceSelect && typeof state.service !== 'undefined') { serviceSelect.value = state.service; }
-                        if (validatorSelect && state.selectValue) { validatorSelect.value = state.selectValue; }
+                        if (siteSelect && state.siteValue) { siteSelect.value = state.siteValue; }
                         if (validatorManual && typeof state.manualValue !== 'undefined') { validatorManual.value = state.manualValue; }
-                        if (searchInput && typeof state.search !== 'undefined') { searchInput.value = state.search; }
+                        if (subpagesSelect && typeof state.subpageValue !== 'undefined') { subpagesSelect.value = state.subpageValue; }
+                        if (siteLimitInput && typeof state.siteLimit !== 'undefined') { siteLimitInput.value = state.siteLimit; }
                     } catch (e) {
                         // ignore
                     }
@@ -179,67 +204,210 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 }
 
                 function currentUrl() {
-                    var mode = currentMode();
-                    var url = '';
-                    if (mode === 'manual' && validatorManual) {
-                        url = validatorManual.value.trim();
-                    } else if (validatorSelect) {
-                        url = (validatorSelect.value || '').trim();
-                    }
-                    return url;
+                    return getTargetValue();
                 }
 
-                function renderSelectOptions() {
-                    if (!validatorSelect) {
+                function isLocalSelected() {
+                    return getRadioValue(envInputs) === 'local';
+                }
+
+                function setSelectorStatus(message) {
+                    if (!selectorStatus) {
                         return;
                     }
-                    var previous = validatorSelect.value;
-                    var options = validatorPages.slice();
-                    if (includePosts && includePosts.checked) {
-                        options = options.concat(validatorPosts);
+                    selectorStatus.textContent = message || '';
+                }
+
+                function resetSubpages(disabled) {
+                    if (!subpagesSelect) {
+                        return;
                     }
-                    var term = searchInput && searchInput.value ? searchInput.value.toLowerCase() : '';
-                    if (term) {
-                        options = options.filter(function (item) {
-                            return item.title && item.title.toLowerCase().indexOf(term) !== -1;
+                    listReady = false;
+                    subpagesSelect.innerHTML = '';
+                    var noneOption = document.createElement('option');
+                    noneOption.value = '';
+                    noneOption.textContent = '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>';
+                    subpagesSelect.appendChild(noneOption);
+                    subpagesSelect.disabled = disabled !== false;
+                }
+
+                function populateSubpages(pages) {
+                    if (!subpagesSelect) {
+                        return;
+                    }
+                    resetSubpages(false);
+                    if (!pages || !pages.length) {
+                        return;
+                    }
+                    subpagesSelect.innerHTML = '';
+                    listReady = true;
+                    var homeEntry = pages.find(function (page) { return page && page.is_home; });
+                    var remaining = pages.filter(function (page) { return page && !page.is_home; });
+                    if (homeEntry) {
+                        var homeOption = document.createElement('option');
+                        homeOption.value = homeEntry.url || '';
+                        homeOption.textContent = homeEntry.label || '<?php echo esc_js( __( 'Home page', 'beseo' ) ); ?>';
+                        subpagesSelect.appendChild(homeOption);
+                    }
+                    if (remaining.length) {
+                        var divider = document.createElement('option');
+                        divider.textContent = '────────';
+                        divider.disabled = true;
+                        subpagesSelect.appendChild(divider);
+                        remaining.forEach(function (page) {
+                            var opt = document.createElement('option');
+                            opt.value = page.url || '';
+                            opt.textContent = page.label || page.url || '';
+                            subpagesSelect.appendChild(opt);
                         });
                     }
-                    options.sort(function(a, b) {
-                        if (a.type !== b.type) {
-                            return a.type.localeCompare(b.type);
-                        }
-                        return (a.title || '').localeCompare(b.title || '');
-                    });
-                    validatorSelect.innerHTML = '';
-                    var placeholder = document.createElement('option');
-                    placeholder.value = '';
-                    placeholder.textContent = '<?php echo esc_js( __( 'Select a page', 'beseo' ) ); ?>';
-                    validatorSelect.appendChild(placeholder);
-                    options.forEach(function (item) {
-                        var opt = document.createElement('option');
-                        opt.value = item.url;
-                        opt.textContent = item.title + (item.type === 'post' ? ' (post)' : '');
-                        validatorSelect.appendChild(opt);
-                    });
-                    if (previous) {
-                        validatorSelect.value = previous;
+                    subpagesSelect.disabled = false;
+                }
+
+                function isHomepageUrl(url) {
+                    if (!url) {
+                        return false;
                     }
+                    try {
+                        var parsed = new URL(url);
+                        var path = parsed.pathname || '/';
+                        return path === '/' || path === '';
+                    } catch (err) {
+                        return false;
+                    }
+                }
+
+                function updateTargetModeControls() {
+                    var mode = currentMode();
+                    var allowList = false;
+                    if (mode === 'site') {
+                        allowList = !!(siteSelect && siteSelect.value);
+                    } else {
+                        var manualUrl = validatorManual ? validatorManual.value.trim() : '';
+                        if (manualUrl && isHomepageUrl(manualUrl)) {
+                            allowList = true;
+                        }
+                    }
+                    if (listPagesBtn) {
+                        listPagesBtn.disabled = !allowList || isListing;
+                    }
+                    if (siteLimitInput) {
+                        siteLimitInput.disabled = !allowList;
+                    }
+                    if (!allowList) {
+                        resetSubpages(true);
+                    }
+                }
+
+                function currentTargetUrl() {
+                    var mode = currentMode();
+                    if (mode === 'manual') {
+                        return validatorManual ? validatorManual.value.trim() : '';
+                    }
+                    return siteSelect ? siteSelect.value.trim() : '';
+                }
+
+                function currentSelectedTarget() {
+                    var subpage = subpagesSelect && !subpagesSelect.disabled ? (subpagesSelect.value || '').trim() : '';
+                    if (subpage) {
+                        return subpage;
+                    }
+                    return currentTargetUrl();
+                }
+
+                function mapToLocalTarget(value) {
+                    if (!value || !validatorHomeUrl) {
+                        return value;
+                    }
+                    try {
+                        var parsed = new URL(value);
+                        var local = new URL(validatorHomeUrl);
+                        if (parsed.host === local.host) {
+                            return value;
+                        }
+                        return local.origin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                    } catch (err) {
+                        return value;
+                    }
+                }
+
+                function getTargetValue() {
+                    var value = currentSelectedTarget();
+                    if (isLocalSelected()) {
+                        value = mapToLocalTarget(value);
+                    }
+                    return value;
+                }
+
+                function applyTargetMode(mode) {
+                    var useManual = mode === 'manual';
+                    validatorMode.forEach(function (input) {
+                        input.checked = input.value === mode;
+                    });
+                    if (validatorManual) {
+                        validatorManual.style.display = useManual ? 'inline-block' : 'none';
+                        validatorManual.disabled = !useManual;
+                    }
+                    if (siteSelect) {
+                        siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                        siteSelect.disabled = useManual;
+                    }
+                    if (includePosts) {
+                        includePosts.disabled = useManual;
+                        if (useManual) {
+                            includePosts.checked = false;
+                        }
+                    }
+                    if (maxPostsInput) {
+                        maxPostsInput.disabled = useManual || !includePosts || !includePosts.checked;
+                    }
+                }
+
+                function loadSites() {
+                    if (!window.localStorage) {
+                        sites = [];
+                        return;
+                    }
+                    try {
+                        var raw = window.localStorage.getItem(sitesStoreKey);
+                        sites = raw ? JSON.parse(raw) : [];
+                        if (!Array.isArray(sites)) {
+                            sites = [];
+                        }
+                    } catch (err) {
+                        sites = [];
+                    }
+                }
+
+                function renderSites() {
+                    if (!siteSelect) {
+                        return;
+                    }
+                    siteSelect.innerHTML = '';
+                    if (!sites.length) {
+                        if (validatorHomeUrl) {
+                            var optHome = document.createElement('option');
+                            optHome.value = validatorHomeUrl;
+                            optHome.textContent = validatorHomeUrl;
+                            siteSelect.appendChild(optHome);
+                        }
+                        return;
+                    }
+                    sites.forEach(function (site) {
+                        if (!site || !site.url) {
+                            return;
+                        }
+                        var opt = document.createElement('option');
+                        opt.value = site.url;
+                        opt.textContent = site.label ? (site.label + ' (' + site.url + ')') : site.url;
+                        siteSelect.appendChild(opt);
+                    });
                 }
 
                 function syncValidatorMode() {
                     var mode = currentMode();
-                    if (validatorSelect) {
-                        validatorSelect.style.display = (mode === 'dropdown') ? 'inline-block' : 'none';
-                    }
-                    if (searchWrap) {
-                        searchWrap.style.display = (mode === 'dropdown') ? 'flex' : 'none';
-                    }
-                    if (validatorManual) {
-                        validatorManual.style.display = (mode === 'manual') ? 'inline-block' : 'none';
-                    }
-                    if (includePosts) {
-                        includePosts.disabled = (mode !== 'dropdown');
-                    }
+                    applyTargetMode(mode);
+                    updateTargetModeControls();
                     persistState();
                     updateButtonState();
                 }
@@ -675,29 +843,120 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 validatorType.forEach(function (radio) {
                     radio.addEventListener('change', syncValidationType);
                 });
-                if (validatorSelect) {
-                    validatorSelect.addEventListener('change', function() {
+                if (siteSelect) {
+                    siteSelect.addEventListener('change', function() {
+                        resetSubpages(true);
+                        updateTargetModeControls();
                         persistState();
                         updateButtonState();
                     });
                 }
                 if (validatorManual) {
                     validatorManual.addEventListener('input', function() {
+                        resetSubpages(true);
+                        updateTargetModeControls();
                         persistState();
                         updateButtonState();
                     });
                 }
-                if (searchInput) {
-                    searchInput.addEventListener('input', function() {
-                        renderSelectOptions();
+                if (subpagesSelect) {
+                    subpagesSelect.addEventListener('change', function() {
                         persistState();
+                        updateButtonState();
+                    });
+                }
+                if (envInputs.length) {
+                    envInputs.forEach(function (input) {
+                        input.addEventListener('change', function() {
+                            resetSubpages(true);
+                            updateTargetModeControls();
+                            persistState();
+                            updateButtonState();
+                        });
                     });
                 }
                 if (includePosts) {
-                    includePosts.addEventListener('change', renderSelectOptions);
                     includePosts.addEventListener('change', function() {
-                        updateButtonState();
+                        if (maxPostsInput) {
+                            maxPostsInput.disabled = !includePosts.checked;
+                        }
                         persistState();
+                    });
+                }
+                if (maxPostsInput) {
+                    maxPostsInput.disabled = !includePosts || !includePosts.checked;
+                    maxPostsInput.addEventListener('change', persistState);
+                }
+                if (siteLimitInput) {
+                    siteLimitInput.addEventListener('change', persistState);
+                }
+                if (listPagesBtn) {
+                    listPagesBtn.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        if (listPagesBtn.disabled) {
+                            return;
+                        }
+                        if (!validatorListPagesNonce) {
+                            setSelectorStatus('<?php echo esc_js( __( 'List Pages is not configured.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        var url = currentTargetUrl();
+                        if (!url) {
+                            setSelectorStatus('<?php echo esc_js( __( 'Select a target URL first.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (currentMode() === 'manual' && !isHomepageUrl(url)) {
+                            setSelectorStatus('<?php echo esc_js( __( 'List Pages requires a homepage URL.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                            return;
+                        }
+                        var max = siteLimitInput ? parseInt(siteLimitInput.value, 10) : 25;
+                        max = isNaN(max) ? 25 : max;
+                        isListing = true;
+                        listReady = false;
+                        updateTargetModeControls();
+                        setSelectorStatus('<?php echo esc_js( __( 'Listing sitemap pages…', 'beseo' ) ); ?>');
+                        resetSubpages(true);
+                        var form = new FormData();
+                        form.append('action', 'be_schema_analyser_list_pages');
+                        form.append('nonce', validatorListPagesNonce);
+                        form.append('url', url);
+                        form.append('local', isLocalSelected() ? '1' : '');
+                        form.append('max', max);
+                        var endpoint = validatorAjax || (window.ajaxurl || '');
+                        fetch(endpoint, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            body: form
+                        }).then(function(response) {
+                            return response.json();
+                        }).then(function(payload) {
+                            isListing = false;
+                            updateTargetModeControls();
+                            if (!payload || !payload.success) {
+                                var msg = (payload && payload.data && payload.data.message) ? payload.data.message : '<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>';
+                                setSelectorStatus(msg);
+                                resetSubpages(true);
+                                listReady = false;
+                                return;
+                            }
+                            var pages = payload.data && payload.data.pages ? payload.data.pages : [];
+                            if (!pages.length) {
+                                setSelectorStatus('<?php echo esc_js( __( 'No sitemap pages found.', 'beseo' ) ); ?>');
+                                resetSubpages(true);
+                                listReady = false;
+                                return;
+                            }
+                            populateSubpages(pages);
+                            setSelectorStatus('<?php echo esc_js( __( 'Pages loaded.', 'beseo' ) ); ?>');
+                            persistState();
+                            updateButtonState();
+                        }).catch(function() {
+                            isListing = false;
+                            updateTargetModeControls();
+                            setSelectorStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                        });
                     });
                 }
                 if (ogCheckbox) {
@@ -778,8 +1037,11 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                     });
                 }
 
+                loadSites();
+                renderSites();
                 restoreState();
-                renderSelectOptions();
+                applyTargetMode(currentMode());
+                updateTargetModeControls();
                 syncValidatorMode();
                 syncValidationType();
                 updateButtonState();

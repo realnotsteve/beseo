@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.53",
+    "version": "2.1.54",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -538,7 +538,9 @@
     "Analyser > Overview Local toggle now sends a local flag and maps analyser/list pages requests to the local site base.",
     "Analyser > Overview now labels the selector box with a \"Selector\" heading.",
     "Schema > Preview Target now uses the Selector box pattern (Local toggle, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages) and removes the Use Homepage shortcut.",
-    "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI."
+    "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI.",
+    "Schema > Tests Render Criteria now shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls removed).",
+    "Social Media > Tests now uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts) instead of the old dropdown/search selector."
   ],
   "ui_rules": [
     "Use the \"Selector\" box pattern (as in Analyser > Overview) whenever a user must select a web page."

@@ -601,6 +601,7 @@
             .be-schema-preview-target,
             .be-schema-preview-criteria {
                 width: 100%;
+                box-sizing: border-box;
             }
 
             .be-schema-preview-criteria-grid {
@@ -620,7 +621,7 @@
                 align-items: center;
                 gap: 12px;
                 flex-wrap: wrap;
-                margin-left: auto;
+                margin-left: 0;
             }
 
             .be-schema-preview-field {

@@ -163,6 +163,91 @@
                 margin-right: 8px;
                 white-space: nowrap;
             }
+            .be-schema-validator-selector-label {
+                display: inline-block;
+                font-weight: 600;
+                color: #1d2327;
+            }
+            .be-schema-validator-selector-box {
+                border: 1px solid #dfe2e6;
+                border-radius: 6px;
+                padding: 12px;
+                background: #f9fafb;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .be-schema-selector-grid {
+                display: flex;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .be-schema-selector-rows {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                flex: 1;
+            }
+            .be-schema-selector-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+            .be-schema-validator-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+            .be-schema-validator-inline-field {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12px;
+                color: #50575e;
+            }
+            .be-schema-validator-inline-field input {
+                margin: 0;
+            }
+            .be-schema-validator-vertical-divider {
+                width: 1px;
+                height: 24px;
+                background: #d0d4d9;
+                margin: 0 4px;
+            }
+            .be-schema-selector-divider {
+                align-self: stretch;
+                height: auto;
+            }
+            .be-schema-validator-local-column {
+                display: flex;
+                align-self: stretch;
+            }
+            .be-schema-validator-local-box {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: center;
+                gap: 0;
+                padding: 6px 10px;
+                border-radius: 4px;
+                border: 1px solid #d0d4d9;
+                background: #fff;
+                flex: 1;
+                box-sizing: border-box;
+            }
+            .be-schema-validator-local-box .be-schema-validator-inline-field {
+                flex: 1;
+            }
+            .be-schema-validator-url::placeholder {
+                color: #b0b0b0;
+            }
+            .be-schema-validator-selector-status {
+                margin: 6px 0 0;
+                min-height: 16px;
+                font-size: 12px;
+                color: #6b7280;
+            }
             .be-schema-engine-box label {
                 white-space: nowrap;
             }

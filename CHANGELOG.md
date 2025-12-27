@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.54] - 2025-12-26
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- assets/css/schema.css
+- beseo-devnotes.json
+- includes/admin/partials/validator-panel.php
+- includes/admin/partials/validator-script.php
+- includes/admin/partials/validator-styles.php
+
+
 ## [2.1.53] - 2025-12-26
 Summary: Update.
 
