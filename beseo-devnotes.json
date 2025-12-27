@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.56",
+    "version": "2.1.57",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -553,7 +553,10 @@
     "Centralized social settings defaults/merging into includes/engine/core-social-settings.php; core-social.php and the admin save now share a single source of truth for default keys and merges.",
     "Added a shared optional-field helper script (includes/admin/js/be-optional-fields.js) and wired Social admin dropdowns (Facebook/Twitter and image variants) to it to remove duplicated JS.",
     "Introduced a shared image validation toggle (default on) and began moving image status checks behind a reusable helper; Schema settings now expose an Image Validation Pills toggle.",
-    "Schema optional dropdowns now use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels."
+    "Schema optional dropdowns now use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels.",
+    "Added shared admin helpers for URL validation and validator target lists; schema/social now delegate to them.",
+    "Added shared selector utilities (includes/admin/js/be-selector.js) to reuse list-pages/selector logic across analyser, schema preview, and validator.",
+    "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials."
   ],
   "ui_notes_tools": [
     "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema \u2192 WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."

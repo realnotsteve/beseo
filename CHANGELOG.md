@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.57] - 2025-12-27
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- beseo-devnotes.json
+
+
 ## [2.1.56] - 2025-12-27
 Summary: Social admin.
 
