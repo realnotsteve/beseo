@@ -23,3 +23,47 @@ if ( ! function_exists( 'be_schema_admin_validate_url_field' ) ) {
         return $sanitized;
     }
 }
+
+if ( ! function_exists( 'be_schema_admin_get_validator_targets' ) ) {
+    function be_schema_admin_get_validator_targets( $args = array() ) {
+        $defaults = array(
+            'page_args' => array(
+                'post_status' => 'publish',
+            ),
+            'post_args' => array(
+                'post_type'   => 'post',
+                'numberposts' => -1,
+                'post_status' => 'publish',
+            ),
+        );
+        $args = wp_parse_args( (array) $args, $defaults );
+
+        $pages = get_pages( $args['page_args'] );
+        $posts = get_posts( $args['post_args'] );
+
+        $page_data = array();
+        foreach ( (array) $pages as $page ) {
+            $page_data[] = array(
+                'id'    => $page->ID,
+                'title' => get_the_title( $page ),
+                'url'   => get_permalink( $page ),
+                'type'  => 'page',
+            );
+        }
+
+        $post_data = array();
+        foreach ( (array) $posts as $post_item ) {
+            $post_data[] = array(
+                'id'    => $post_item->ID,
+                'title' => get_the_title( $post_item ),
+                'url'   => get_permalink( $post_item ),
+                'type'  => 'post',
+            );
+        }
+
+        return array(
+            'pages' => $page_data,
+            'posts' => $post_data,
+        );
+    }
+}

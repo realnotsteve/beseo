@@ -395,36 +395,9 @@ function be_schema_engine_render_social_media_page() {
     $twitter_optional_serialized = implode( ',', $twitter_optional_props );
 
     // Data for Validator tab (shared with Tools validator).
-    $validator_pages = get_pages(
-        array(
-            'post_status' => 'publish',
-        )
-    );
-    $validator_posts = get_posts(
-        array(
-            'post_type'   => 'post',
-            'numberposts' => -1,
-            'post_status' => 'publish',
-        )
-    );
-    $validator_page_data = array();
-    foreach ( (array) $validator_pages as $page ) {
-        $validator_page_data[] = array(
-            'id'    => $page->ID,
-            'title' => get_the_title( $page ),
-            'url'   => get_permalink( $page ),
-            'type'  => 'page',
-        );
-    }
-    $validator_post_data = array();
-    foreach ( (array) $validator_posts as $post_item ) {
-        $validator_post_data[] = array(
-            'id'    => $post_item->ID,
-            'title' => get_the_title( $post_item ),
-            'url'   => get_permalink( $post_item ),
-            'type'  => 'post',
-        );
-    }
+    $validator_targets   = be_schema_admin_get_validator_targets();
+    $validator_page_data = $validator_targets['pages'];
+    $validator_post_data = $validator_targets['posts'];
 
     ?>
     <script>

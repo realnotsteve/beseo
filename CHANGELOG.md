@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.56] - 2025-12-27
+Summary: Social admin.
+
+### Changed
+- Touched areas: social admin.
+
+### Files
+- includes/admin/admin-helpers.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+
+
 ## [2.1.55] - 2025-12-27
 Summary: Schema admin + social admin.
 
