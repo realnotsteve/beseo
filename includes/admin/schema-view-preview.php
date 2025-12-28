@@ -114,6 +114,7 @@ function be_schema_engine_render_schema_preview_criteria() {
                     <p class="be-schema-preview-help" id="be-schema-preview-beseo-help"></p>
                 </div>
             </div>
+            <span class="be-schema-preview-criteria-divider" aria-hidden="true"></span>
             <div class="be-schema-preview-criteria-actions">
                 <div class="be-schema-preview-actions">
                     <button type="button" class="button button-primary" id="be-schema-preview-create">

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var labelPublisherNone = labels.publisherNone || 'Publisher Type: None';
     var labelPublisherDedicated = labels.publisherDedicated || 'Publisher Type: Dedicated';
     var labelPublisherReference = labels.publisherReference || 'Publisher Type: Reference';
+
                 // Top-level tabs.
                 var tabLinks = document.querySelectorAll('.be-schema-tab-link');
                 var tabPanels = document.querySelectorAll('.be-schema-tab-panel');

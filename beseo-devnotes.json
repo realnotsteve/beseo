@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "3.0.4",
+    "version": "3.0.5",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -572,13 +572,18 @@
     "Normalized Analyser/Playfair naming in UI strings and comments to avoid legacy Tools/Wayfair drift.",
     "Aligned CHANGELOG terminology with Analyser/Playfair and Schema/Social Tests naming to reduce documentation drift.",
     "Split Social Media tab layouts into partials for Open Graph, Platforms, Facebook, and Twitter with shared optional-fields blocks.",
-    "Removed the Analyser Images tab and updated admin headers to the BE SEO naming."
+    "Removed the Analyser Images tab and updated admin headers to the BE SEO naming.",
+    "Fixed the validator inline script wrapper by removing a stray IIFE closer that caused a JS parser error."
   ],
   "ui_notes_tools": [
     "Analyser submenu has Schema Tests, Social Tests, Playfair, and Analyser tabs with a shared selector header; Analyser hosts its Overview/Issues/Pages/History/Settings subtabs. Tabs use WP nav-tab styling with inline CSS/JS fallback to ensure visibility.",
+    "Analyser > Schema Tests panel omits the heading/description so the preview content starts immediately.",
+    "Analyser Render Criteria shows a divider between Add BE SEO and the action buttons (Create/Refresh/Clear), styled via .be-schema-preview-criteria-divider.",
     "Analyser > Playfair focuses on capture output only (settings summary removed).",
+    "Analyser/Schema admin pages force the WP footer to flow normally and add extra bottom padding via admin-ui.css to prevent overlap with preview output.",
     "Analyser is accessed via the Analyser tab within the Analyser page (no separate submenu).",
-    "Analyser appears above Settings in the admin submenu order."
+    "Analyser appears above Settings in the admin submenu order.",
+    "Admin pages add extra bottom padding on Analyser/Schema screens to avoid the WP footer overlapping preview output."
   ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",

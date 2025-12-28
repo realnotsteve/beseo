@@ -835,8 +835,8 @@ function be_schema_engine_render_tools_page() {
             be_schema_engine_render_tester_panel_open(
                 'be-schema-tools-schema',
                 ( 'schema' === $tools_default_tab ),
-                __( 'Schema Tests', 'beseo' ),
-                __( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ),
+                '',
+                '',
                 array( 'description_class' => 'be-schema-description' )
             );
             ?>

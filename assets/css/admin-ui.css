@@ -61,3 +61,20 @@
     border: 1px solid #2a2a2aff;
     color: #ffffffff;
 }
+
+body.beseo_page_beseo-tools .wrap,
+body.beseo_page_beseo-schema .wrap {
+    padding-bottom: 60px;
+}
+
+body.beseo_page_beseo-tools #wpbody-content,
+body.beseo_page_beseo-schema #wpbody-content {
+    padding-bottom: 120px !important;
+}
+
+body.beseo_page_beseo-tools #wpfooter,
+body.beseo_page_beseo-schema #wpfooter {
+    position: static !important;
+    margin-top: 20px !important;
+    clear: both;
+}

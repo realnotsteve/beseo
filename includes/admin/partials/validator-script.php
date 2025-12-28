@@ -1000,5 +1000,4 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 toggleCrops();
                 applyPreviewToggles();
             });
-        })();
     </script>
