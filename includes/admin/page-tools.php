@@ -498,6 +498,13 @@ function be_schema_engine_render_tools_page() {
         BE_SCHEMA_ENGINE_VERSION,
         true
     );
+    wp_enqueue_script(
+        'be-schema-selector',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION,
+        true
+    );
 
     if ( $is_settings_submenu ) {
         if ( function_exists( 'be_schema_help_overrides_handle_request' ) ) {
@@ -560,6 +567,18 @@ function be_schema_engine_render_tools_page() {
                 border-radius: 6px;
                 padding: 16px;
                 margin-top: 12px;
+            }
+            .be-schema-tester-section {
+                border: 1px solid #ccd0d4;
+                background: #fff;
+                border-radius: 6px;
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            .be-schema-tester-section-title {
+                margin: 0 0 10px;
+                font-size: 14px;
+                font-weight: 600;
             }
             .be-schema-sites-row {
                 display: flex;
@@ -652,7 +671,7 @@ function be_schema_engine_render_tools_page() {
 
         <h2 class="nav-tab-wrapper">
             <?php if ( ! $is_settings_submenu ) : ?>
-                <a href="#be-schema-tools-dashboard" class="nav-tab<?php echo ( 'dashboard' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="dashboard"><?php esc_html_e( 'Dashboard', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-dashboard" class="nav-tab<?php echo ( 'dashboard' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="dashboard"><?php esc_html_e( 'Sources', 'beseo' ); ?></a>
             <?php endif; ?>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
@@ -666,17 +685,96 @@ function be_schema_engine_render_tools_page() {
 
         <?php if ( ! $is_settings_submenu ) : ?>
             <div id="be-schema-tools-dashboard" class="be-schema-tools-panel<?php echo ( 'dashboard' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <p class="description">
-                    <?php esc_html_e(
-                        'Diagnostic information and effective status summaries live under Schema → Settings. Use this dashboard for quick reminders and links.',
-                        'beseo'
-                    ); ?>
-                </p>
-                <ul class="ul-disc">
-                    <li><?php esc_html_e( 'Check Schema → Settings for debug, dry run, and image validation toggles.', 'beseo' ); ?></li>
-                    <li><?php esc_html_e( 'Visit Schema → Snapshots to review the last BE_SCHEMA_DEBUG snapshot when debug is enabled.', 'beseo' ); ?></li>
-                    <li><?php esc_html_e( 'Open Graph/Twitter dry-run toggles live under Platforms → Facebook/Twitter → Tools.', 'beseo' ); ?></li>
-                </ul>
+                <?php
+                $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
+                $playfair_styles  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-styles.php';
+                $playfair_panel   = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-panel.php';
+                $playfair_script  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-script.php';
+
+                if ( file_exists( $validator_styles ) ) {
+                    include $validator_styles;
+                }
+                if ( file_exists( $playfair_styles ) ) {
+                    include $playfair_styles;
+                }
+                ?>
+                <div class="be-schema-tester-section" id="be-schema-tester-selector">
+                    <h3 class="be-schema-tester-section-title"><?php esc_html_e( 'Selector', 'beseo' ); ?></h3>
+                    <div class="be-schema-validator-selector-box">
+                        <div class="be-schema-selector-grid">
+                            <div class="be-schema-validator-local-column">
+                                <div class="be-schema-validator-local-box">
+                                    <label class="be-schema-validator-inline-field">
+                                        <input type="radio" name="be-schema-validator-env" value="local" checked />
+                                        <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                                    </label>
+                                    <label class="be-schema-validator-inline-field">
+                                        <input type="radio" name="be-schema-validator-env" value="remote" />
+                                        <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <span class="be-schema-validator-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
+                            <div class="be-schema-selector-rows">
+                                <div class="be-schema-validator-controls be-schema-selector-row">
+                                    <label><input type="radio" name="be_schema_validator_mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                                    <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                                    <select id="be-schema-validator-site" class="regular-text be-schema-validator-url"></select>
+                                    <input type="text" id="be-schema-validator-manual" class="regular-text be-schema-validator-url" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
+                                    <label class="be-schema-validator-inline-field">
+                                        <input type="checkbox" id="be-schema-validator-include-posts" />
+                                        <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
+                                    </label>
+                                    <label class="be-schema-validator-inline-field">
+                                        <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
+                                        <input type="number" id="be-schema-validator-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
+                                    </label>
+                                </div>
+                                <div class="be-schema-validator-controls be-schema-selector-row">
+                                    <button type="button" class="button button-primary" id="be-schema-validator-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
+                                    <label class="be-schema-validator-inline-field">
+                                        <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
+                                        <select id="be-schema-validator-subpages" class="regular-text" disabled>
+                                            <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
+                                        </select>
+                                    </label>
+                                    <label class="be-schema-validator-inline-field">
+                                        <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
+                                        <input type="number" id="be-schema-validator-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="description be-schema-validator-selector-status" id="be-schema-validator-selector-status"></p>
+                </div>
+                <div class="be-schema-tester-section">
+                    <h3 class="be-schema-tester-section-title"><?php esc_html_e( 'Playfair Capture', 'beseo' ); ?></h3>
+                    <p class="description">
+                        <?php esc_html_e( 'Capture schema output via Playfair using the selector above.', 'beseo' ); ?>
+                    </p>
+                    <?php
+                    if ( file_exists( $playfair_panel ) ) {
+                        $playfair_capture_context  = 'schema';
+                        $playfair_capture_selector = 'validator';
+                        $playfair_capture_id       = 'be-tester-playfair';
+                        $playfair_capture_defaults = function_exists( 'be_schema_admin_get_playfair_defaults' )
+                            ? be_schema_admin_get_playfair_defaults()
+                            : array();
+                        $playfair_capture_show_schema  = true;
+                        $playfair_capture_show_og      = false;
+                        $playfair_capture_show_twitter = false;
+                        $playfair_capture_show_html    = true;
+                        $playfair_capture_show_logs    = true;
+                        include $playfair_panel;
+                    }
+                    ?>
+                </div>
+                <?php
+                if ( file_exists( $playfair_script ) ) {
+                    include $playfair_script;
+                }
+                ?>
             </div>
         <?php endif; ?>
 
@@ -891,6 +989,282 @@ function be_schema_engine_render_tools_page() {
                 document.addEventListener('DOMContentLoaded', initToolsTabs);
             } else {
                 initToolsTabs();
+            }
+        })();
+    </script>
+    <script>
+        (function() {
+            function initTesterSelector() {
+                var root = document.getElementById('be-schema-tester-selector');
+                if (!root) {
+                    return;
+                }
+
+                var selector = window.beSchemaSelector || {};
+                var sitesStoreKey = 'be-schema-analyser-sites';
+                var sites = [];
+                var listReady = false;
+                var isListing = false;
+                var ajaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+                var listPagesNonce = '<?php echo esc_js( wp_create_nonce( 'be_schema_analyser' ) ); ?>';
+                var homeUrl = '<?php echo esc_js( home_url( '/' ) ); ?>';
+
+                var modeInputs = root.querySelectorAll('input[name="be_schema_validator_mode"]');
+                var envInputs = root.querySelectorAll('input[name="be-schema-validator-env"]');
+                var siteSelect = document.getElementById('be-schema-validator-site');
+                var manualInput = document.getElementById('be-schema-validator-manual');
+                var includePosts = document.getElementById('be-schema-validator-include-posts');
+                var maxPostsInput = document.getElementById('be-schema-validator-max-posts');
+                var listPagesBtn = document.getElementById('be-schema-validator-list-pages');
+                var subpagesSelect = document.getElementById('be-schema-validator-subpages');
+                var siteLimitInput = document.getElementById('be-schema-validator-site-limit');
+                var statusEl = document.getElementById('be-schema-validator-selector-status');
+
+                function getRadioValue(inputs) {
+                    var selected = '';
+                    inputs.forEach(function (input) {
+                        if (input.checked) {
+                            selected = input.value;
+                        }
+                    });
+                    return selected;
+                }
+
+                function currentMode() {
+                    return getRadioValue(modeInputs) || 'site';
+                }
+
+                function isLocalSelected() {
+                    return getRadioValue(envInputs) === 'local';
+                }
+
+                function setStatus(message) {
+                    if (!statusEl) {
+                        return;
+                    }
+                    statusEl.textContent = message || '';
+                }
+
+                function resetSubpages(disabled) {
+                    listReady = false;
+                    if (selector.resetSubpages) {
+                        selector.resetSubpages(subpagesSelect, '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>', disabled);
+                    }
+                }
+
+                function populateSubpages(pages) {
+                    if (!selector.populateSubpages) {
+                        return;
+                    }
+                    listReady = selector.populateSubpages(subpagesSelect, pages, {
+                        noneLabel: '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>',
+                        homeLabel: '<?php echo esc_js( __( 'Home page', 'beseo' ) ); ?>',
+                        dividerLabel: '--------'
+                    });
+                }
+
+                function isHomepageUrl(url) {
+                    return selector.isHomepageUrl ? selector.isHomepageUrl(url) : false;
+                }
+
+                function updateTargetModeControls() {
+                    var mode = currentMode();
+                    var allowList = false;
+                    if (mode === 'site') {
+                        allowList = !!(siteSelect && siteSelect.value);
+                    } else {
+                        var manualUrl = manualInput ? manualInput.value.trim() : '';
+                        if (manualUrl && isHomepageUrl(manualUrl)) {
+                            allowList = true;
+                        }
+                    }
+                    if (listPagesBtn) {
+                        listPagesBtn.disabled = !allowList || isListing;
+                    }
+                    if (siteLimitInput) {
+                        siteLimitInput.disabled = !allowList;
+                    }
+                    if (!allowList) {
+                        resetSubpages(true);
+                    }
+                }
+
+                function currentTargetUrl() {
+                    var mode = currentMode();
+                    if (mode === 'manual') {
+                        return manualInput ? manualInput.value.trim() : '';
+                    }
+                    return siteSelect ? siteSelect.value.trim() : '';
+                }
+
+                function applyTargetMode(mode) {
+                    var useManual = mode === 'manual';
+                    modeInputs.forEach(function (input) {
+                        input.checked = input.value === mode;
+                    });
+                    if (manualInput) {
+                        manualInput.style.display = useManual ? 'inline-block' : 'none';
+                        manualInput.disabled = !useManual;
+                    }
+                    if (siteSelect) {
+                        siteSelect.style.display = useManual ? 'none' : 'inline-block';
+                        siteSelect.disabled = useManual;
+                    }
+                    if (includePosts) {
+                        includePosts.disabled = useManual;
+                        if (useManual) {
+                            includePosts.checked = false;
+                        }
+                    }
+                    if (maxPostsInput) {
+                        maxPostsInput.disabled = useManual || !includePosts || !includePosts.checked;
+                    }
+                }
+
+                function loadSites() {
+                    if (selector.loadSites) {
+                        sites = selector.loadSites(sitesStoreKey);
+                        return;
+                    }
+                    sites = [];
+                }
+
+                function renderSites() {
+                    if (selector.renderSitesSelect) {
+                        selector.renderSitesSelect(siteSelect, sites, homeUrl);
+                    }
+                }
+
+                modeInputs.forEach(function (input) {
+                    input.addEventListener('change', function () {
+                        applyTargetMode(input.value);
+                        updateTargetModeControls();
+                    });
+                });
+
+                if (manualInput) {
+                    manualInput.addEventListener('input', function () {
+                        resetSubpages(true);
+                        updateTargetModeControls();
+                    });
+                    manualInput.addEventListener('change', function () {
+                        resetSubpages(true);
+                        updateTargetModeControls();
+                    });
+                }
+
+                if (siteSelect) {
+                    siteSelect.addEventListener('change', function () {
+                        resetSubpages(true);
+                        updateTargetModeControls();
+                    });
+                }
+
+                if (subpagesSelect) {
+                    subpagesSelect.addEventListener('change', function () {
+                        updateTargetModeControls();
+                    });
+                }
+
+                if (envInputs.length) {
+                    envInputs.forEach(function (input) {
+                        input.addEventListener('change', function () {
+                            resetSubpages(true);
+                            updateTargetModeControls();
+                        });
+                    });
+                }
+
+                if (includePosts && maxPostsInput) {
+                    includePosts.addEventListener('change', function () {
+                        maxPostsInput.disabled = !includePosts.checked;
+                    });
+                    maxPostsInput.disabled = !includePosts.checked;
+                }
+
+                if (listPagesBtn) {
+                    listPagesBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        if (listPagesBtn.disabled) {
+                            return;
+                        }
+                        if (!listPagesNonce) {
+                            setStatus('<?php echo esc_js( __( 'List Pages is not configured.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        var url = currentTargetUrl();
+                        if (!url) {
+                            setStatus('<?php echo esc_js( __( 'Select a target URL first.', 'beseo' ) ); ?>');
+                            return;
+                        }
+                        if (currentMode() === 'manual' && !isHomepageUrl(url)) {
+                            setStatus('<?php echo esc_js( __( 'List Pages requires a homepage URL.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                            return;
+                        }
+                        var max = siteLimitInput ? parseInt(siteLimitInput.value, 10) : 25;
+                        max = isNaN(max) ? 25 : max;
+                        isListing = true;
+                        listReady = false;
+                        updateTargetModeControls();
+                        setStatus('<?php echo esc_js( __( 'Listing sitemap pages...', 'beseo' ) ); ?>');
+                        resetSubpages(true);
+                        if (!selector.requestListPages) {
+                            setStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                            isListing = false;
+                            updateTargetModeControls();
+                            return;
+                        }
+                        selector.requestListPages({
+                            ajaxUrl: ajaxUrl,
+                            nonce: listPagesNonce,
+                            url: url,
+                            local: isLocalSelected(),
+                            max: max
+                        }).then(function (response) {
+                            isListing = false;
+                            updateTargetModeControls();
+                            if (!response || !response.success) {
+                                var msg = response && response.data && response.data.message ? response.data.message : '<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>';
+                                setStatus(msg);
+                                resetSubpages(true);
+                                listReady = false;
+                                return;
+                            }
+                            var pages = response.data && response.data.pages ? response.data.pages : [];
+                            if (!pages.length) {
+                                setStatus('<?php echo esc_js( __( 'No sitemap pages found.', 'beseo' ) ); ?>');
+                                resetSubpages(true);
+                                listReady = false;
+                                return;
+                            }
+                            populateSubpages(pages);
+                            setStatus('<?php echo esc_js( __( 'Pages loaded.', 'beseo' ) ); ?>');
+                            updateTargetModeControls();
+                        }).catch(function () {
+                            isListing = false;
+                            updateTargetModeControls();
+                            setStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
+                            resetSubpages(true);
+                        });
+                    });
+                }
+
+                loadSites();
+                renderSites();
+                applyTargetMode(currentMode());
+                resetSubpages(true);
+                updateTargetModeControls();
+                if (listReady) {
+                    updateTargetModeControls();
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initTesterSelector);
+            } else {
+                initTesterSelector();
             }
         })();
     </script>

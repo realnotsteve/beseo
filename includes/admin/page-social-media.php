@@ -1137,48 +1137,16 @@ function be_schema_engine_render_social_media_page() {
                     $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
                     $validator_panel  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-panel.php';
                     $validator_script = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-script.php';
-                    $playfair_styles  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-styles.php';
-                    $playfair_panel   = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-panel.php';
-                    $playfair_script  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-script.php';
-
                     if ( file_exists( $validator_styles ) ) {
                         include $validator_styles;
-                    }
-                    if ( file_exists( $playfair_styles ) ) {
-                        include $playfair_styles;
                     }
                     if ( file_exists( $validator_panel ) ) {
                         include $validator_panel;
                     } else {
                         echo '<p class="description">' . esc_html__( 'Tests unavailable.', 'beseo' ) . '</p>';
                     }
-                    if ( file_exists( $playfair_panel ) ) {
-                        $playfair_capture_context  = 'social';
-                        $playfair_capture_selector = 'validator';
-                        $playfair_capture_id       = 'be-social-playfair';
-                        $playfair_capture_defaults = function_exists( 'be_schema_admin_get_playfair_defaults' )
-                            ? be_schema_admin_get_playfair_defaults()
-                            : array();
-                        $playfair_capture_show_schema  = false;
-                        $playfair_capture_show_og      = true;
-                        $playfair_capture_show_twitter = true;
-                        $playfair_capture_show_html    = true;
-                        $playfair_capture_show_logs    = true;
-                        ?>
-                        <div class="be-schema-social-section">
-                            <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Playfair Capture', 'beseo' ); ?></h4>
-                            <p class="description">
-                                <?php esc_html_e( 'Capture Open Graph and Twitter tags via Playfair using the selector above.', 'beseo' ); ?>
-                            </p>
-                            <?php include $playfair_panel; ?>
-                        </div>
-                        <?php
-                    }
                     if ( file_exists( $validator_script ) ) {
                         include $validator_script;
-                    }
-                    if ( file_exists( $playfair_script ) ) {
-                        include $playfair_script;
                     }
                     ?>
                 </div>

@@ -8,7 +8,7 @@
  *  - Schema       (main configuration page)
  *  - Social Media (Open Graph & Twitter Cards)
  *  - Sitemap      (placeholder for XML/HTML sitemap tools)
- *  - Tools        (placeholder for future utilities / validators)
+ *  - Tester       (placeholder for future utilities / validators)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -104,11 +104,11 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_tools_page'
     );
 
-    // "Tools" submenu (simple placeholder for now).
+    // "Tester" submenu (simple placeholder for now).
     add_submenu_page(
         $top_level_slug,
-        __( 'Tools', 'beseo' ),
-        __( 'Tools', 'beseo' ),
+        __( 'Tester', 'beseo' ),
+        __( 'Tester', 'beseo' ),
         $capability,
         'beseo-tools',
         'be_schema_engine_render_tools_page'

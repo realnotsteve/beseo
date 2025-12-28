@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.60",
+    "version": "2.1.61",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -542,7 +542,7 @@
     "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI.",
     "Schema > Tests Render Criteria now shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls removed).",
     "Social Media > Tests now uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts) instead of the old dropdown/search selector.",
-    "Playfair capture outputs now live under Schema > Tests (schema) and Social Media > Tests (Open Graph/Twitter), removing the Tools > Playfair tab.",
+    "Playfair capture now lives under Tester > Sources for schema output, replacing the old Schema/Social Tests locations.",
     "Sitemap page now includes a status pill with last generated time and links to /sitemap.xml, /sitemap_index.xml, and the latest sitemap file; the success notice also shows the friendly /sitemap_index.xml link."
   ],
   "ui_rules": [
@@ -565,11 +565,11 @@
     "Added shared admin helpers for URL validation and validator target lists; schema/social now delegate to them.",
     "Added shared selector utilities (includes/admin/js/be-selector.js) to reuse list-pages/selector logic across analyser, schema preview, and validator.",
     "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials.",
-    "Created shared Playfair capture partials and moved the Tools Playfair UI into Schema > Tests and Social Media > Tests.",
+    "Created shared Playfair capture partials and moved the Tools Playfair UI into Tester > Sources.",
     "Fixed Schema > Tests Playfair include to avoid a PHP parse error."
   ],
   "ui_notes_tools": [
-    "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema \u2192 WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
+    "Tester submenu now has Sources and Images tabs; Sources hosts the Playfair capture selector and output, while Images links to Schema \u2192 WebSite images. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
   ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
