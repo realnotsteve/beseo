@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.2] - 2025-12-28
+Summary: Devnotes + schema admin.
+
+### Changed
+- Touched areas: devnotes, schema admin.
+
+### Files
+- assets/css/admin-ui.css
+- assets/css/schema.css
+- assets/js/sitemap-admin.js
+- beseo-devnotes.json
+- includes/admin/admin-menu.php
+- includes/admin/admin-ui.php
+- includes/admin/page-schema.php
+- includes/admin/page-sitemap.php
+- includes/admin/page-tools.php
+- includes/admin/schema-view.php
+
+
 ## [3.0.1] - 2025-12-28
 Summary: Devnotes.
 

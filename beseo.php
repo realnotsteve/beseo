@@ -3,7 +3,7 @@
  * Plugin Name:       BESEO
  * Plugin URI:        https://billevans.be/
  * Description:       Central, conservative, and controllable schema + social meta for WordPress (Elementor-first), with strong safety and debug tools.
- * Version:           3.0.1
+ * Version:           3.0.2
  * Author:            Bill Evans
  * Author URI:        https://billevans.be/
  * Text Domain:       beseo
@@ -41,7 +41,7 @@ if ( ! defined( 'BE_SCHEMA_ENGINE_PLUGIN_URL' ) ) {
 
 // Plugin version (used for cache-busting if needed).
 if ( ! defined( 'BE_SCHEMA_ENGINE_VERSION' ) ) {
-    define( 'BE_SCHEMA_ENGINE_VERSION', '3.0.1' );
+    define( 'BE_SCHEMA_ENGINE_VERSION', '3.0.2' );
 }
 
 /**

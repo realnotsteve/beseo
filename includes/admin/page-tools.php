@@ -473,6 +473,46 @@ function be_schema_engine_handle_validator_run() {
     wp_send_json_success( $result );
 }
 
+function be_schema_engine_render_tester_selector_header() {
+    ?>
+    <div class="be-schema-tester-header">
+        <?php
+        if ( function_exists( 'be_schema_engine_render_schema_preview_selector' ) ) {
+            be_schema_engine_render_schema_preview_selector();
+        }
+        ?>
+    </div>
+    <?php
+}
+
+function be_schema_engine_render_tester_panel_open( $panel_id, $is_active, $title, $description = '', $args = array() ) {
+    $classes = array( 'be-schema-tools-panel' );
+    if ( $is_active ) {
+        $classes[] = 'active';
+    }
+    $description_class = 'description';
+    if ( ! empty( $args['description_class'] ) ) {
+        $description_class .= ' ' . $args['description_class'];
+    }
+    ?>
+    <div id="<?php echo esc_attr( $panel_id ); ?>" class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>">
+        <?php if ( $title ) : ?>
+            <h2><?php echo esc_html( $title ); ?></h2>
+        <?php endif; ?>
+        <?php if ( '' !== $description ) : ?>
+            <p class="<?php echo esc_attr( $description_class ); ?>">
+                <?php echo esc_html( $description ); ?>
+            </p>
+        <?php endif; ?>
+    <?php
+}
+
+function be_schema_engine_render_tester_panel_close() {
+    ?>
+    </div>
+    <?php
+}
+
 /**
  * Render the Tools submenu page.
  *
@@ -697,21 +737,6 @@ function be_schema_engine_render_tools_page() {
                 background: #fdecec;
                 color: #8a1f11;
             }
-            .be-schema-global-section {
-                border: 1px solid #ccd0d4;
-                border-radius: 6px;
-                padding: 15px;
-                margin-bottom: 16px;
-                background: #f9fafb;
-                color: #111;
-            }
-            .be-schema-section-title {
-                display: block;
-                margin: -15px -15px 12px;
-                padding: 12px 15px;
-                background: #e1e4e8;
-                color: #111;
-            }
             .be-schema-tools-panel input::placeholder,
             .be-schema-tools-panel textarea::placeholder {
                 color: #9ca3af;
@@ -733,22 +758,61 @@ function be_schema_engine_render_tools_page() {
             }
         </style>
 
-        <h2 class="nav-tab-wrapper">
-            <?php if ( ! $is_settings_submenu ) : ?>
-                <a href="#be-schema-tools-schema" class="nav-tab<?php echo ( 'schema' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="schema"><?php esc_html_e( 'Schema Tests', 'beseo' ); ?></a>
-                <a href="#be-schema-tools-social" class="nav-tab<?php echo ( 'social' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="social"><?php esc_html_e( 'Social Tests', 'beseo' ); ?></a>
-                <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair Tester', 'beseo' ); ?></a>
-                <a href="#be-schema-tools-analyser" class="nav-tab<?php echo ( 'analyser' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="analyser"><?php esc_html_e( 'Analyser', 'beseo' ); ?></a>
-            <?php endif; ?>
-            <?php if ( $is_settings_submenu ) : ?>
-                <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
-                <a href="#be-schema-tools-lists" class="nav-tab<?php echo ( 'lists' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="lists"><?php esc_html_e( 'Lists', 'beseo' ); ?></a>
-                <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair', 'beseo' ); ?></a>
-            <?php endif; ?>
-            <?php if ( ! $is_settings_submenu ) : ?>
-                <a href="#be-schema-tools-images" class="nav-tab<?php echo ( 'images' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="images"><?php esc_html_e( 'Images', 'beseo' ); ?></a>
-            <?php endif; ?>
-        </h2>
+        <?php
+        $tools_tabs = array();
+        if ( ! $is_settings_submenu ) {
+            $tools_tabs[] = array(
+                'key'   => 'schema',
+                'label' => __( 'Schema Tests', 'beseo' ),
+                'href'  => '#be-schema-tools-schema',
+                'data'  => array( 'tools-tab' => 'schema' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'social',
+                'label' => __( 'Social Tests', 'beseo' ),
+                'href'  => '#be-schema-tools-social',
+                'data'  => array( 'tools-tab' => 'social' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'wayfair',
+                'label' => __( 'Wayfair Tester', 'beseo' ),
+                'href'  => '#be-schema-tools-wayfair',
+                'data'  => array( 'tools-tab' => 'wayfair' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'analyser',
+                'label' => __( 'Analyser', 'beseo' ),
+                'href'  => '#be-schema-tools-analyser',
+                'data'  => array( 'tools-tab' => 'analyser' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'images',
+                'label' => __( 'Images', 'beseo' ),
+                'href'  => '#be-schema-tools-images',
+                'data'  => array( 'tools-tab' => 'images' ),
+            );
+        } else {
+            $tools_tabs[] = array(
+                'key'   => 'help',
+                'label' => __( 'Help Text', 'beseo' ),
+                'href'  => '#be-schema-tools-help',
+                'data'  => array( 'tools-tab' => 'help' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'lists',
+                'label' => __( 'Lists', 'beseo' ),
+                'href'  => '#be-schema-tools-lists',
+                'data'  => array( 'tools-tab' => 'lists' ),
+            );
+            $tools_tabs[] = array(
+                'key'   => 'wayfair',
+                'label' => __( 'Wayfair', 'beseo' ),
+                'href'  => '#be-schema-tools-wayfair',
+                'data'  => array( 'tools-tab' => 'wayfair' ),
+            );
+        }
+        be_schema_engine_admin_render_nav_tabs( $tools_tabs, $tools_default_tab );
+        ?>
 
         <?php if ( ! $is_settings_submenu ) : ?>
             <?php
@@ -771,19 +835,17 @@ function be_schema_engine_render_tools_page() {
                 include $playfair_styles;
             }
             ?>
-            <div class="be-schema-tester-header">
-                <?php
-                if ( function_exists( 'be_schema_engine_render_schema_preview_selector' ) ) {
-                    be_schema_engine_render_schema_preview_selector();
-                }
-                ?>
-            </div>
+            <?php be_schema_engine_render_tester_selector_header(); ?>
 
-            <div id="be-schema-tools-schema" class="be-schema-tools-panel<?php echo ( 'schema' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <h2><?php esc_html_e( 'Schema Tests', 'beseo' ); ?></h2>
-                <p class="description be-schema-description">
-                    <?php esc_html_e( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ); ?>
-                </p>
+            <?php
+            be_schema_engine_render_tester_panel_open(
+                'be-schema-tools-schema',
+                ( 'schema' === $tools_default_tab ),
+                __( 'Schema Tests', 'beseo' ),
+                __( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ),
+                array( 'description_class' => 'be-schema-description' )
+            );
+            ?>
                 <div id="be-schema-tab-preview">
                     <div class="be-schema-preview-upper">
                         <?php if ( function_exists( 'be_schema_engine_render_schema_preview_criteria' ) ) : ?>
@@ -794,13 +856,16 @@ function be_schema_engine_render_tools_page() {
                         <?php be_schema_engine_render_schema_preview_output(); ?>
                     <?php endif; ?>
                 </div>
-            </div>
+            <?php be_schema_engine_render_tester_panel_close(); ?>
 
-            <div id="be-schema-tools-social" class="be-schema-tools-panel<?php echo ( 'social' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <h2><?php esc_html_e( 'Social Tests', 'beseo' ); ?></h2>
-                <p class="description">
-                    <?php esc_html_e( 'Validate Open Graph and Twitter tags with previews and source mapping.', 'beseo' ); ?>
-                </p>
+            <?php
+            be_schema_engine_render_tester_panel_open(
+                'be-schema-tools-social',
+                ( 'social' === $tools_default_tab ),
+                __( 'Social Tests', 'beseo' ),
+                __( 'Validate Open Graph and Twitter tags with previews and source mapping.', 'beseo' )
+            );
+            ?>
                 <?php
                 if ( file_exists( $validator_panel ) ) {
                     $validator_include_wrapper = false;
@@ -810,10 +875,15 @@ function be_schema_engine_render_tools_page() {
                     echo '<p class="description">' . esc_html__( 'Tests unavailable.', 'beseo' ) . '</p>';
                 }
                 ?>
-            </div>
+            <?php be_schema_engine_render_tester_panel_close(); ?>
 
-            <div id="be-schema-tools-wayfair" class="be-schema-tools-panel<?php echo ( 'wayfair' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <h2><?php esc_html_e( 'Wayfair Tester', 'beseo' ); ?></h2>
+            <?php
+            be_schema_engine_render_tester_panel_open(
+                'be-schema-tools-wayfair',
+                ( 'wayfair' === $tools_default_tab ),
+                __( 'Wayfair Tester', 'beseo' )
+            );
+            ?>
                 <div class="be-schema-playfair-box">
                     <h3><?php esc_html_e( 'Wayfair Settings Summary', 'beseo' ); ?></h3>
                     <p class="description">
@@ -873,13 +943,16 @@ function be_schema_engine_render_tools_page() {
                     include $playfair_panel;
                 }
                 ?>
-            </div>
+            <?php be_schema_engine_render_tester_panel_close(); ?>
 
-            <div id="be-schema-tools-analyser" class="be-schema-tools-panel<?php echo ( 'analyser' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <h2><?php esc_html_e( 'Analyser', 'beseo' ); ?></h2>
-                <p class="description">
-                    <?php esc_html_e( 'Run quick crawls and review issue summaries, pages, and history.', 'beseo' ); ?>
-                </p>
+            <?php
+            be_schema_engine_render_tester_panel_open(
+                'be-schema-tools-analyser',
+                ( 'analyser' === $tools_default_tab ),
+                __( 'Analyser', 'beseo' ),
+                __( 'Run quick crawls and review issue summaries, pages, and history.', 'beseo' )
+            );
+            ?>
                 <?php
                 if ( function_exists( 'be_schema_engine_render_analyser_content' ) ) {
                     be_schema_engine_render_analyser_content( $analyser_default_tab, $analyser_home_url );
@@ -887,7 +960,7 @@ function be_schema_engine_render_tools_page() {
                     echo '<p class="description">' . esc_html__( 'Analyser unavailable.', 'beseo' ) . '</p>';
                 }
                 ?>
-            </div>
+            <?php be_schema_engine_render_tester_panel_close(); ?>
 
             <?php
             if ( file_exists( $validator_script ) ) {
@@ -913,13 +986,11 @@ function be_schema_engine_render_tools_page() {
 
         <?php if ( $is_settings_submenu ) : ?>
             <div id="be-schema-tools-lists" class="be-schema-tools-panel<?php echo ( 'lists' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <div class="be-schema-global-section">
-                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Websites', 'beseo' ); ?></h4>
+                <?php be_schema_engine_admin_render_section_open( __( 'Websites', 'beseo' ) ); ?>
                     <p class="description" id="be-schema-sites-empty"><?php esc_html_e( 'Website will appear here.', 'beseo' ); ?></p>
                     <ul class="be-schema-website-list" id="be-schema-sites-list"></ul>
-                </div>
-                <div class="be-schema-global-section">
-                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Library', 'beseo' ); ?></h4>
+                <?php be_schema_engine_admin_render_section_close(); ?>
+                <?php be_schema_engine_admin_render_section_open( __( 'Library', 'beseo' ) ); ?>
                     <p class="description"><?php esc_html_e( 'Manage the list of websites used by the Analyser.', 'beseo' ); ?></p>
                     <div class="be-schema-sites-row">
                         <button type="button" class="button button-primary" id="be-schema-sites-add"><?php esc_html_e( 'Save Website', 'beseo' ); ?></button>
@@ -930,7 +1001,7 @@ function be_schema_engine_render_tools_page() {
                     </div>
                     <hr class="be-schema-sites-status-divider" id="be-schema-sites-status-divider" />
                     <p class="description" id="be-schema-sites-status"></p>
-                </div>
+                <?php be_schema_engine_admin_render_section_close(); ?>
             </div>
 
             <div id="be-schema-tools-wayfair" class="be-schema-tools-panel<?php echo ( 'wayfair' === $tools_default_tab ) ? ' active' : ''; ?>">
@@ -1052,19 +1123,20 @@ function be_schema_engine_render_tools_page() {
         <?php endif; ?>
 
         <?php if ( ! $is_settings_submenu ) : ?>
-            <div id="be-schema-tools-images" class="be-schema-tools-panel<?php echo ( 'images' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <p class="description">
-                    <?php esc_html_e(
-                        'Image helpers: use Schema → Website → Global/Person/Publisher for recommended aspect ratios and validation pills. More tools coming soon.',
-                    'beseo'
-                ); ?>
-            </p>
+            <?php
+            be_schema_engine_render_tester_panel_open(
+                'be-schema-tools-images',
+                ( 'images' === $tools_default_tab ),
+                __( 'Images', 'beseo' ),
+                __( 'Image helpers: use Schema → Website → Global/Person/Publisher for recommended aspect ratios and validation pills. More tools coming soon.', 'beseo' )
+            );
+            ?>
                 <p>
                     <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=beseo-schema#website' ) ); ?>">
                         <?php esc_html_e( 'Go to Schema Images', 'beseo' ); ?>
                     </a>
                 </p>
-            </div>
+            <?php be_schema_engine_render_tester_panel_close(); ?>
         <?php endif; ?>
 
     </div>

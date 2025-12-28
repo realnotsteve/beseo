@@ -474,43 +474,49 @@ function be_schema_engine_render_schema_page() {
             <input type="hidden" name="be_schema_engine_settings_submitted" value="1" />
 
             <div class="be-schema-tabs">
-                <ul class="be-schema-tabs-nav">
-                    <li>
-                        <a href="#be-schema-tab-overview"
-                           class="be-schema-tab-link be-schema-tab-active"
-                           data-schema-tab="overview">
-                            <?php esc_html_e( 'Dashboard', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#be-schema-tab-website"
-                           class="be-schema-tab-link"
-                           data-schema-tab="website">
-                            <?php esc_html_e( 'Website', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#be-schema-tab-settings-author"
-                           class="be-schema-tab-link"
-                           data-schema-tab="settings-author">
-                            <?php esc_html_e( 'Defaults', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#be-schema-tab-options"
-                           class="be-schema-tab-link"
-                           data-schema-tab="options">
-                            <?php esc_html_e( 'Options', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#be-schema-tab-debug"
-                           class="be-schema-tab-link"
-                           data-schema-tab="debug">
-                            <?php esc_html_e( 'Debug', 'beseo' ); ?>
-                        </a>
-                    </li>
-                </ul>
+                <?php
+                $schema_tabs = array(
+                    array(
+                        'key'   => 'overview',
+                        'label' => __( 'Dashboard', 'beseo' ),
+                        'href'  => '#be-schema-tab-overview',
+                        'data'  => array( 'schema-tab' => 'overview' ),
+                    ),
+                    array(
+                        'key'   => 'website',
+                        'label' => __( 'Website', 'beseo' ),
+                        'href'  => '#be-schema-tab-website',
+                        'data'  => array( 'schema-tab' => 'website' ),
+                    ),
+                    array(
+                        'key'   => 'settings-author',
+                        'label' => __( 'Defaults', 'beseo' ),
+                        'href'  => '#be-schema-tab-settings-author',
+                        'data'  => array( 'schema-tab' => 'settings-author' ),
+                    ),
+                    array(
+                        'key'   => 'options',
+                        'label' => __( 'Options', 'beseo' ),
+                        'href'  => '#be-schema-tab-options',
+                        'data'  => array( 'schema-tab' => 'options' ),
+                    ),
+                    array(
+                        'key'   => 'debug',
+                        'label' => __( 'Debug', 'beseo' ),
+                        'href'  => '#be-schema-tab-debug',
+                        'data'  => array( 'schema-tab' => 'debug' ),
+                    ),
+                );
+                be_schema_engine_admin_render_list_tabs(
+                    $schema_tabs,
+                    'overview',
+                    array(
+                        'wrapper_class' => 'be-schema-tabs-nav',
+                        'link_class'    => 'be-schema-tab-link',
+                        'active_class'  => 'be-schema-tab-active',
+                    )
+                );
+                ?>
 
                 <!-- OVERVIEW TAB -->
                 <div id="be-schema-tab-overview" class="be-schema-tab-panel be-schema-tab-panel-active">
@@ -551,8 +557,7 @@ function be_schema_engine_render_schema_page() {
 
                         <div class="be-schema-overview-panels">
                             <div id="be-schema-overview-operation" class="be-schema-overview-panel">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Operation', 'beseo' ); ?></h4>
+                                <?php be_schema_engine_admin_render_section_open( __( 'Operation', 'beseo' ) ); ?>
                                     <table class="form-table">
                                         <tr>
                                             <th scope="row"><?php esc_html_e( 'Enable BE Schema Engine', 'beseo' ); ?></th>
@@ -568,13 +573,12 @@ function be_schema_engine_render_schema_page() {
                                             </td>
                                         </tr>
                                     </table>
-                                </div>
+                                <?php be_schema_engine_admin_render_section_close(); ?>
                             </div>
 
                             <div id="be-schema-overview-snapshots"
                                  class="be-schema-overview-panel be-schema-overview-panel-active">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Individual Schema', 'beseo' ); ?></h4>
+                                <?php be_schema_engine_admin_render_section_open( __( 'Individual Schema', 'beseo' ) ); ?>
                                     <div class="be-schema-settings-snapshot">
                                         <p class="description be-schema-description">
                                             <?php esc_html_e(
@@ -625,13 +629,12 @@ function be_schema_engine_render_schema_page() {
                                             <p><em><?php esc_html_e( 'No settings found for be_schema_engine_settings.', 'beseo' ); ?></em></p>
                                         <?php endif; ?>
                                     </div>
-                                </div>
+                                <?php be_schema_engine_admin_render_section_close(); ?>
                             </div>
 
 
                             <div id="be-schema-overview-health" class="be-schema-overview-panel">
-                                <div class="be-schema-global-section">
-                                    <h4 class="be-schema-section-title"><?php esc_html_e( 'Schema Health Check', 'beseo' ); ?></h4>
+                                <?php be_schema_engine_admin_render_section_open( __( 'Schema Health Check', 'beseo' ) ); ?>
                                     <div class="be-schema-health-table">
                                         <p class="description be-schema-description">
                                             <?php esc_html_e(
@@ -704,15 +707,15 @@ function be_schema_engine_render_schema_page() {
                                                         <?php
                                                         $org_issues = array();
                                                         if ( $organization_enabled && ! $org_name_trim ) {
-                                                            $org_issues[] = sprintf(
-                                                                '<span class="be-schema-status-pill off">%s</span>',
-                                                                esc_html__( 'Name missing', 'beseo' )
+                                                            $org_issues[] = be_schema_engine_admin_render_status_pill(
+                                                                __( 'Name missing', 'beseo' ),
+                                                                false
                                                             );
                                                         }
                                                         if ( $organization_enabled && ! $org_logo_ok ) {
-                                                            $org_issues[] = sprintf(
-                                                                '<span class="be-schema-status-pill off">%s</span>',
-                                                                esc_html__( 'Logo missing', 'beseo' )
+                                                            $org_issues[] = be_schema_engine_admin_render_status_pill(
+                                                                __( 'Logo missing', 'beseo' ),
+                                                                false
                                                             );
                                                         }
                                                         if ( empty( $org_issues ) ) {
@@ -749,15 +752,15 @@ function be_schema_engine_render_schema_page() {
                                                         <?php
                                                         $publisher_issues = array();
                                                         if ( $publisher_enabled && ! $publisher_name_effective ) {
-                                                            $publisher_issues[] = sprintf(
-                                                                '<span class="be-schema-status-pill off">%s</span>',
-                                                                esc_html__( 'Name missing', 'beseo' )
+                                                            $publisher_issues[] = be_schema_engine_admin_render_status_pill(
+                                                                __( 'Name missing', 'beseo' ),
+                                                                false
                                                             );
                                                         }
                                                         if ( $publisher_enabled && ! $publisher_logo_ok ) {
-                                                            $publisher_issues[] = sprintf(
-                                                                '<span class="be-schema-status-pill off">%s</span>',
-                                                                esc_html__( 'Logo missing', 'beseo' )
+                                                            $publisher_issues[] = be_schema_engine_admin_render_status_pill(
+                                                                __( 'Logo missing', 'beseo' ),
+                                                                false
                                                             );
                                                         }
                                                         if ( empty( $publisher_issues ) ) {
@@ -772,7 +775,7 @@ function be_schema_engine_render_schema_page() {
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
+                                <?php be_schema_engine_admin_render_section_close(); ?>
                             </div>
                         </div>
                     </div>
@@ -780,8 +783,7 @@ function be_schema_engine_render_schema_page() {
 
                 <!-- SETTINGS TAB -->
                 <div id="be-schema-tab-settings-author" class="be-schema-tab-panel">
-                    <div class="be-schema-global-section">
-                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Global Author', 'beseo' ); ?></h4>
+                    <?php be_schema_engine_admin_render_section_open( __( 'Global Author', 'beseo' ) ); ?>
                         <p class="description be-schema-description">
                             <?php esc_html_e( 'Default author details applied when content needs an author and none is provided.', 'beseo' ); ?>
                         </p>
@@ -910,7 +912,7 @@ function be_schema_engine_render_schema_page() {
                                 </td>
                             </tr>
                         </table>
-                    </div>
+                    <?php be_schema_engine_admin_render_section_close(); ?>
                 </div>
 
                 <!-- OPTIONS TAB -->
@@ -924,8 +926,7 @@ function be_schema_engine_render_schema_page() {
                     <p class="description be-schema-description">
                         <?php esc_html_e( 'Control debug logging and dry-run behavior for schema output.', 'beseo' ); ?>
                     </p>
-                    <div class="be-schema-global-section">
-                        <h4 class="be-schema-section-title"><?php esc_html_e( 'Debug & Dry Run', 'beseo' ); ?></h4>
+                    <?php be_schema_engine_admin_render_section_open( __( 'Debug & Dry Run', 'beseo' ) ); ?>
                         <table class="form-table">
                             <tr>
                                 <th scope="row"><?php esc_html_e( 'Debug logging', 'beseo' ); ?></th>
@@ -943,7 +944,7 @@ function be_schema_engine_render_schema_page() {
                                 </td>
                             </tr>
                         </table>
-                    </div>
+                    <?php be_schema_engine_admin_render_section_close(); ?>
                 </div>
 
                 <?php include BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/schema-view-website.php'; ?>

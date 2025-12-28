@@ -57,21 +57,6 @@
                 color: #8c8f94;
             }
 
-            .be-schema-status-pill {
-                display: inline-block;
-                padding: 3px 8px;
-                border-radius: 999px;
-                font-size: 11px;
-                margin-right: 6px;
-                background: #e5f5e0;
-                color: #13610b;
-            }
-
-            .be-schema-status-pill.off {
-                background: #fbeaea;
-                color: #8a1f11;
-            }
-
             .be-schema-info-box {
                 margin-top: 12px;
                 padding: 12px;
@@ -186,33 +171,6 @@
 
             .be-schema-overview-panel-active {
                 display: block;
-            }
-
-            /* Global tab sections */
-            .be-schema-global-section {
-                border: 1px solid #ccd0d4;
-                border-radius: 6px;
-                padding: 15px;
-                margin-bottom: 16px;
-                background: #f9fafb;
-                color: #111;
-            }
-
-            .be-schema-global-section .form-table th {
-                white-space: nowrap;
-                width: 1%;
-            }
-
-            .be-schema-section-title {
-                display: block;
-                margin: -15px -15px 12px;
-                padding: 12px 15px;
-                background: #e1e4e8;
-                color: #111;
-            }
-
-            .be-schema-global-section h4 {
-                margin: 0;
             }
 
             .be-schema-global-divider {
@@ -512,26 +470,6 @@
 
             .be-schema-honorific-field input[type="text"] {
                 width: 180px;
-            }
-
-            .be-schema-status-pill {
-                display: inline-block;
-                padding: 3px 8px;
-                border-radius: 999px;
-                font-size: 11px;
-                margin-right: 6px;
-                background: #e5f5e0;
-                color: #13610b;
-            }
-
-            .be-schema-status-pill.off {
-                background: #fbeaea;
-                color: #8a1f11;
-            }
-
-            .be-schema-status-pill.neutral {
-                background: #eef1f6;
-                color: #1f2d3d;
             }
 
             .be-schema-conditional-block.is-disabled {

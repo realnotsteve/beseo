@@ -23,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - be_schema_engine_render_social_media_page()
  */
 if ( defined( 'BE_SCHEMA_ENGINE_PLUGIN_DIR' ) ) {
+    require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/admin-ui.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-overview.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-schema.php';
     require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/page-social-media.php';

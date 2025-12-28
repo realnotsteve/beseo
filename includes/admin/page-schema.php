@@ -18,9 +18,16 @@ function be_schema_engine_enqueue_schema_assets() {
     $image_validation_enabled = isset( $settings['image_validation_enabled'] ) ? ( '1' === (string) $settings['image_validation_enabled'] ) : true;
 
     wp_enqueue_style(
+        'be-schema-admin-ui',
+        BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/css/admin-ui.css',
+        array(),
+        BE_SCHEMA_ENGINE_VERSION
+    );
+
+    wp_enqueue_style(
         'be-schema-admin',
         BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/css/schema.css',
-        array(),
+        array( 'be-schema-admin-ui' ),
         BE_SCHEMA_ENGINE_VERSION
     );
 

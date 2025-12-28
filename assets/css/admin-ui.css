@@ -1,0 +1,63 @@
+.be-schema-global-section {
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 16px;
+    background: #f9fafb;
+    color: #111;
+}
+
+.be-schema-global-section .form-table th {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.be-schema-section-title {
+    display: block;
+    margin: -15px -15px 12px;
+    padding: 12px 15px;
+    background: #e1e4e8;
+    color: #111;
+}
+
+.be-schema-global-section h4 {
+    margin: 0;
+}
+
+.be-schema-status-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    margin-right: 6px;
+    background: #e5f5e0;
+    color: #13610b;
+}
+
+.be-schema-status-pill.off {
+    background: #fbeaea;
+    color: #8a1f11;
+}
+
+.be-schema-status-pill.neutral {
+    background: #eef1f6;
+    color: #1f2d3d;
+}
+
+.be-schema-status-pill.beseo-status-pill {
+    margin-right: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    background-color: #31b355ff;
+    border: 1px solid #2a2a2aff;
+    color: #ffffffff;
+}
+
+.be-schema-status-pill.beseo-status-pill.off {
+    background-color: #b03e31ff;
+    border: 1px solid #2a2a2aff;
+    color: #ffffffff;
+}
