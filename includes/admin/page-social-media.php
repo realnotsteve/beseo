@@ -831,29 +831,6 @@ function be_schema_engine_render_social_media_page() {
                     </div>
                     <?php endif; ?>
 
-                    <div class="be-schema-social-section">
-                        <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Last Social Debug Snapshot', 'beseo' ); ?></h4>
-                        <?php
-                        $last_social = get_transient( 'be_social_last_debug' );
-                        if ( $last_social && isset( $last_social['snapshot'] ) ) :
-                            $last_social_time = isset( $last_social['time'] ) ? (int) $last_social['time'] : 0;
-                            ?>
-                            <p class="description be-schema-social-description" style="margin-top:0;">
-                                <?php
-                                if ( $last_social_time ) {
-                                    /* translators: %s: human time diff */
-                                    printf( esc_html__( 'Captured %s ago.', 'beseo' ), esc_html( human_time_diff( $last_social_time, time() ) ) );
-                                } else {
-                                    esc_html_e( 'Captured recently.', 'beseo' );
-                                }
-                                ?>
-                            </p>
-                            <pre class="be-schema-settings-snapshot-pre" style="max-height: 260px; overflow:auto;"><?php echo esc_html( wp_json_encode( $last_social['snapshot'], JSON_PRETTY_PRINT ) ); ?></pre>
-                        <?php else : ?>
-                            <p><em><?php esc_html_e( 'No social debug snapshot found. Enable debug to capture the next one.', 'beseo' ); ?></em></p>
-                        <?php endif; ?>
-                    </div>
-
                 </div>
 
                 <?php if ( ! $is_platforms ) : ?>
@@ -2034,7 +2011,7 @@ function be_schema_engine_render_social_media_page() {
                                     <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Tools', 'beseo' ); ?></h4>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Use Tester \u2192 Social Tests for Twitter Card validation and previews.',
+                                            'Use Analyser \u2192 Social Tests for Twitter Card validation and previews.',
                                             'beseo'
                                         ); ?>
                                     </p>

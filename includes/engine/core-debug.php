@@ -5,7 +5,7 @@
  * Responsible for:
  * - Central debug gating (WP_DEBUG + plugin flag / constant).
  * - Structured debug events.
- * - Optional JSON snapshots for schema/social engines.
+ * - Optional JSON log payloads for schema/social engines.
  * - Shutdown summary of graphs emitted / skipped by reason.
  *
  * @package BE_SEO
@@ -42,10 +42,6 @@ function be_schema_is_debug_enabled() {
 		$settings = be_schema_engine_get_settings();
 	} else {
 		$settings = get_option( 'be_schema_engine_settings', array() );
-	}
-
-	if ( ! empty( $settings['override_debug'] ) ) {
-		return true;
 	}
 
 	if ( ! empty( $settings['debug_enabled'] ) || ! empty( $settings['debug'] ) ) {
@@ -162,15 +158,6 @@ function be_schema_debug_collect( array $graph ) {
 		)
 	);
 
-	// Store last debug snapshot for admin display (24h).
-	set_transient(
-		'be_schema_last_debug_graph',
-		array(
-			'time'  => time(),
-			'graph' => $graph,
-		),
-		DAY_IN_SECONDS
-	);
 }
 
 /**

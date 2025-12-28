@@ -397,7 +397,7 @@ function be_schema_engine_render_overview_page() {
                         <h4><?php esc_html_e( 'Dev Workflow', 'beseo' ); ?></h4>
                         <ul>
                             <li><?php esc_html_e( 'Pre-commit auto-bumps version/changelog; commit message is auto-built from staged files (override with BESEO_COMMIT_MSG).', 'beseo' ); ?></li>
-                            <li><?php esc_html_e( 'Use Schema/Social dry-run toggles for safe testing; debug snapshots surface in Schema Snapshots and Social Dashboard when WP_DEBUG + Debug are on.', 'beseo' ); ?></li>
+                            <li><?php esc_html_e( 'Use Schema/Social dry-run toggles for safe testing; debug logs emit to error_log when WP_DEBUG + Debug are on.', 'beseo' ); ?></li>
                             <li><?php esc_html_e( 'Manual test checklist: see tests/README.md.', 'beseo' ); ?></li>
                             <li><?php esc_html_e( 'Notes live in beseo-devnotes.json; keep it updated when making changes.', 'beseo' ); ?></li>
                         </ul>

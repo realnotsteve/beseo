@@ -14,7 +14,7 @@
  *          - Featured image (preferred)
  *          - Social defaults from settings
  *          - Global default image (if configured)
- * - Provide structured debug snapshots when debug mode is enabled.
+ * - Provide structured debug logs when debug mode is enabled.
  *
  * NOTE:
  * - This module does NOT output JSON-LD.
@@ -482,15 +482,6 @@ function be_schema_output_social_meta() {
 		);
 
 		error_log( 'BE_SOCIAL_DEBUG ' . wp_json_encode( $debug_snapshot ) );
-
-		set_transient(
-			'be_social_last_debug',
-			array(
-				'time'     => time(),
-				'snapshot' => $debug_snapshot,
-			),
-			DAY_IN_SECONDS
-		);
 	}
 
 	if ( $og_dry_run || $twitter_dry_run ) {

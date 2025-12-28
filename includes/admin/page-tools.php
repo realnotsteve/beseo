@@ -600,7 +600,7 @@ function be_schema_engine_render_tools_page() {
     ?>
     <div class="wrap">
         <h1>
-            <?php echo $is_settings_submenu ? esc_html__( 'BE Schema Engine – Settings', 'beseo' ) : esc_html__( 'BE Schema Engine – Tester', 'beseo' ); ?>
+            <?php echo $is_settings_submenu ? esc_html__( 'BE Schema Engine – Settings', 'beseo' ) : esc_html__( 'BE Schema Engine – Analyser', 'beseo' ); ?>
         </h1>
         <style>
             .be-schema-help-accent {

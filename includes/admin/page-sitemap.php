@@ -866,66 +866,75 @@ function be_schema_engine_handle_sitemap_post() {
 add_action( 'admin_post_be_schema_generate_sitemap', 'be_schema_engine_handle_sitemap_post' );
 
 /**
- * Render preview UI (radios, select, iframe, textarea) for sitemaps.
+ * Render preview UI (radios, select, code blocks) for sitemaps.
  *
- * @param string $xml_output      The first XML sitemap content.
- * @param array  $written_urls    List of generated sitemap URLs.
+ * @param string $xml_output       The first XML sitemap content.
+ * @param array  $written_urls     List of generated sitemap URLs.
  * @param string $written_html_url HTML sitemap URL.
- * @param string $posted_mode     Requested preview mode (xml/html).
+ * @param string $posted_mode      Requested preview mode (xml/html).
+ * @param string $html_output      HTML sitemap content.
  */
 if ( ! function_exists( 'be_schema_engine_render_sitemap_preview_block' ) ) {
-    function be_schema_engine_render_sitemap_preview_block( $xml_output, $written_urls, $written_html_url, $posted_mode ) {
+    function be_schema_engine_render_sitemap_preview_block( $xml_output, $written_urls, $written_html_url, $posted_mode, $html_output ) {
         $has_xml   = ! empty( $xml_output ) || ! empty( $written_urls );
         $has_html  = ! empty( $written_html_url );
         $mode      = ( 'html' === $posted_mode && $has_html ) ? 'html' : 'xml';
         if ( ! $has_xml && $has_html ) {
             $mode = 'html';
         }
-        $default_src = ( 'html' === $mode && $has_html ) ? $written_html_url : ( $written_urls ? $written_urls[0] : '' );
+        $preview_source = '';
+        $preview_lang   = 'xml';
+        if ( 'html' === $mode && ! empty( $html_output ) ) {
+            $preview_source = $html_output;
+            $preview_lang   = 'html';
+        } elseif ( ! empty( $xml_output ) ) {
+            $preview_source = $xml_output;
+        }
+        $has_preview = ( '' !== $preview_source );
+        $has_raw     = ! empty( $xml_output );
+        $has_two     = $has_preview && $has_raw;
 
         ob_start();
         ?>
         <div class="beseo-sitemap-preview">
             <?php if ( $has_xml || $has_html ) : ?>
                 <div style="margin-top:10px;">
-                    <?php if ( $has_xml ) : ?>
-                        <label style="margin-right:12px;">
-                            <input type="radio" name="be_schema_sitemap_preview_mode" value="xml" <?php checked( 'xml', $mode ); ?> />
-                            <?php esc_html_e( 'XML sitemap', 'beseo' ); ?>
-                        </label>
-                    <?php endif; ?>
-                    <?php if ( $has_html ) : ?>
-                        <label>
-                            <input type="radio" name="be_schema_sitemap_preview_mode" value="html" <?php checked( 'html', $mode ); ?> />
-                            <?php esc_html_e( 'HTML sitemap (preview)', 'beseo' ); ?>
-                        </label>
-                    <?php endif; ?>
+                    <label style="margin-right:12px;">
+                        <input type="radio" name="be_schema_sitemap_preview_mode" value="xml" <?php checked( 'xml', $mode ); ?> <?php disabled( ! $has_xml ); ?> />
+                        <?php esc_html_e( 'XML sitemap', 'beseo' ); ?>
+                    </label>
+                    <label>
+                        <input type="radio" name="be_schema_sitemap_preview_mode" value="html" <?php checked( 'html', $mode ); ?> <?php disabled( ! $has_html ); ?> />
+                        <?php esc_html_e( 'HTML sitemap (preview)', 'beseo' ); ?>
+                    </label>
                 </div>
 
-                <?php if ( $written_urls ) : ?>
-                    <div style="margin:10px 0 8px;">
-                        <label for="be-schema-sitemap-iframe-select"><strong><?php esc_html_e( 'Choose sitemap file', 'beseo' ); ?></strong></label><br />
-                        <select id="be-schema-sitemap-iframe-select" class="regular-text" style="max-width:420px;">
-                            <?php foreach ( $written_urls as $url_item ) : ?>
-                                <option value="<?php echo esc_url( $url_item ); ?>"><?php echo esc_html( $url_item ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
+                <div class="beseo-sitemap-preview-grid<?php echo $has_two ? ' has-two' : ''; ?>" style="margin-top:10px;">
+                    <div>
+                        <?php if ( $written_urls ) : ?>
+                            <div style="margin:10px 0 8px;">
+                                <label for="be-schema-sitemap-iframe-select"><strong><?php esc_html_e( 'Choose sitemap file', 'beseo' ); ?></strong></label><br />
+                                <select id="be-schema-sitemap-iframe-select" class="regular-text" style="max-width:420px;">
+                                    <?php foreach ( $written_urls as $url_item ) : ?>
+                                        <option value="<?php echo esc_url( $url_item ); ?>"><?php echo esc_html( $url_item ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
 
-                <?php if ( $default_src ) : ?>
-                    <div style="margin-top:10px; border:1px solid #ccd0d4; background:#fff;">
-                        <iframe id="be-schema-sitemap-iframe"
-                                src="<?php echo esc_url( $default_src ); ?>"
-                                style="width:100%; min-height:320px; border:0;"></iframe>
+                        <?php if ( $preview_source ) : ?>
+                            <pre class="beseo-sitemap-code beseo-sitemap-code-left"><code id="be-schema-sitemap-preview-code" data-code-type="<?php echo esc_attr( $preview_lang ); ?>"><?php echo esc_html( $preview_source ); ?></code></pre>
+                        <?php else : ?>
+                            <p class="description" style="margin-top:8px;"><?php esc_html_e( 'Generate to preview your sitemap here.', 'beseo' ); ?></p>
+                        <?php endif; ?>
                     </div>
-                <?php else : ?>
-                    <p class="description" style="margin-top:8px;"><?php esc_html_e( 'Generate to preview your sitemap here.', 'beseo' ); ?></p>
-                <?php endif; ?>
 
-                <?php if ( $xml_output ) : ?>
-                    <textarea class="large-text code" rows="18" readonly style="margin-top:12px;"><?php echo esc_textarea( $xml_output ); ?></textarea>
-                <?php endif; ?>
+                    <?php if ( $xml_output ) : ?>
+                        <div class="beseo-sitemap-raw" style="margin-top:10px;">
+                            <pre class="beseo-sitemap-code beseo-sitemap-code-right"><code id="be-schema-sitemap-xml-code" data-code-type="xml"><?php echo esc_html( $xml_output ); ?></code></pre>
+                        </div>
+                    <?php endif; ?>
+                </div>
             <?php else : ?>
                 <p class="description" style="margin-top:8px;"><?php esc_html_e( 'Generate to preview your sitemap here.', 'beseo' ); ?></p>
             <?php endif; ?>
@@ -1179,105 +1188,9 @@ function be_schema_engine_render_sitemap_page() {
     <div class="wrap">
         <h1><?php esc_html_e( 'BE Schema Engine – Sitemap', 'beseo' ); ?></h1>
 
-        <?php if ( $notice ) : ?>
-            <div class="<?php echo esc_attr( $notice_class ); ?> notice is-dismissible">
-                <p><?php echo esc_html( $notice ); ?></p>
-                <?php if ( $written_urls ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'Sitemap URLs:', 'beseo' ); ?></strong>
-                    </p>
-                    <ul>
-                        <?php foreach ( $written_urls as $url_item ) : ?>
-                            <li><a href="<?php echo esc_url( $url_item ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url_item ); ?></a></li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php elseif ( $written_url ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'Public URL:', 'beseo' ); ?></strong>
-                        <a href="<?php echo esc_url( $written_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_url ); ?></a>
-                    </p>
-                <?php endif; ?>
-                <?php if ( $written_paths ) : ?>
-                    <p><strong><?php esc_html_e( 'File paths:', 'beseo' ); ?></strong></p>
-                    <ul>
-                        <?php foreach ( $written_paths as $path_item ) : ?>
-                            <li><code><?php echo esc_html( $path_item ); ?></code></li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php elseif ( $written_path ) : ?>
-                    <p><strong><?php esc_html_e( 'File path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_path ); ?></code></p>
-                <?php endif; ?>
-                <?php if ( $written_index_url ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'Sitemap index URL:', 'beseo' ); ?></strong>
-                        <a href="<?php echo esc_url( $written_index_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_index_url ); ?></a>
-                    </p>
-                <?php endif; ?>
-                <?php if ( $written_index_url ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'Friendly index URL:', 'beseo' ); ?></strong>
-                        <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( home_url( '/sitemap_index.xml' ) ); ?></a>
-                    </p>
-                <?php endif; ?>
-                <?php if ( $written_index_path ) : ?>
-                    <p><strong><?php esc_html_e( 'Sitemap index path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_index_path ); ?></code></p>
-                <?php endif; ?>
-                <?php if ( $written_index_url ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'Friendly URL:', 'beseo' ); ?></strong>
-                        <a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( home_url( '/sitemap.xml' ) ); ?></a>
-                    </p>
-                <?php endif; ?>
-                <?php if ( $written_html_url ) : ?>
-                    <p>
-                        <strong><?php esc_html_e( 'HTML URL:', 'beseo' ); ?></strong>
-                        <a href="<?php echo esc_url( $written_html_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_html_url ); ?></a>
-                    </p>
-                <?php endif; ?>
-                <?php if ( $written_html_path ) : ?>
-                    <p><strong><?php esc_html_e( 'HTML file path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_html_path ); ?></code></p>
-                <?php endif; ?>
-                <?php if ( $indexnow_results ) : ?>
-                    <p><strong><?php esc_html_e( 'IndexNow notifications:', 'beseo' ); ?></strong></p>
-                    <ul>
-                        <?php foreach ( $indexnow_results as $result ) : ?>
-                            <li>
-                                <?php echo esc_html( $result['endpoint'] ); ?> –
-                                <?php echo esc_html( $result['status'] ); ?>:
-                                <?php echo esc_html( $result['message'] ); ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-                <?php if ( $google_results ) : ?>
-                    <p><strong><?php esc_html_e( 'Google notifications:', 'beseo' ); ?></strong></p>
-                    <ul>
-                        <?php foreach ( $google_results as $result ) : ?>
-                            <li>
-                                <?php echo esc_html( $result['target'] ); ?> –
-                                <?php echo esc_html( $result['status'] ); ?>:
-                                <?php echo esc_html( $result['message'] ); ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-
         <p class="description">
             <?php esc_html_e( 'Generate XML/HTML sitemaps for selected content, with optional pings to search engines.', 'beseo' ); ?>
         </p>
-        <p class="description">
-            <?php esc_html_e( 'Helpful links:', 'beseo' ); ?>
-        </p>
-        <ul style="margin-left:18px; list-style: disc;">
-            <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Search Console', 'beseo' ); ?></a></li>
-            <li><a href="https://developers.google.com/search/blog" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Search Blog', 'beseo' ); ?></a></li>
-            <li><a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Bing Webmaster Tools', 'beseo' ); ?></a></li>
-            <li><a href="https://blogs.bing.com/webmaster" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft Bing Blog', 'beseo' ); ?></a></li>
-            <li><a href="https://www.sitemaps.org/protocol.html" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Sitemaps Protocol', 'beseo' ); ?></a></li>
-            <li><a href="https://www.indexnow.org/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'IndexNow Protocol', 'beseo' ); ?></a></li>
-        </ul>
 
         <style>
             .beseo-sitemap-section {
@@ -1329,54 +1242,277 @@ function be_schema_engine_render_sitemap_page() {
                 border: 1px solid #2a2a2aff;
                 color: #ffffffff;
             }
+            .beseo-sitemap-dashboard-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 16px;
+                align-items: start;
+            }
+            .beseo-sitemap-panel {
+                display: none;
+                margin-top: 16px;
+            }
+            .beseo-sitemap-panel.active {
+                display: block;
+            }
+            .beseo-sitemap-tabs {
+                margin-top: 16px;
+            }
+            .beseo-sitemap-results {
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                background: #f8fafc;
+                padding: 10px 12px;
+            }
+            .beseo-sitemap-results.is-success {
+                border-color: #b6e1c5;
+                background: #effaf4;
+            }
+            .beseo-sitemap-results.is-error {
+                border-color: #f3b2b2;
+                background: #fff4f4;
+            }
+            .beseo-sitemap-preview-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 12px;
+            }
+            .beseo-sitemap-preview-grid.has-two {
+                align-items: stretch;
+            }
+            .beseo-sitemap-preview-grid.has-two > div {
+                display: flex;
+                flex-direction: column;
+            }
+            .beseo-sitemap-preview-grid.has-two .beseo-sitemap-code {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+            }
+            .beseo-sitemap-code {
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+                background: #fff;
+                padding: 10px;
+                margin: 10px 0 0;
+                font-family: Menlo, Consolas, Monaco, "Liberation Mono", monospace;
+                font-size: 12px;
+                line-height: 1.5;
+                overflow: auto;
+                white-space: pre;
+                color: #111827;
+                min-height: 220px;
+            }
+            .beseo-sitemap-preview-grid.has-two .beseo-sitemap-code {
+                min-height: 320px;
+            }
+            .beseo-sitemap-code code {
+                display: block;
+                white-space: pre;
+            }
+            .beseo-code-tag {
+                color: #1d4ed8;
+                font-weight: 600;
+            }
+            .beseo-code-attr {
+                color: #7c3aed;
+            }
+            .beseo-code-value {
+                color: #0f766e;
+            }
+            .beseo-code-punct {
+                color: #334155;
+            }
+            .beseo-code-comment {
+                color: #6b7280;
+                font-style: italic;
+            }
+            .beseo-sitemap-code-right .beseo-code-tag {
+                color: #0f766e;
+            }
+            .beseo-sitemap-code-right .beseo-code-attr {
+                color: #b45309;
+            }
+            .beseo-sitemap-code-right .beseo-code-value {
+                color: #b91c1c;
+            }
         </style>
 
         <form method="get" id="be-schema-sitemap-form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return false;">
             <?php wp_nonce_field( 'be_schema_generate_sitemap', 'be_schema_sitemap_nonce' ); ?>
             <input type="hidden" name="action" value="be_schema_generate_sitemap" />
+            <h2 class="nav-tab-wrapper beseo-sitemap-tabs">
+                <a href="#be-schema-sitemap-dashboard" class="nav-tab nav-tab-active" data-sitemap-tab="dashboard"><?php esc_html_e( 'Dashboard', 'beseo' ); ?></a>
+                <a href="#be-schema-sitemap-inclusion" class="nav-tab" data-sitemap-tab="inclusion"><?php esc_html_e( 'Inclusion', 'beseo' ); ?></a>
+                <a href="#be-schema-sitemap-crawl" class="nav-tab" data-sitemap-tab="crawl"><?php esc_html_e( 'Crawl Hints', 'beseo' ); ?></a>
+                <a href="#be-schema-sitemap-notifications" class="nav-tab" data-sitemap-tab="notifications"><?php esc_html_e( 'Notifications', 'beseo' ); ?></a>
+                <a href="#be-schema-sitemap-links" class="nav-tab" data-sitemap-tab="links"><?php esc_html_e( 'External Links', 'beseo' ); ?></a>
+            </h2>
             <div class="beseo-sitemap-sections">
-                <div class="beseo-sitemap-section">
-                    <h3 class="beseo-section-title"><?php esc_html_e( 'Status', 'beseo' ); ?></h3>
-                    <p class="be-schema-status-row">
-                        <span class="be-schema-status-pill <?php echo esc_attr( $sitemap_status_class ); ?>">
+                <div id="be-schema-sitemap-dashboard" class="beseo-sitemap-panel active" data-sitemap-panel="dashboard">
+                    <div class="beseo-sitemap-section">
+                    <h3 class="beseo-section-title"><?php esc_html_e( 'Dashboard', 'beseo' ); ?></h3>
+                    <div class="beseo-sitemap-dashboard-grid">
+                        <div>
+                            <h4 style="margin:4px 0 8px;"><?php esc_html_e( 'Preview & generate', 'beseo' ); ?></h4>
+                            <p class="description" style="margin-top:-6px;">
+                                <?php esc_html_e( 'Generation runs in the background and reloads this page with the results—no form resubmit prompt.', 'beseo' ); ?>
+                            </p>
+                            <div id="be-schema-sitemap-inline-error" class="notice notice-error" style="display:none; margin-top:10px;">
+                                <p style="margin: 6px 0 8px;"></p>
+                            </div>
+                            <p>
+                                <button type="button" class="button button-primary" id="be-schema-sitemap-generate-btn">
+                                    <?php esc_html_e( 'Generate Sitemap', 'beseo' ); ?>
+                                </button>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="be-schema-status-row">
+                                <span class="be-schema-status-pill <?php echo esc_attr( $sitemap_status_class ); ?>">
+                                    <?php
+                                    printf(
+                                        esc_html__( 'Sitemap: %s', 'beseo' ),
+                                        esc_html( $sitemap_status_label )
+                                    );
+                                    ?>
+                                </span>
+                            </p>
+                            <p class="description">
+                                <?php if ( $sitemap_generated_on ) : ?>
+                                    <?php
+                                    printf(
+                                        esc_html__( 'Last generated: %s', 'beseo' ),
+                                        esc_html( $sitemap_generated_on )
+                                    );
+                                    ?>
+                                <?php else : ?>
+                                    <?php esc_html_e( 'No sitemap has been generated yet.', 'beseo' ); ?>
+                                <?php endif; ?>
+                                <?php if ( $sitemap_status_note ) : ?>
+                                    <br /><?php echo esc_html( $sitemap_status_note ); ?>
+                                <?php endif; ?>
+                            </p>
+                            <p class="description">
+                                <a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
+                                    <?php esc_html_e( 'Open /sitemap.xml', 'beseo' ); ?>
+                                </a>
+                                | <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
+                                    <?php esc_html_e( 'Open /sitemap_index.xml', 'beseo' ); ?>
+                                </a>
+                                <?php if ( $sitemap_latest_url ) : ?>
+                                    | <a href="<?php echo esc_url( $sitemap_latest_url ); ?>" target="_blank" rel="noopener noreferrer">
+                                        <?php esc_html_e( 'Open latest file', 'beseo' ); ?>
+                                    </a>
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                    </div>
+                    </div>
+                    <?php if ( $notice ) : ?>
+                        <div class="beseo-sitemap-section">
+                            <h3 class="beseo-section-title"><?php esc_html_e( 'Generation Results', 'beseo' ); ?></h3>
                             <?php
-                            printf(
-                                esc_html__( 'Sitemap: %s', 'beseo' ),
-                                esc_html( $sitemap_status_label )
-                            );
+                            $results_class = 'beseo-sitemap-results';
+                            if ( 'error' === $notice_class ) {
+                                $results_class .= ' is-error';
+                            } else {
+                                $results_class .= ' is-success';
+                            }
                             ?>
-                        </span>
-                    </p>
-                    <p class="description">
-                        <?php if ( $sitemap_generated_on ) : ?>
-                            <?php
-                            printf(
-                                esc_html__( 'Last generated: %s', 'beseo' ),
-                                esc_html( $sitemap_generated_on )
-                            );
-                            ?>
-                        <?php else : ?>
-                            <?php esc_html_e( 'No sitemap has been generated yet.', 'beseo' ); ?>
-                        <?php endif; ?>
-                        <?php if ( $sitemap_status_note ) : ?>
-                            <br /><?php echo esc_html( $sitemap_status_note ); ?>
-                        <?php endif; ?>
-                    </p>
-                    <p class="description">
-                        <a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e( 'Open /sitemap.xml', 'beseo' ); ?>
-                        </a>
-                        | <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e( 'Open /sitemap_index.xml', 'beseo' ); ?>
-                        </a>
-                        <?php if ( $sitemap_latest_url ) : ?>
-                            | <a href="<?php echo esc_url( $sitemap_latest_url ); ?>" target="_blank" rel="noopener noreferrer">
-                                <?php esc_html_e( 'Open latest file', 'beseo' ); ?>
-                            </a>
-                        <?php endif; ?>
-                    </p>
+                            <div class="<?php echo esc_attr( $results_class ); ?>">
+                                <p><?php echo esc_html( $notice ); ?></p>
+                                <?php if ( $written_urls ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'Sitemap URLs:', 'beseo' ); ?></strong>
+                                    </p>
+                                    <ul>
+                                        <?php foreach ( $written_urls as $url_item ) : ?>
+                                            <li><a href="<?php echo esc_url( $url_item ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url_item ); ?></a></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php elseif ( $written_url ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'Public URL:', 'beseo' ); ?></strong>
+                                        <a href="<?php echo esc_url( $written_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_url ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                                <?php if ( $written_paths ) : ?>
+                                    <p><strong><?php esc_html_e( 'File paths:', 'beseo' ); ?></strong></p>
+                                    <ul>
+                                        <?php foreach ( $written_paths as $path_item ) : ?>
+                                            <li><code><?php echo esc_html( $path_item ); ?></code></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php elseif ( $written_path ) : ?>
+                                    <p><strong><?php esc_html_e( 'File path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_path ); ?></code></p>
+                                <?php endif; ?>
+                                <?php if ( $written_index_url ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'Sitemap index URL:', 'beseo' ); ?></strong>
+                                        <a href="<?php echo esc_url( $written_index_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_index_url ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                                <?php if ( $written_index_url ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'Friendly index URL:', 'beseo' ); ?></strong>
+                                        <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( home_url( '/sitemap_index.xml' ) ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                                <?php if ( $written_index_path ) : ?>
+                                    <p><strong><?php esc_html_e( 'Sitemap index path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_index_path ); ?></code></p>
+                                <?php endif; ?>
+                                <?php if ( $written_index_url ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'Friendly URL:', 'beseo' ); ?></strong>
+                                        <a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( home_url( '/sitemap.xml' ) ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                                <?php if ( $written_html_url ) : ?>
+                                    <p>
+                                        <strong><?php esc_html_e( 'HTML URL:', 'beseo' ); ?></strong>
+                                        <a href="<?php echo esc_url( $written_html_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_html_url ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                                <?php if ( $written_html_path ) : ?>
+                                    <p><strong><?php esc_html_e( 'HTML file path:', 'beseo' ); ?></strong> <code><?php echo esc_html( $written_html_path ); ?></code></p>
+                                <?php endif; ?>
+                                <?php if ( $indexnow_results ) : ?>
+                                    <p><strong><?php esc_html_e( 'IndexNow notifications:', 'beseo' ); ?></strong></p>
+                                    <ul>
+                                        <?php foreach ( $indexnow_results as $result ) : ?>
+                                            <li>
+                                                <?php echo esc_html( $result['endpoint'] ); ?> –
+                                                <?php echo esc_html( $result['status'] ); ?>:
+                                                <?php echo esc_html( $result['message'] ); ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                                <?php if ( $google_results ) : ?>
+                                    <p><strong><?php esc_html_e( 'Google notifications:', 'beseo' ); ?></strong></p>
+                                    <ul>
+                                        <?php foreach ( $google_results as $result ) : ?>
+                                            <li>
+                                                <?php echo esc_html( $result['target'] ); ?> –
+                                                <?php echo esc_html( $result['status'] ); ?>:
+                                                <?php echo esc_html( $result['message'] ); ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    <div class="beseo-sitemap-section">
+                    <h3 class="beseo-section-title"><?php esc_html_e( 'Preview Results', 'beseo' ); ?></h3>
+                    <?php
+                        echo be_schema_engine_render_sitemap_preview_block( $xml_output, $written_urls, $written_html_url, $preview_mode_request, $html_output ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                    ?>
+                    </div>
                 </div>
-                <div class="beseo-sitemap-section">
+                <div id="be-schema-sitemap-inclusion" class="beseo-sitemap-panel" data-sitemap-panel="inclusion">
+                    <div class="beseo-sitemap-section">
                     <h3 class="beseo-section-title"><?php esc_html_e( 'Inclusion', 'beseo' ); ?></h3>
                     <table class="form-table">
                         <tbody>
@@ -1452,9 +1588,11 @@ function be_schema_engine_render_sitemap_page() {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div class="beseo-sitemap-section">
+                <div id="be-schema-sitemap-crawl" class="beseo-sitemap-panel" data-sitemap-panel="crawl">
+                    <div class="beseo-sitemap-section">
                     <h3 class="beseo-section-title"><?php esc_html_e( 'Crawl hints', 'beseo' ); ?></h3>
                     <table class="form-table">
                         <tbody>
@@ -1522,9 +1660,11 @@ function be_schema_engine_render_sitemap_page() {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div class="beseo-sitemap-section">
+                <div id="be-schema-sitemap-notifications" class="beseo-sitemap-panel" data-sitemap-panel="notifications">
+                    <div class="beseo-sitemap-section">
                     <h3 class="beseo-section-title"><?php esc_html_e( 'Notifications', 'beseo' ); ?></h3>
                     <table class="form-table">
                         <tbody>
@@ -1578,24 +1718,24 @@ function be_schema_engine_render_sitemap_page() {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div class="beseo-sitemap-section">
-                    <h3 class="beseo-section-title"><?php esc_html_e( 'Preview & generate', 'beseo' ); ?></h3>
-                    <p class="description" style="margin-top:-6px;">
-                        <?php esc_html_e( 'Generation runs in the background and reloads this page with the results—no form resubmit prompt.', 'beseo' ); ?>
-                    </p>
-                    <div id="be-schema-sitemap-inline-error" class="notice notice-error" style="display:none; margin-top:10px;">
-                        <p style="margin: 6px 0 8px;"></p>
+                <div id="be-schema-sitemap-links" class="beseo-sitemap-panel" data-sitemap-panel="links">
+                    <div class="beseo-sitemap-section">
+                        <h3 class="beseo-section-title"><?php esc_html_e( 'External Links', 'beseo' ); ?></h3>
+                        <p class="description">
+                            <?php esc_html_e( 'Helpful links:', 'beseo' ); ?>
+                        </p>
+                        <ul style="margin-left:18px; list-style: disc;">
+                            <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Search Console', 'beseo' ); ?></a></li>
+                            <li><a href="https://developers.google.com/search/blog" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Search Blog', 'beseo' ); ?></a></li>
+                            <li><a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Bing Webmaster Tools', 'beseo' ); ?></a></li>
+                            <li><a href="https://blogs.bing.com/webmaster" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft Bing Blog', 'beseo' ); ?></a></li>
+                            <li><a href="https://www.sitemaps.org/protocol.html" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Sitemaps Protocol', 'beseo' ); ?></a></li>
+                            <li><a href="https://www.indexnow.org/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'IndexNow Protocol', 'beseo' ); ?></a></li>
+                        </ul>
                     </div>
-                    <p>
-                        <button type="button" class="button button-primary" id="be-schema-sitemap-generate-btn">
-                            <?php esc_html_e( 'Generate Sitemap', 'beseo' ); ?>
-                        </button>
-                    </p>
-                    <?php
-                        echo be_schema_engine_render_sitemap_preview_block( $xml_output, $written_urls, $written_html_url, $preview_mode_request ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                    ?>
                 </div>
 
             </div>
@@ -1604,10 +1744,14 @@ function be_schema_engine_render_sitemap_page() {
     </div>
     <script>
         (function() {
+            var tabLinks = document.querySelectorAll('.beseo-sitemap-tabs a[data-sitemap-tab]');
+            var tabPanels = document.querySelectorAll('.beseo-sitemap-panel');
             var selectEl = document.getElementById('be-schema-sitemap-iframe-select');
-            var iframeEl = document.getElementById('be-schema-sitemap-iframe');
+            var previewCodeEl = document.getElementById('be-schema-sitemap-preview-code');
+            var xmlCodeEl = document.getElementById('be-schema-sitemap-xml-code');
             var radios   = document.getElementsByName('be_schema_sitemap_preview_mode');
             var htmlUrl  = <?php echo wp_json_encode( $written_html_url ); ?>;
+            var htmlSource = <?php echo wp_json_encode( $html_output ); ?>;
             var ajaxUrl  = window.ajaxurl || <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
             var formEl   = document.getElementById('be-schema-sitemap-form');
             var trigger  = document.getElementById('be-schema-sitemap-generate-btn');
@@ -1615,23 +1759,297 @@ function be_schema_engine_render_sitemap_page() {
             var inlineErr = document.getElementById('be-schema-sitemap-inline-error');
             var generating = false;
 
-            if (selectEl) {
-                selectEl.addEventListener('change', function() {
-                    if (iframeEl) {
-                        iframeEl.src = selectEl.value || '';
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, function(match) {
+                    switch (match) {
+                        case '&':
+                            return '&amp;';
+                        case '<':
+                            return '&lt;';
+                        case '>':
+                            return '&gt;';
+                        case '"':
+                            return '&quot;';
+                        default:
+                            return '&#039;';
                     }
                 });
             }
-            if (radios && radios.length && iframeEl) {
+
+            function formatMarkup(markup) {
+                if (!markup) {
+                    return '';
+                }
+                var text = String(markup).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+                if (!text) {
+                    return '';
+                }
+                var tokens = text.split(/(<[^>]+>)/g).filter(function(token) {
+                    return token !== '';
+                });
+                var lines = [];
+                var indent = 0;
+                for (var i = 0; i < tokens.length; i++) {
+                    var token = tokens[i];
+                    if (token.trim() === '') {
+                        continue;
+                    }
+                    var isTag = token.charAt(0) === '<' && token.charAt(token.length - 1) === '>';
+                    var isClosing = /^<\//.test(token);
+                    var isSelfClosing = /\/>$/.test(token) || /^<\?/.test(token) || /^<!/.test(token);
+                    if (isClosing) {
+                        indent = Math.max(indent - 1, 0);
+                    }
+                    var line = token;
+                    if (!isTag) {
+                        line = token.trim();
+                        if (!line) {
+                            continue;
+                        }
+                    }
+                    lines.push(new Array(indent + 1).join('  ') + line);
+                    if (isTag && !isClosing && !isSelfClosing) {
+                        indent++;
+                    }
+                }
+                return lines.join('\n');
+            }
+
+            function highlightTag(token) {
+                if (/^<!--/.test(token) || /^<\?/.test(token) || /^<!/.test(token)) {
+                    return '<span class="beseo-code-comment">' + escapeHtml(token) + '</span>';
+                }
+                var isClosing = /^<\//.test(token);
+                var content = token.slice(1, -1);
+                if (isClosing) {
+                    content = content.slice(1);
+                }
+                if (/\/\s*$/.test(content)) {
+                    content = content.replace(/\/\s*$/, '');
+                }
+                var trimmed = content.trim();
+                var spaceIndex = trimmed.search(/\s/);
+                var tagName = spaceIndex === -1 ? trimmed : trimmed.slice(0, spaceIndex);
+                var attrs = spaceIndex === -1 ? '' : trimmed.slice(spaceIndex);
+                var attrOutput = '';
+                var lastIndex = 0;
+                var attrRe = /([^\s=]+)(\s*=\s*)(\"[^\"]*\"|'[^']*'|[^\s\"'>]+)/g;
+                var match;
+                while ((match = attrRe.exec(attrs))) {
+                    attrOutput += escapeHtml(attrs.slice(lastIndex, match.index));
+                    attrOutput += '<span class="beseo-code-attr">' + escapeHtml(match[1]) + '</span>';
+                    attrOutput += '<span class="beseo-code-punct">' + escapeHtml(match[2]) + '</span>';
+                    attrOutput += '<span class="beseo-code-value">' + escapeHtml(match[3]) + '</span>';
+                    lastIndex = attrRe.lastIndex;
+                }
+                attrOutput += escapeHtml(attrs.slice(lastIndex));
+                var openPunct = '<span class="beseo-code-punct">&lt;' + (isClosing ? '/' : '') + '</span>';
+                var closePunct = '<span class="beseo-code-punct">' + (token.slice(-2) === '/>' ? '/&gt;' : '&gt;') + '</span>';
+                return openPunct + '<span class="beseo-code-tag">' + escapeHtml(tagName) + '</span>' + attrOutput + closePunct;
+            }
+
+            function highlightMarkup(markup) {
+                if (!markup) {
+                    return '';
+                }
+                var tokens = String(markup).split(/(<[^>]+>)/g);
+                var output = '';
+                for (var i = 0; i < tokens.length; i++) {
+                    var token = tokens[i];
+                    if (!token) {
+                        continue;
+                    }
+                    if (token.charAt(0) === '<' && token.charAt(token.length - 1) === '>') {
+                        output += highlightTag(token);
+                    } else {
+                        output += escapeHtml(token);
+                    }
+                }
+                return output;
+            }
+
+            function applyHighlight(codeEl, raw, type) {
+                if (!codeEl) {
+                    return;
+                }
+                var source = raw || '';
+                codeEl.setAttribute('data-raw', source);
+                if (type) {
+                    codeEl.setAttribute('data-code-type', type);
+                }
+                if (!source) {
+                    codeEl.innerHTML = '';
+                    return;
+                }
+                var formatted = formatMarkup(source);
+                if (!formatted) {
+                    formatted = source;
+                }
+                codeEl.innerHTML = highlightMarkup(formatted);
+            }
+
+            function initCodeBlock(codeEl) {
+                if (!codeEl) {
+                    return '';
+                }
+                var raw = codeEl.textContent || '';
+                applyHighlight(codeEl, raw, codeEl.getAttribute('data-code-type'));
+                return raw;
+            }
+
+            var previewRaw = initCodeBlock(previewCodeEl);
+            var xmlRaw = initCodeBlock(xmlCodeEl);
+            var xmlSource = xmlRaw;
+            if (!htmlSource && previewCodeEl && previewCodeEl.getAttribute('data-code-type') === 'html') {
+                htmlSource = previewRaw;
+            }
+            if (!xmlSource && previewCodeEl && previewCodeEl.getAttribute('data-code-type') === 'xml') {
+                xmlSource = previewRaw;
+            }
+            var previewCache = {};
+            var xmlSourceUrl = selectEl ? selectEl.value : '';
+            if (xmlSource && xmlSourceUrl) {
+                previewCache[xmlSourceUrl] = xmlSource;
+            }
+
+            function currentMode() {
+                var mode = 'xml';
+                if (!radios || !radios.length) {
+                    return mode;
+                }
+                for (var i = 0; i < radios.length; i++) {
+                    if (radios[i].checked) {
+                        mode = radios[i].value;
+                        break;
+                    }
+                }
+                return mode;
+            }
+
+            function setPreviewSource(source, type) {
+                if (!previewCodeEl) {
+                    return;
+                }
+                applyHighlight(previewCodeEl, source, type);
+            }
+
+            function fetchSource(url, callback) {
+                if (!url || !window.fetch) {
+                    callback(new Error('missing'));
+                    return;
+                }
+                fetch(url, { credentials: 'same-origin' }).then(function(resp) {
+                    if (!resp.ok) {
+                        throw new Error('HTTP ' + resp.status);
+                    }
+                    return resp.text();
+                }).then(function(text) {
+                    callback(null, text);
+                }).catch(function() {
+                    callback(new Error('fetch failed'));
+                });
+            }
+
+            function loadPreviewFromUrl(url, type) {
+                if (!url) {
+                    return;
+                }
+                if (previewCache[url]) {
+                    setPreviewSource(previewCache[url], type);
+                    return;
+                }
+                fetchSource(url, function(err, text) {
+                    if (err) {
+                        return;
+                    }
+                    previewCache[url] = text;
+                    setPreviewSource(text, type);
+                });
+            }
+
+            function syncPreviewToMode(mode) {
+                if (!previewCodeEl) {
+                    return;
+                }
+                if (mode === 'html') {
+                    if (htmlSource) {
+                        setPreviewSource(htmlSource, 'html');
+                    } else if (htmlUrl) {
+                        loadPreviewFromUrl(htmlUrl, 'html');
+                    }
+                    return;
+                }
+                if (selectEl && selectEl.value) {
+                    if (previewCache[selectEl.value]) {
+                        setPreviewSource(previewCache[selectEl.value], 'xml');
+                        return;
+                    }
+                    loadPreviewFromUrl(selectEl.value, 'xml');
+                    return;
+                }
+                if (xmlSource) {
+                    setPreviewSource(xmlSource, 'xml');
+                }
+            }
+
+            function activateTab(key) {
+                for (var i = 0; i < tabLinks.length; i++) {
+                    tabLinks[i].classList.toggle('nav-tab-active', tabLinks[i].getAttribute('data-sitemap-tab') === key);
+                }
+                for (var j = 0; j < tabPanels.length; j++) {
+                    tabPanels[j].classList.toggle('active', tabPanels[j].getAttribute('data-sitemap-panel') === key);
+                }
+            }
+
+            function keyFromHash() {
+                if (!window.location.hash) {
+                    return '';
+                }
+                var hash = window.location.hash.substring(1);
+                var panel = document.getElementById(hash);
+                if (panel && panel.getAttribute('data-sitemap-panel')) {
+                    return panel.getAttribute('data-sitemap-panel');
+                }
+                return '';
+            }
+
+            if (tabLinks.length && tabPanels.length) {
+                for (var t = 0; t < tabLinks.length; t++) {
+                    tabLinks[t].addEventListener('click', function(event) {
+                        event.preventDefault();
+                        var key = this.getAttribute('data-sitemap-tab');
+                        activateTab(key);
+                        var panel = document.querySelector('.beseo-sitemap-panel[data-sitemap-panel="' + key + '"]');
+                        if (panel && panel.id) {
+                            if (window.history && window.history.replaceState) {
+                                window.history.replaceState({}, document.title, '#' + panel.id);
+                            } else {
+                                window.location.hash = panel.id;
+                            }
+                        }
+                    });
+                }
+                var initialKey = keyFromHash();
+                if (!initialKey && tabLinks[0]) {
+                    initialKey = tabLinks[0].getAttribute('data-sitemap-tab');
+                }
+                if (initialKey) {
+                    activateTab(initialKey);
+                }
+            }
+
+            if (selectEl) {
+                selectEl.addEventListener('change', function() {
+                    xmlSourceUrl = selectEl.value;
+                    if (currentMode() === 'xml') {
+                        loadPreviewFromUrl(selectEl.value, 'xml');
+                    }
+                });
+            }
+            if (radios && radios.length) {
                 for (var i = 0; i < radios.length; i++) {
                     radios[i].addEventListener('change', function() {
-                        if (this.value === 'html' && htmlUrl) {
-                            iframeEl.src = htmlUrl;
-                            return;
-                        }
-                        if (selectEl) {
-                            iframeEl.src = selectEl.value || iframeEl.src;
-                        }
+                        syncPreviewToMode(this.value);
                     });
                 }
             }

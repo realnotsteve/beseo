@@ -8,7 +8,7 @@
  *  - Schema       (main configuration page)
  *  - Social Media (Open Graph & Twitter Cards)
  *  - Sitemap      (placeholder for XML/HTML sitemap tools)
- *  - Tester       (placeholder for future utilities / validators)
+ *  - Analyser     (utilities / validators hub)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -94,6 +94,16 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_sitemap_page'
     );
 
+    // "Analyser" submenu.
+    add_submenu_page(
+        $top_level_slug,
+        __( 'Analyser', 'beseo' ),
+        __( 'Analyser', 'beseo' ),
+        $capability,
+        'beseo-tools',
+        'be_schema_engine_render_tools_page'
+    );
+
     // "Settings" submenu (shortcut into Tools for quick toggles).
     add_submenu_page(
         $top_level_slug,
@@ -102,26 +112,6 @@ function be_schema_engine_register_admin_menu() {
         $capability,
         'beseo-settings',
         'be_schema_engine_render_tools_page'
-    );
-
-    // "Tester" submenu (simple placeholder for now).
-    add_submenu_page(
-        $top_level_slug,
-        __( 'Tester', 'beseo' ),
-        __( 'Tester', 'beseo' ),
-        $capability,
-        'beseo-tools',
-        'be_schema_engine_render_tools_page'
-    );
-
-    // "Analyser" submenu.
-    add_submenu_page(
-        $top_level_slug,
-        __( 'Analyser', 'beseo' ),
-        __( 'Analyser', 'beseo' ),
-        $capability,
-        'beseo-analyser',
-        'be_schema_engine_render_analyser_page'
     );
 }
 add_action( 'admin_menu', 'be_schema_engine_register_admin_menu' );
