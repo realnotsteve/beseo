@@ -970,6 +970,29 @@ document.addEventListener('DOMContentLoaded', function () {
                         return playfairProfiles.indexOf(profile) !== -1 ? profile : playfairDefaultProfile;
                     }
 
+                    function shouldForceHttp(hostname) {
+                        if (!hostname) {
+                            return false;
+                        }
+                        if (hostname === 'localhost' || hostname.slice(-6) === '.local') {
+                            return true;
+                        }
+                        if (!/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+                            return false;
+                        }
+                        var parts = hostname.split('.').map(function (part) { return parseInt(part, 10); });
+                        if (parts[0] === 10 || parts[0] === 127) {
+                            return true;
+                        }
+                        if (parts[0] === 192 && parts[1] === 168) {
+                            return true;
+                        }
+                        if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+                            return true;
+                        }
+                        return false;
+                    }
+
                     function mapToLocalTarget(value) {
                         if (!value || !homeUrl) {
                             return value;
@@ -980,10 +1003,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         try {
                             var parsed = new URL(value);
                             var local = new URL(homeUrl);
-                            if (parsed.host === local.host) {
-                                return value;
+                            var localOrigin = local.origin;
+                            if (local.protocol === 'https:' && shouldForceHttp(local.hostname)) {
+                                localOrigin = 'http://' + local.host;
                             }
-                            return local.origin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                            if (parsed.host === local.host) {
+                                return localOrigin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                            }
+                            return localOrigin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
                         } catch (err) {
                             return value;
                         }
@@ -1551,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         return entries.map(function (entry, index) {
                             var parsed = entry && entry.parsed ? entry.parsed : safeParseJson(entry ? entry.raw : '');
-                            var raw = entry && entry.raw ? entry.raw : (parsed ? JSON.stringify(parsed, null, 2) : '');
+                            var raw = parsed ? JSON.stringify(parsed, null, 2) : (entry && entry.raw ? entry.raw : '');
                             return {
                                 index: index,
                                 raw: raw || '',

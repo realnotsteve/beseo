@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.60] - 2025-12-27
+Summary: Devnotes + engine.
+
+### Changed
+- Touched areas: devnotes, engine.
+
+### Files
+- assets/js/schema.js
+- beseo-devnotes.json
+- includes/admin/analyser-service.php
+- includes/admin/partials/playfair-capture-script.php
+- includes/engine/core-helpers.php
+
+
 ## [2.1.59] - 2025-12-27
 Summary: Devnotes + social admin + engine.
 

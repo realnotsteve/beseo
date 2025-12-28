@@ -67,6 +67,29 @@
             return Array.isArray(list) ? list.length : 0;
         }
 
+        function shouldForceHttp(hostname) {
+            if (!hostname) {
+                return false;
+            }
+            if (hostname === 'localhost' || hostname.slice(-6) === '.local') {
+                return true;
+            }
+            if (!/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+                return false;
+            }
+            var parts = hostname.split('.').map(function (part) { return parseInt(part, 10); });
+            if (parts[0] === 10 || parts[0] === 127) {
+                return true;
+            }
+            if (parts[0] === 192 && parts[1] === 168) {
+                return true;
+            }
+            if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+                return true;
+            }
+            return false;
+        }
+
         function mapToLocalTarget(value, homeUrl) {
             if (!value || !homeUrl) {
                 return value;
@@ -77,10 +100,14 @@
             try {
                 var parsed = new URL(value);
                 var local = new URL(homeUrl);
-                if (parsed.host === local.host) {
-                    return value;
+                var localOrigin = local.origin;
+                if (local.protocol === 'https:' && shouldForceHttp(local.hostname)) {
+                    localOrigin = 'http://' + local.host;
                 }
-                return local.origin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                if (parsed.host === local.host) {
+                    return localOrigin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
+                }
+                return localOrigin + (parsed.pathname || '/') + (parsed.search || '') + (parsed.hash || '');
             } catch (err) {
                 return value;
             }

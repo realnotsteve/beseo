@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.59",
+    "version": "2.1.60",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -524,6 +524,7 @@
     "Schema > Status now includes an Operation subtab for global output + Elementor toggles; Schema > Defaults replaces the Settings label; Options now hosts debug, dry-run, and image validation toggles.",
     "Schema Dashboard tab removed; Dashboard is now the first tab in the Schema submenu. Preview tab renamed to Tests.",
     "Schema > Tests now adds browser profile selection per output column and adds spacing above the Diff panel.",
+    "Schema > Tests JSON-LD view now pretty-prints the JSON-LD blocks for readability.",
     "Selector box now uses a two-row flex layout; the Analyser selector background matches the Schema Global Identity box while the Local toggle box matches the Overview tab background.",
     "Selector box now supports the include-posts toggle with Max Posts and a full-height Local column spanning both rows.",
     "Analyser > Overview selector now uses Local/Remote radio buttons instead of a single Local checkbox.",
@@ -551,7 +552,10 @@
     "Social engine now honors the per-network enable toggles: Open Graph output depends on social_enable_og, Twitter Cards on social_enable_twitter, and both keys now have defaults to avoid notices on fresh installs.",
     "The master social enable flag now mirrors the per-network toggles so Open Graph/Twitter output no longer stops early when the legacy master flag was unset.",
     "Schema engine now honors admin override flags for BE_SCHEMA_DISABLE_ALL, BE_SCHEMA_DISABLE_ELEMENTOR, and BE_SCHEMA_DEBUG when wp-config constants are not set.",
-    "Sitemap alias now runs early on template_redirect so /sitemap.xml is served before canonical redirects."
+    "Sitemap alias now runs early on template_redirect so /sitemap.xml is served before canonical redirects.",
+    "Sitemap discovery now validates candidate XML before accepting a sitemap URL to avoid HTML fallbacks.",
+    "Playfair local captures now force http for local/private hosts to avoid invalid HTTPS cert errors.",
+    "Preview requests now bypass canonical redirects to keep local Playfair captures on http."
   ],
   "refactor_notes": [
     "Centralized social settings defaults/merging into includes/engine/core-social-settings.php; core-social.php and the admin save now share a single source of truth for default keys and merges.",

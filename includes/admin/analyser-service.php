@@ -432,7 +432,10 @@ function be_schema_engine_analyser_discover_sitemap( $base_url ) {
             if ( preg_match( '/^\\s*sitemap\\s*:\\s*(\\S+)/i', $line, $matches ) ) {
                 $candidate = trim( $matches[1] );
                 if ( wp_http_validate_url( $candidate ) ) {
-                    return $candidate;
+                    $response = be_schema_engine_analyser_fetch_url( $candidate );
+                    if ( $response['ok'] && ! empty( $response['body'] ) && be_schema_engine_analyser_is_sitemap_body( $response['body'] ) ) {
+                        return $candidate;
+                    }
                 }
             }
         }
@@ -445,12 +448,26 @@ function be_schema_engine_analyser_discover_sitemap( $base_url ) {
     );
     foreach ( $candidates as $candidate ) {
         $response = be_schema_engine_analyser_fetch_url( $candidate );
-        if ( $response['ok'] && ! empty( $response['body'] ) ) {
+        if ( $response['ok'] && ! empty( $response['body'] ) && be_schema_engine_analyser_is_sitemap_body( $response['body'] ) ) {
             return $candidate;
         }
     }
 
     return '';
+}
+
+/**
+ * Determine if a response body looks like a sitemap XML.
+ *
+ * @param string $body Response body.
+ * @return bool
+ */
+function be_schema_engine_analyser_is_sitemap_body( $body ) {
+    if ( '' === trim( (string) $body ) ) {
+        return false;
+    }
+    $parsed = be_schema_engine_analyser_parse_sitemap( $body );
+    return ( ! empty( $parsed['urls'] ) || ! empty( $parsed['sitemaps'] ) );
 }
 
 /**

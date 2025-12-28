@@ -270,6 +270,21 @@ function be_schema_preview_marker_enabled() {
 }
 
 /**
+ * Prevent canonical redirects during BE SEO preview requests.
+ *
+ * @param string|false $redirect_url Proposed redirect URL.
+ * @param string      $requested_url Requested URL.
+ * @return string|false
+ */
+function be_schema_preview_disable_canonical_redirect( $redirect_url, $requested_url ) {
+	if ( function_exists( 'be_schema_is_preview_request' ) && be_schema_is_preview_request() ) {
+		return false;
+	}
+	return $redirect_url;
+}
+add_filter( 'redirect_canonical', 'be_schema_preview_disable_canonical_redirect', 10, 2 );
+
+/**
  * Return the preview marker value used for BE SEO source attribution.
  *
  * @return string
