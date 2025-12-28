@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.64",
+    "version": "3.0.1",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -43,7 +43,7 @@
     {
       "path": "includes/admin/admin-menu.php",
       "group": "admin",
-      "role": "Registers top-level BE SEO admin menu and submenus (Overview default, Schema, Social Media, Tools)."
+      "role": "Registers top-level BE SEO admin menu and submenus (Home default, Schema, Social Media, Sitemap, Analyser, Settings)."
     },
     {
       "path": "assets/images/admin/be_seo-landing_image.webp",
@@ -78,12 +78,12 @@
     {
       "path": "includes/admin/page-social-media.php",
       "group": "admin",
-      "role": "Social Media submenu UI: Settings/Facebook/Twitter tabs and associated options."
+      "role": "Social Media submenu UI: Dashboard, Open Graph, and Platforms tabs with per-network subtabs (Facebook/Twitter/Instagram/TikTok/LinkedIn)."
     },
     {
       "path": "includes/admin/page-tools.php",
       "group": "admin",
-      "role": "Tools submenu UI (future home for validators and diagnostics)."
+      "role": "Analyser/Settings submenu UI (validators, tests, and Playfair capture hub)."
     },
     {
       "path": "includes/admin/playfair-admin.php",
@@ -465,11 +465,10 @@
     "Schema > Website > Global: panel title heading is absent; section titles use a medium grey (#e1e4e8) background with dark text; global section padding is 15px; image row checkboxes are centered with their fields; form-table left column no-wraps and shrinks to fit content; Site Identity Mode uses a flex row with an ~380px checkbox column, 8px gap to the radios, and JS that bolds only the selected radio label.",
     "Schema > Website > Person: panel title heading is absent; honorific prefix and suffix are on one row with inline labels; panel matches Global styling with bordered sections (Person Details, Person Links) using grey section headers and enclosed backgrounds.",
     "Schema > Website > Organisation/Publisher: panel titles are absent; each uses Global-style bordered sections with grey section headers enclosing enable toggles and their fields. Organisation optional fields (Legal Name, Organisation URL) use a dropdown + add/remove pattern like Person.",
-    "Schema > Snapshots tab (Health/Individual/WordPress panels) uses Global-style bordered sections with grey section headers wrapping the read-only tables.",
-    "Social Media dashboard and Facebook/Twitter subtabs use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks. Facebook/Twitter Content panels expose optional fields via dropdown + add/remove (Page URL/default image/App ID/notes; handle/default image/notes).",
-    "Platforms submenu includes placeholder tabs for Instagram, TikTok, and LinkedIn.",
-    "Added a placeholder Platforms submenu between Open Graph and Tools for future network-specific controls.",
-    "Facebook/Twitter/Instagram/TikTok/LinkedIn tabs live under Platforms; Open Graph keeps the dashboard only.",
+    "Schema > Dashboard uses Global-style bordered sections with grey section headers inside Operation, Health Check, and Individual Schema panels.",
+    "Social Media dashboard and Facebook/Twitter subtabs use Global-style bordered sections with grey section headers around their settings/overview/status/content/tools blocks. Facebook/Twitter Cards panels expose optional fields via dropdown + add/remove (Page URL/App ID/notes; @handles/image alt).",
+    "Social Media tabs include Dashboard, Open Graph, and Platforms.",
+    "Platforms tab hosts Facebook/Twitter/Instagram/TikTok/LinkedIn subtabs (placeholders for Instagram/TikTok/LinkedIn).",
     "Analyser shared selector includes Playfair Health Check and Run Test actions."
   ],
   "validation_notes": [
@@ -478,8 +477,8 @@
   ],
   "ux_notes": [
     "Schema Website entities (Person/Organisation/Publisher) show inline status pills (ON/OFF) within their sections to surface current enable state.",
-    "Schema Settings debug row includes a read-only debug readiness box showing WP_DEBUG, admin debug toggle, and BE_SCHEMA_DEBUG constant state.",
-    "Schema Snapshots > Health: added Issues column with badges for missing org/publisher name/logo and quick links to the relevant Website subtabs.",
+    "Schema > Debug shows the debug toggle and a WP_DEBUG warning when WordPress debug is off.",
+    "Schema > Dashboard > Health Check includes an Issues column with badges for missing org/publisher name/logo and quick links to the relevant Website subtabs.",
     "Schema > Website > Publisher mirrors the Person optional-properties picker: Entity and Dedicated sections use a dropdown + add/remove buttons to reveal only the publisher fields you want to output.",
     "Publisher Dedicated optional controls (dropdown, add/remove, inputs) are only enabled when both WebSite.publisher and Dedicated Publisher toggles are on.",
     "Publisher panel shows a secondary pill indicating publisher type: Reference (green) when enabled without dedicated, Dedicated (green) when dedicated is on, and None (red) when WebSite.publisher is disabled.",
@@ -497,18 +496,17 @@
     "Schema > Website > Publisher > Dedicated separates Custom Publisher Logo into its own Image(s) dropdown at the same level as other rows; the primary Optional Properties dropdown is limited to name and URL, and the image dropdown offers all WebSite Featured Image aspect options.",
     "Schema > Website > Person > Image(s) uses a dropdown to add any of the WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and dimension guidance.",
     "Schema > Website > Global > Site Logo uses a dropdown to add WebSite Featured Image aspect options (16:9, 4:3, 1:1, 3:4, 9:16) with enable toggles, previews, and recommended dimensions; the selected logo feeds Organisation and WebSite.",
-    "Renamed the admin submenu from Social Media to Open Graph and adjusted copy to say Open Graph.",
+    "Social Media submenu remains; Open Graph is a tab inside Social Media.",
     "Open Graph global fallback image helper text includes recommended specs: 1.91:1 aspect ratio, 1200x630 resolution, JPEG or PNG formats, plus an Alternate Aspect Ratios dropdown with common sizes and add/remove controls with left-aligned minus buttons.",
-    "Platforms > Facebook > Content shows optional properties only; Default Facebook OG Image picker and Additional Aspect Ratios are not present.",
-    "Open Graph > Twitter > Content uses a dedicated Default Twitter Card Image field; the optional dropdown does not include it.",
-    "Platforms > Facebook > Content provides the dedicated Default Facebook OG Image field; the Additional Aspect Ratios dropdown is not present.",
-    "Open Graph > Twitter > Content offers an Additional Aspect Ratios dropdown that mirrors the Global/Facebook patterns (plus to add, left-aligned minus to remove, inline labels, Select/Clear controls, and previews for each aspect).",
-    "Default Facebook OG Image help includes specs: 1.91:1 aspect ratio, 1200x630 resolution, JPEG or PNG formats.",
+    "Platforms > Facebook > Content shows optional properties only; the Global Default Image lives in Social Media > Open Graph.",
+    "Platforms > Twitter > Cards uses dedicated Large Summary + Summary images; the optional dropdown does not include them.",
+    "Open Graph Content offers an Additional Aspect Ratios dropdown that mirrors the Global patterns (plus to add, left-aligned minus to remove, inline labels, Select/Clear controls, and previews for each aspect).",
+    "Global Default Image help includes specs: 1.91:1 aspect ratio, 1200x630 resolution, JPEG or PNG formats.",
     "Open Graph Content includes the square 1:1 (1200x1200) image as its own field; the dropdown lists 1.91:1 and 1:1 as disabled items for clarity.",
-    "Open Graph has a Content tab that owns the Global Defaults block; Platforms dashboard shows a note pointing back to Open Graph for those settings.",
-    "Platforms > Twitter > Content includes an Alternate Twitter Card Image field alongside the primary default image.",
-    "Platforms > Twitter > Content splits into Content and Images sections; the Images box holds the default and alternate Twitter card images plus aspect-ratio variants.",
-    "Platforms > Twitter > Content labels the default/alternate images as Summary Large and Summary; Additional Aspect Ratios are not present on that tab.",
+    "Social Media > Open Graph hosts the Global Defaults block; the Platforms dashboard note points back to Open Graph for those settings.",
+    "Platforms > Twitter > Cards includes an Alternate Twitter Card image field alongside the primary default image.",
+    "Platforms > Twitter > Cards includes Optional Properties and Images sections; Images holds the default and alternate Twitter card images (no aspect-ratio variants).",
+    "Platforms > Twitter > Cards labels the default/alternate images as Summary Large and Summary; Additional Aspect Ratios are not present on that tab.",
     "Added placeholder Content and Images sections to Platforms > Instagram, TikTok, and LinkedIn tabs.",
     "Save Social Settings button sits directly beneath the Image Selection Summary on the Social dashboard.",
     "Platforms > Twitter > Overview contains the status pill; the Status subtab is not present.",
@@ -517,12 +515,12 @@
     "Platforms > Facebook > Status sits as its own section directly under Overview (not nested).",
     "Platforms > Twitter > Tools includes a Twitter-only dry-run toggle that skips outputting Twitter meta tags while computing values.",
     "Platforms > Twitter > Tools shows the Twitter dry-run toggle as its own section beneath Tools (not nested).",
-    "Dashboard Safety dry run affects only Open Graph output; Twitter has its own dry-run toggle under Tools.",
+    "Platforms > Facebook > Tools > Safety dry run affects only Open Graph output; Twitter has its own dry-run toggle under Tools.",
     "Platforms > Facebook > Tools hosts the OpenGraph-only dry-run toggle; the Platforms dashboard safety box does not show it.",
     "Platforms > Twitter > Tools shows Dry Run as a standalone section beneath Tools (not nested).",
     "Social Dashboard does not show the OpenGraph dry-run safety box; it lives under Platforms > Facebook > Tools.",
-    "Schema > Status includes an Operation subtab for global output + Elementor toggles; Schema > Defaults replaces the Settings label; Options hosts debug, dry-run, and image validation toggles.",
-    "Schema Dashboard tab is absent; Schema Tests live under Analyser.",
+    "Schema > Dashboard includes the Operation subtab for global output + Elementor toggles; Schema > Defaults replaces the Settings label; Options hosts Image validation; Debug hosts debug and dry-run toggles.",
+    "Schema Tests live under Analyser; Schema Dashboard remains available for operation/snapshots/health.",
     "Analyser > Schema Tests adds browser profile selection per output column and adds spacing above the Diff panel.",
     "Analyser > Schema Tests JSON-LD view pretty-prints the JSON-LD blocks for readability.",
     "Selector box uses a two-row flex layout; the Analyser selector background matches the Schema Global Identity box while the Local toggle box matches the Overview tab background.",
@@ -535,7 +533,7 @@
     "Analyser > Overview disables Run Analysis and Max Follow Links by default; List Pages/Max Site Pages enable for Websites or when a manual URL matches the homepage (scheme-agnostic).",
     "Analyser > Overview provides a Subpage(s) dropdown populated via sitemap discovery (robots.txt or common sitemap locations) when List Pages is clicked, and enables Run Analysis/Max Follow Links after the list finishes loading.",
     "Analyser > Overview list controls are back on a single row inside the box (List Pages, Subpage(s), Max Site Pages).",
-    "Analyser > Overview includes a Local checkbox with a vertical divider before the Websites/Manual radio group.",
+    "Analyser > Overview includes a Local/Remote radio column with a vertical divider before the Websites/Manual radio group.",
     "Analyser > Overview Local toggle sends a local flag and maps analyser/list pages requests to the local site base.",
     "Analyser > Overview labels the selector box with a \"Selector\" heading.",
     "Schema > Preview Target uses the Selector box pattern (Local toggle, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages) and omits the Use Homepage shortcut.",
@@ -590,9 +588,9 @@
     "Social: added dry-run toggle (Social Dashboard) that prevents OG/Twitter meta output while logging BE_SOCIAL_DRY_RUN events."
   ],
   "ux_notes_settings": [
-    "Schema > Dashboard tab uses Global-style bordered sections with grey headers (Engine, Debug & Safety) and a divider between debug and dry-run controls.",
+    "Schema > Dashboard uses Operation/Health/Individual Schema panels (no Debug & Safety block on that tab).",
     "Schema > Debug tab hosts the Debug logging and Dry run toggles; Options includes Image validation.",
-    "Schema > Dashboard does not show a WordPress subtab; wp-config info lives under Debug.",
+    "Schema > Dashboard does not show a WordPress subtab; debug warnings only appear under Debug.",
     "Settings > Help Text uses two Global-style boxes (Existing, Add New Override) with a disclosure triangle, plus/minus row controls, and a live override count; Existing is collapsed by default and shows the count when collapsed.",
     "Help Text override validation only accepts help/descriptive strings sourced from description-class helper text (labels are ignored).",
     "Settings > Lists tab hosts the Websites list used by Analyser; Analyser settings points users to Settings \u2192 Lists.",

@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.1] - 2025-12-28
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+
+
+## [3.0.0] - 2025-12-28
+Summary: Sitemap dashboard layout, preview formatting, and version bump.
+
+### Changed
+- Touched areas: sitemap admin UI, preview formatting, versioning.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- beseo.php
+- includes/admin/page-sitemap.php
+
+
 ## [2.1.64] - 2025-12-28
 Summary: Devnotes + social admin + engine.
 
