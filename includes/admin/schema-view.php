@@ -6,7 +6,7 @@
  *
  * Tabs:
  *  - Dashboard (operation, snapshots, health check)
- *  - Tests     (graph preview for a specific page)
+ *  - Tests removed (schema preview now lives under Tester)
  *  - Website   (site identity mode plus site entities: Global / Person / Organisation / Publisher)
  *  - Defaults  (global author defaults)
  *  - Options   (image validation toggle)
@@ -491,13 +491,6 @@ function be_schema_engine_render_schema_page() {
                         </a>
                     </li>
                     <li>
-                        <a href="#be-schema-tab-preview"
-                           class="be-schema-tab-link"
-                           data-schema-tab="preview">
-                            <?php esc_html_e( 'Tests', 'beseo' ); ?>
-                        </a>
-                    </li>
-                    <li>
                         <a href="#be-schema-tab-website"
                            class="be-schema-tab-link"
                            data-schema-tab="website">
@@ -791,11 +784,6 @@ function be_schema_engine_render_schema_page() {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- PREVIEW TAB -->
-                <div id="be-schema-tab-preview" class="be-schema-tab-panel">
-                    <?php be_schema_engine_render_schema_tab_preview(); ?>
                 </div>
 
                 <!-- SETTINGS TAB -->

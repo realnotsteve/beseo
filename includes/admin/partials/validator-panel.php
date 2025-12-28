@@ -1,4 +1,11 @@
+<?php
+$validator_include_wrapper = isset( $validator_include_wrapper ) ? (bool) $validator_include_wrapper : true;
+$validator_use_shared_selector = isset( $validator_use_shared_selector ) ? (bool) $validator_use_shared_selector : false;
+?>
+
+<?php if ( $validator_include_wrapper ) : ?>
 <div id="be-schema-tools-validator" class="be-schema-tools-panel active">
+<?php endif; ?>
             <p class="description">
                 <?php esc_html_e( 'Validate Open Graph and Twitter Cards with live previews and source mapping.', 'beseo' ); ?>
             </p>
@@ -12,53 +19,57 @@
                 <div class="be-schema-header-grid">
                     <div class="be-schema-header-section">
                         <label class="be-schema-validator-selector-label"><?php esc_html_e( 'Selector', 'beseo' ); ?></label>
-                        <div class="be-schema-validator-selector-box">
-                            <div class="be-schema-selector-grid">
-                                <div class="be-schema-validator-local-column">
-                                    <div class="be-schema-validator-local-box">
-                                        <label class="be-schema-validator-inline-field">
-                                            <input type="radio" name="be-schema-validator-env" value="local" checked />
-                                            <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
-                                        </label>
-                                        <label class="be-schema-validator-inline-field">
-                                            <input type="radio" name="be-schema-validator-env" value="remote" />
-                                            <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
-                                        </label>
+                        <?php if ( $validator_use_shared_selector ) : ?>
+                            <p class="description"><?php esc_html_e( 'Using the shared selector above.', 'beseo' ); ?></p>
+                        <?php else : ?>
+                            <div class="be-schema-validator-selector-box">
+                                <div class="be-schema-selector-grid">
+                                    <div class="be-schema-validator-local-column">
+                                        <div class="be-schema-validator-local-box">
+                                            <label class="be-schema-validator-inline-field">
+                                                <input type="radio" name="be-schema-validator-env" value="local" checked />
+                                                <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
+                                            </label>
+                                            <label class="be-schema-validator-inline-field">
+                                                <input type="radio" name="be-schema-validator-env" value="remote" />
+                                                <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
-                                <span class="be-schema-validator-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
-                                <div class="be-schema-selector-rows">
-                                    <div class="be-schema-validator-controls be-schema-selector-row">
-                                        <label><input type="radio" name="be_schema_validator_mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
-                                        <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                                        <select id="be-schema-validator-site" class="regular-text be-schema-validator-url"></select>
-                                        <input type="text" id="be-schema-validator-manual" class="regular-text be-schema-validator-url" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
-                                        <label class="be-schema-validator-inline-field">
-                                            <input type="checkbox" id="be-schema-validator-include-posts" />
-                                            <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
-                                        </label>
-                                        <label class="be-schema-validator-inline-field">
-                                            <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
-                                            <input type="number" id="be-schema-validator-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
-                                        </label>
-                                    </div>
-                                    <div class="be-schema-validator-controls be-schema-selector-row">
-                                        <button type="button" class="button button-primary" id="be-schema-validator-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
-                                        <label class="be-schema-validator-inline-field">
-                                            <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
-                                            <select id="be-schema-validator-subpages" class="regular-text" disabled>
-                                                <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
-                                            </select>
-                                        </label>
-                                        <label class="be-schema-validator-inline-field">
-                                            <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
-                                            <input type="number" id="be-schema-validator-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
-                                        </label>
+                                    <span class="be-schema-validator-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
+                                    <div class="be-schema-selector-rows">
+                                        <div class="be-schema-validator-controls be-schema-selector-row">
+                                            <label><input type="radio" name="be_schema_validator_mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
+                                            <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
+                                            <select id="be-schema-validator-site" class="regular-text be-schema-validator-url"></select>
+                                            <input type="text" id="be-schema-validator-manual" class="regular-text be-schema-validator-url" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
+                                            <label class="be-schema-validator-inline-field">
+                                                <input type="checkbox" id="be-schema-validator-include-posts" />
+                                                <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
+                                            </label>
+                                            <label class="be-schema-validator-inline-field">
+                                                <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
+                                                <input type="number" id="be-schema-validator-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
+                                            </label>
+                                        </div>
+                                        <div class="be-schema-validator-controls be-schema-selector-row">
+                                            <button type="button" class="button button-primary" id="be-schema-validator-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
+                                            <label class="be-schema-validator-inline-field">
+                                                <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
+                                                <select id="be-schema-validator-subpages" class="regular-text" disabled>
+                                                    <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
+                                                </select>
+                                            </label>
+                                            <label class="be-schema-validator-inline-field">
+                                                <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
+                                                <input type="number" id="be-schema-validator-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <p class="description be-schema-validator-selector-status" id="be-schema-validator-selector-status"></p>
+                            <p class="description be-schema-validator-selector-status" id="be-schema-validator-selector-status"></p>
+                        <?php endif; ?>
                     </div>
                     <div class="be-schema-header-section">
                         <div class="be-schema-engine-row">
@@ -183,4 +194,6 @@
             </div>
         </div>
 
-        
+        <?php if ( $validator_include_wrapper ) : ?>
+        </div>
+        <?php endif; ?>

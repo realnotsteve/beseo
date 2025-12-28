@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.61",
+    "version": "2.1.62",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -470,7 +470,7 @@
     "Platforms submenu now includes placeholder tabs for Instagram, TikTok, and LinkedIn.",
     "Added a placeholder Platforms submenu between Open Graph and Tools for future network-specific controls.",
     "Facebook/Twitter/Instagram/TikTok/LinkedIn tabs now live under Platforms; Open Graph keeps the dashboard only.",
-    "Schema > Preview Target now includes Playfair Health Check and Run Test actions (moved from Tools > Playfair)."
+    "Tester shared selector now includes Playfair Health Check and Run Test actions."
   ],
   "validation_notes": [
     "Schema settings: added URL validation (http/https) for Organisation URL, publisher URLs/policies, and numeric copyright year (4 digits), surfacing errors via settings_errors.",
@@ -522,15 +522,15 @@
     "Platforms > Twitter > Tools now shows Dry Run as a standalone section beneath Tools (not nested).",
     "Social Dashboard no longer shows the OpenGraph dry-run safety box (moved to Platforms > Facebook > Tools).",
     "Schema > Status now includes an Operation subtab for global output + Elementor toggles; Schema > Defaults replaces the Settings label; Options now hosts debug, dry-run, and image validation toggles.",
-    "Schema Dashboard tab removed; Dashboard is now the first tab in the Schema submenu. Preview tab renamed to Tests.",
-    "Schema > Tests now adds browser profile selection per output column and adds spacing above the Diff panel.",
-    "Schema > Tests JSON-LD view now pretty-prints the JSON-LD blocks for readability.",
+    "Schema Dashboard tab removed; Schema Tests now live under Tester.",
+    "Tester > Schema Tests now adds browser profile selection per output column and adds spacing above the Diff panel.",
+    "Tester > Schema Tests JSON-LD view now pretty-prints the JSON-LD blocks for readability.",
     "Selector box now uses a two-row flex layout; the Analyser selector background matches the Schema Global Identity box while the Local toggle box matches the Overview tab background.",
     "Selector box now supports the include-posts toggle with Max Posts and a full-height Local column spanning both rows.",
     "Analyser > Overview selector now uses Local/Remote radio buttons instead of a single Local checkbox.",
     "Analyser > Overview Local/Remote radios now stack vertically within the Local box.",
     "Analyser > Overview Local box now aligns its radios to the top and bottom of the two selector rows.",
-    "Open Graph (Social) Validator tab renamed to Tests.",
+    "Social validator now lives under Tester > Social Tests.",
     "Analyser > Overview controls now include a List Pages button with Max Site Pages, and the follow-links limit sits to the right of Run Analysis with a Max Follow Links label.",
     "Analyser > Overview now disables Run Analysis and Max Follow Links by default; List Pages/Max Site Pages enable for Websites or when a manual URL matches the homepage (scheme-agnostic).",
     "Analyser > Overview now provides a Subpage(s) dropdown populated via sitemap discovery (robots.txt or common sitemap locations) when List Pages is clicked, and enables Run Analysis/Max Follow Links after the list finishes loading.",
@@ -540,9 +540,9 @@
     "Analyser > Overview now labels the selector box with a \"Selector\" heading.",
     "Schema > Preview Target now uses the Selector box pattern (Local toggle, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages) and removes the Use Homepage shortcut.",
     "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI.",
-    "Schema > Tests Render Criteria now shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls removed).",
-    "Social Media > Tests now uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts) instead of the old dropdown/search selector.",
-    "Playfair capture now lives under Tester > Sources for schema output, replacing the old Schema/Social Tests locations.",
+    "Tester > Schema Tests Render Criteria now shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls removed).",
+    "Tester > Social Tests uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts).",
+    "Playfair capture now lives under Tester > Wayfair Tester with schema, Open Graph, and Twitter outputs.",
     "Sitemap page now includes a status pill with last generated time and links to /sitemap.xml, /sitemap_index.xml, and the latest sitemap file; the success notice also shows the friendly /sitemap_index.xml link."
   ],
   "ui_rules": [
@@ -565,11 +565,12 @@
     "Added shared admin helpers for URL validation and validator target lists; schema/social now delegate to them.",
     "Added shared selector utilities (includes/admin/js/be-selector.js) to reuse list-pages/selector logic across analyser, schema preview, and validator.",
     "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials.",
-    "Created shared Playfair capture partials and moved the Tools Playfair UI into Tester > Sources.",
-    "Fixed Schema > Tests Playfair include to avoid a PHP parse error."
+    "Created shared Playfair capture partials and moved the Tools Playfair UI into Tester > Wayfair Tester.",
+    "Fixed Schema Tests preview template after moving it into Tester.",
+    "Removed Schema Tests Playfair include after moving captures to Tester."
   ],
   "ui_notes_tools": [
-    "Tester submenu now has Sources and Images tabs; Sources hosts the Playfair capture selector and output, while Images links to Schema \u2192 WebSite images. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
+    "Tester submenu now has Schema Tests, Social Tests, Wayfair Tester, and Images tabs with a shared selector header; Images still links to Schema \u2192 WebSite images. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
   ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",

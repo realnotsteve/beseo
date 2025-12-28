@@ -480,7 +480,7 @@ function be_schema_engine_handle_validator_run() {
  * Schema → Settings, but this page provides quick entry points.
  */
 function be_schema_engine_render_tools_page() {
-    $tools_default_tab = 'dashboard';
+    $tools_default_tab = 'schema';
     $current_page      = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
     $requested_tab     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
     $is_settings_submenu = ( 'beseo-settings' === $current_page );
@@ -498,13 +498,59 @@ function be_schema_engine_render_tools_page() {
         BE_SCHEMA_ENGINE_VERSION,
         true
     );
-    wp_enqueue_script(
-        'be-schema-selector',
-        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
-        array(),
-        BE_SCHEMA_ENGINE_VERSION,
-        true
-    );
+
+    if ( ! $is_settings_submenu ) {
+        $image_validation_enabled = isset( $settings['image_validation_enabled'] ) ? ( '1' === (string) $settings['image_validation_enabled'] ) : true;
+
+        wp_enqueue_style(
+            'be-schema-admin',
+            BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/css/schema.css',
+            array(),
+            BE_SCHEMA_ENGINE_VERSION
+        );
+        wp_enqueue_script(
+            'be-schema-selector',
+            BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
+            array(),
+            BE_SCHEMA_ENGINE_VERSION,
+            true
+        );
+        wp_enqueue_script(
+            'be-schema-admin',
+            BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/js/schema.js',
+            array( 'media-editor', 'be-schema-selector' ),
+            BE_SCHEMA_ENGINE_VERSION,
+            true
+        );
+        wp_localize_script(
+            'be-schema-admin',
+            'beSchemaSchemaData',
+            array(
+                'imageValidationEnabled' => $image_validation_enabled,
+                'preview'                => array(
+                    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                    'nonce'   => wp_create_nonce( 'be_schema_preview_graph' ),
+                    'homeUrl' => home_url( '/' ),
+                    'listPagesNonce' => wp_create_nonce( 'be_schema_analyser' ),
+                    'playfairDefaultProfile' => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
+                    'playfairNonce' => wp_create_nonce( 'be_schema_playfair_capture' ),
+                    'playfairAction' => 'be_schema_playfair_capture',
+                    'marker' => function_exists( 'be_schema_preview_marker_value' ) ? be_schema_preview_marker_value() : 'beseo-generated',
+                    'playfairHealthNonce' => wp_create_nonce( 'be_schema_playfair_health' ),
+                    'playfairTestUrl' => 'https://example.com',
+                ),
+                'labels'                 => array(
+                    'undefined'          => __( 'Undefined', 'beseo' ),
+                    'verified'           => __( 'Verified', 'beseo' ),
+                    'resolution'         => __( 'Resolution', 'beseo' ),
+                    'selectImage'        => __( 'Select Image', 'beseo' ),
+                    'publisherNone'      => __( 'Publisher Type: None', 'beseo' ),
+                    'publisherDedicated' => __( 'Publisher Type: Dedicated', 'beseo' ),
+                    'publisherReference' => __( 'Publisher Type: Reference', 'beseo' ),
+                ),
+            )
+        );
+    }
 
     if ( $is_settings_submenu ) {
         if ( function_exists( 'be_schema_help_overrides_handle_request' ) ) {
@@ -524,12 +570,14 @@ function be_schema_engine_render_tools_page() {
         } else {
             $tools_default_tab = 'help';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'dashboard', 'images' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'schema', 'social', 'wayfair', 'images' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
     <div class="wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Tools', 'beseo' ); ?></h1>
+        <h1>
+            <?php echo $is_settings_submenu ? esc_html__( 'BE Schema Engine – Settings', 'beseo' ) : esc_html__( 'BE Schema Engine – Tester', 'beseo' ); ?>
+        </h1>
         <style>
             .be-schema-help-accent {
                 color: #00a0d2;
@@ -568,17 +616,9 @@ function be_schema_engine_render_tools_page() {
                 padding: 16px;
                 margin-top: 12px;
             }
-            .be-schema-tester-section {
-                border: 1px solid #ccd0d4;
-                background: #fff;
-                border-radius: 6px;
-                padding: 16px;
+            .be-schema-tester-header {
+                margin-top: 16px;
                 margin-bottom: 16px;
-            }
-            .be-schema-tester-section-title {
-                margin: 0 0 10px;
-                font-size: 14px;
-                font-weight: 600;
             }
             .be-schema-sites-row {
                 display: flex;
@@ -671,7 +711,9 @@ function be_schema_engine_render_tools_page() {
 
         <h2 class="nav-tab-wrapper">
             <?php if ( ! $is_settings_submenu ) : ?>
-                <a href="#be-schema-tools-dashboard" class="nav-tab<?php echo ( 'dashboard' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="dashboard"><?php esc_html_e( 'Sources', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-schema" class="nav-tab<?php echo ( 'schema' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="schema"><?php esc_html_e( 'Schema Tests', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-social" class="nav-tab<?php echo ( 'social' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="social"><?php esc_html_e( 'Social Tests', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair Tester', 'beseo' ); ?></a>
             <?php endif; ?>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
@@ -684,98 +726,138 @@ function be_schema_engine_render_tools_page() {
         </h2>
 
         <?php if ( ! $is_settings_submenu ) : ?>
-            <div id="be-schema-tools-dashboard" class="be-schema-tools-panel<?php echo ( 'dashboard' === $tools_default_tab ) ? ' active' : ''; ?>">
-                <?php
-                $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
-                $playfair_styles  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-styles.php';
-                $playfair_panel   = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-panel.php';
-                $playfair_script  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-script.php';
+            <?php
+            $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
+            $validator_panel  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-panel.php';
+            $validator_script = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-script.php';
+            $playfair_styles  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-styles.php';
+            $playfair_panel   = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-panel.php';
+            $playfair_script  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-script.php';
+            $validator_targets   = function_exists( 'be_schema_admin_get_validator_targets' )
+                ? be_schema_admin_get_validator_targets()
+                : array( 'pages' => array(), 'posts' => array() );
+            $validator_page_data = $validator_targets['pages'] ?? array();
+            $validator_post_data = $validator_targets['posts'] ?? array();
 
-                if ( file_exists( $validator_styles ) ) {
-                    include $validator_styles;
-                }
-                if ( file_exists( $playfair_styles ) ) {
-                    include $playfair_styles;
-                }
-                ?>
-                <div class="be-schema-tester-section" id="be-schema-tester-selector">
-                    <h3 class="be-schema-tester-section-title"><?php esc_html_e( 'Selector', 'beseo' ); ?></h3>
-                    <div class="be-schema-validator-selector-box">
-                        <div class="be-schema-selector-grid">
-                            <div class="be-schema-validator-local-column">
-                                <div class="be-schema-validator-local-box">
-                                    <label class="be-schema-validator-inline-field">
-                                        <input type="radio" name="be-schema-validator-env" value="local" checked />
-                                        <span><?php esc_html_e( 'Local', 'beseo' ); ?></span>
-                                    </label>
-                                    <label class="be-schema-validator-inline-field">
-                                        <input type="radio" name="be-schema-validator-env" value="remote" />
-                                        <span><?php esc_html_e( 'Remote', 'beseo' ); ?></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <span class="be-schema-validator-vertical-divider be-schema-selector-divider" aria-hidden="true"></span>
-                            <div class="be-schema-selector-rows">
-                                <div class="be-schema-validator-controls be-schema-selector-row">
-                                    <label><input type="radio" name="be_schema_validator_mode" value="site" checked /> <?php esc_html_e( 'Websites', 'beseo' ); ?></label>
-                                    <label><input type="radio" name="be_schema_validator_mode" value="manual" /> <?php esc_html_e( 'Manual URL', 'beseo' ); ?></label>
-                                    <select id="be-schema-validator-site" class="regular-text be-schema-validator-url"></select>
-                                    <input type="text" id="be-schema-validator-manual" class="regular-text be-schema-validator-url" placeholder="<?php esc_attr_e( 'https://example.com/', 'beseo' ); ?>" style="display:none;" />
-                                    <label class="be-schema-validator-inline-field">
-                                        <input type="checkbox" id="be-schema-validator-include-posts" />
-                                        <span><?php esc_html_e( 'Include Posts', 'beseo' ); ?></span>
-                                    </label>
-                                    <label class="be-schema-validator-inline-field">
-                                        <span><?php esc_html_e( 'Max Posts', 'beseo' ); ?></span>
-                                        <input type="number" id="be-schema-validator-max-posts" class="small-text" value="25" min="1" max="500" style="width:80px;" disabled />
-                                    </label>
-                                </div>
-                                <div class="be-schema-validator-controls be-schema-selector-row">
-                                    <button type="button" class="button button-primary" id="be-schema-validator-list-pages"><?php esc_html_e( 'List Pages', 'beseo' ); ?></button>
-                                    <label class="be-schema-validator-inline-field">
-                                        <span><?php esc_html_e( 'Subpage(s)', 'beseo' ); ?></span>
-                                        <select id="be-schema-validator-subpages" class="regular-text" disabled>
-                                            <option value=""><?php esc_html_e( 'None', 'beseo' ); ?></option>
-                                        </select>
-                                    </label>
-                                    <label class="be-schema-validator-inline-field">
-                                        <span><?php esc_html_e( 'Max Site Pages', 'beseo' ); ?></span>
-                                        <input type="number" id="be-schema-validator-site-limit" class="small-text" value="25" min="1" max="500" style="width:80px;" />
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="description be-schema-validator-selector-status" id="be-schema-validator-selector-status"></p>
-                </div>
-                <div class="be-schema-tester-section">
-                    <h3 class="be-schema-tester-section-title"><?php esc_html_e( 'Playfair Capture', 'beseo' ); ?></h3>
-                    <p class="description">
-                        <?php esc_html_e( 'Capture schema output via Playfair using the selector above.', 'beseo' ); ?>
-                    </p>
-                    <?php
-                    if ( file_exists( $playfair_panel ) ) {
-                        $playfair_capture_context  = 'schema';
-                        $playfair_capture_selector = 'validator';
-                        $playfair_capture_id       = 'be-tester-playfair';
-                        $playfair_capture_defaults = function_exists( 'be_schema_admin_get_playfair_defaults' )
-                            ? be_schema_admin_get_playfair_defaults()
-                            : array();
-                        $playfair_capture_show_schema  = true;
-                        $playfair_capture_show_og      = false;
-                        $playfair_capture_show_twitter = false;
-                        $playfair_capture_show_html    = true;
-                        $playfair_capture_show_logs    = true;
-                        include $playfair_panel;
-                    }
-                    ?>
-                </div>
+            if ( file_exists( $validator_styles ) ) {
+                include $validator_styles;
+            }
+            if ( file_exists( $playfair_styles ) ) {
+                include $playfair_styles;
+            }
+            ?>
+            <div class="be-schema-tester-header">
                 <?php
-                if ( file_exists( $playfair_script ) ) {
-                    include $playfair_script;
+                if ( function_exists( 'be_schema_engine_render_schema_preview_selector' ) ) {
+                    be_schema_engine_render_schema_preview_selector();
                 }
                 ?>
             </div>
+
+            <div id="be-schema-tools-schema" class="be-schema-tools-panel<?php echo ( 'schema' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <h2><?php esc_html_e( 'Schema Tests', 'beseo' ); ?></h2>
+                <p class="description be-schema-description">
+                    <?php esc_html_e( 'Preview the JSON-LD graph that would be emitted for a specific page.', 'beseo' ); ?>
+                </p>
+                <div id="be-schema-tab-preview">
+                    <div class="be-schema-preview-upper">
+                        <?php if ( function_exists( 'be_schema_engine_render_schema_preview_criteria' ) ) : ?>
+                            <?php be_schema_engine_render_schema_preview_criteria(); ?>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ( function_exists( 'be_schema_engine_render_schema_preview_output' ) ) : ?>
+                        <?php be_schema_engine_render_schema_preview_output(); ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div id="be-schema-tools-social" class="be-schema-tools-panel<?php echo ( 'social' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <h2><?php esc_html_e( 'Social Tests', 'beseo' ); ?></h2>
+                <p class="description">
+                    <?php esc_html_e( 'Validate Open Graph and Twitter tags with previews and source mapping.', 'beseo' ); ?>
+                </p>
+                <?php
+                if ( file_exists( $validator_panel ) ) {
+                    $validator_include_wrapper = false;
+                    $validator_use_shared_selector = true;
+                    include $validator_panel;
+                } else {
+                    echo '<p class="description">' . esc_html__( 'Tests unavailable.', 'beseo' ) . '</p>';
+                }
+                ?>
+            </div>
+
+            <div id="be-schema-tools-wayfair" class="be-schema-tools-panel<?php echo ( 'wayfair' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <h2><?php esc_html_e( 'Wayfair Tester', 'beseo' ); ?></h2>
+                <div class="be-schema-playfair-box">
+                    <h3><?php esc_html_e( 'Wayfair Settings Summary', 'beseo' ); ?></h3>
+                    <p class="description">
+                        <?php esc_html_e( 'Review the current Playfair endpoints and defaults. Edit full settings under Settings → Wayfair.', 'beseo' ); ?>
+                    </p>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Mode', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( $settings['playfair_mode'] ?? 'auto' ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Remote base URL', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( $settings['playfair_remote_base_url'] ?? '' ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Local base URL', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( $settings['playfair_local_base_url'] ?? '' ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Timeout (seconds)', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( (string) ( $settings['playfair_timeout_seconds'] ?? 60 ) ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Default profile', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( $settings['playfair_default_profile'] ?? 'desktop_chromium' ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Default wait (ms)', 'beseo' ); ?></th>
+                            <td><?php echo esc_html( (string) ( $settings['playfair_default_wait_ms'] ?? 1500 ) ); ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Local file access', 'beseo' ); ?></th>
+                            <td><?php echo ! empty( $settings['playfair_allow_private_targets'] ) ? esc_html__( 'Enabled', 'beseo' ) : esc_html__( 'Disabled', 'beseo' ); ?></td>
+                        </tr>
+                    </table>
+                    <p>
+                        <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=beseo-settings&tab=wayfair' ) ); ?>">
+                            <?php esc_html_e( 'Edit Wayfair Settings', 'beseo' ); ?>
+                        </a>
+                    </p>
+                </div>
+                <?php
+                if ( file_exists( $playfair_panel ) ) {
+                    echo '<h3>' . esc_html__( 'Playfair Capture', 'beseo' ) . '</h3>';
+                    echo '<p class="description">' . esc_html__( 'Capture schema, Open Graph, and Twitter tags via Playfair using the shared selector above.', 'beseo' ) . '</p>';
+                    $playfair_capture_context  = 'tester';
+                    $playfair_capture_selector = 'schema';
+                    $playfair_capture_id       = 'be-tester-playfair';
+                    $playfair_capture_defaults = function_exists( 'be_schema_admin_get_playfair_defaults' )
+                        ? be_schema_admin_get_playfair_defaults()
+                        : array();
+                    $playfair_capture_show_schema  = true;
+                    $playfair_capture_show_og      = true;
+                    $playfair_capture_show_twitter = true;
+                    $playfair_capture_show_html    = true;
+                    $playfair_capture_show_logs    = true;
+                    include $playfair_panel;
+                }
+                ?>
+            </div>
+
+            <?php
+            if ( file_exists( $validator_script ) ) {
+                include $validator_script;
+            }
+            if ( file_exists( $playfair_script ) ) {
+                include $playfair_script;
+            }
+            ?>
         <?php endif; ?>
 
         <?php if ( $is_settings_submenu ) : ?>
@@ -989,282 +1071,6 @@ function be_schema_engine_render_tools_page() {
                 document.addEventListener('DOMContentLoaded', initToolsTabs);
             } else {
                 initToolsTabs();
-            }
-        })();
-    </script>
-    <script>
-        (function() {
-            function initTesterSelector() {
-                var root = document.getElementById('be-schema-tester-selector');
-                if (!root) {
-                    return;
-                }
-
-                var selector = window.beSchemaSelector || {};
-                var sitesStoreKey = 'be-schema-analyser-sites';
-                var sites = [];
-                var listReady = false;
-                var isListing = false;
-                var ajaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-                var listPagesNonce = '<?php echo esc_js( wp_create_nonce( 'be_schema_analyser' ) ); ?>';
-                var homeUrl = '<?php echo esc_js( home_url( '/' ) ); ?>';
-
-                var modeInputs = root.querySelectorAll('input[name="be_schema_validator_mode"]');
-                var envInputs = root.querySelectorAll('input[name="be-schema-validator-env"]');
-                var siteSelect = document.getElementById('be-schema-validator-site');
-                var manualInput = document.getElementById('be-schema-validator-manual');
-                var includePosts = document.getElementById('be-schema-validator-include-posts');
-                var maxPostsInput = document.getElementById('be-schema-validator-max-posts');
-                var listPagesBtn = document.getElementById('be-schema-validator-list-pages');
-                var subpagesSelect = document.getElementById('be-schema-validator-subpages');
-                var siteLimitInput = document.getElementById('be-schema-validator-site-limit');
-                var statusEl = document.getElementById('be-schema-validator-selector-status');
-
-                function getRadioValue(inputs) {
-                    var selected = '';
-                    inputs.forEach(function (input) {
-                        if (input.checked) {
-                            selected = input.value;
-                        }
-                    });
-                    return selected;
-                }
-
-                function currentMode() {
-                    return getRadioValue(modeInputs) || 'site';
-                }
-
-                function isLocalSelected() {
-                    return getRadioValue(envInputs) === 'local';
-                }
-
-                function setStatus(message) {
-                    if (!statusEl) {
-                        return;
-                    }
-                    statusEl.textContent = message || '';
-                }
-
-                function resetSubpages(disabled) {
-                    listReady = false;
-                    if (selector.resetSubpages) {
-                        selector.resetSubpages(subpagesSelect, '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>', disabled);
-                    }
-                }
-
-                function populateSubpages(pages) {
-                    if (!selector.populateSubpages) {
-                        return;
-                    }
-                    listReady = selector.populateSubpages(subpagesSelect, pages, {
-                        noneLabel: '<?php echo esc_js( __( 'None', 'beseo' ) ); ?>',
-                        homeLabel: '<?php echo esc_js( __( 'Home page', 'beseo' ) ); ?>',
-                        dividerLabel: '--------'
-                    });
-                }
-
-                function isHomepageUrl(url) {
-                    return selector.isHomepageUrl ? selector.isHomepageUrl(url) : false;
-                }
-
-                function updateTargetModeControls() {
-                    var mode = currentMode();
-                    var allowList = false;
-                    if (mode === 'site') {
-                        allowList = !!(siteSelect && siteSelect.value);
-                    } else {
-                        var manualUrl = manualInput ? manualInput.value.trim() : '';
-                        if (manualUrl && isHomepageUrl(manualUrl)) {
-                            allowList = true;
-                        }
-                    }
-                    if (listPagesBtn) {
-                        listPagesBtn.disabled = !allowList || isListing;
-                    }
-                    if (siteLimitInput) {
-                        siteLimitInput.disabled = !allowList;
-                    }
-                    if (!allowList) {
-                        resetSubpages(true);
-                    }
-                }
-
-                function currentTargetUrl() {
-                    var mode = currentMode();
-                    if (mode === 'manual') {
-                        return manualInput ? manualInput.value.trim() : '';
-                    }
-                    return siteSelect ? siteSelect.value.trim() : '';
-                }
-
-                function applyTargetMode(mode) {
-                    var useManual = mode === 'manual';
-                    modeInputs.forEach(function (input) {
-                        input.checked = input.value === mode;
-                    });
-                    if (manualInput) {
-                        manualInput.style.display = useManual ? 'inline-block' : 'none';
-                        manualInput.disabled = !useManual;
-                    }
-                    if (siteSelect) {
-                        siteSelect.style.display = useManual ? 'none' : 'inline-block';
-                        siteSelect.disabled = useManual;
-                    }
-                    if (includePosts) {
-                        includePosts.disabled = useManual;
-                        if (useManual) {
-                            includePosts.checked = false;
-                        }
-                    }
-                    if (maxPostsInput) {
-                        maxPostsInput.disabled = useManual || !includePosts || !includePosts.checked;
-                    }
-                }
-
-                function loadSites() {
-                    if (selector.loadSites) {
-                        sites = selector.loadSites(sitesStoreKey);
-                        return;
-                    }
-                    sites = [];
-                }
-
-                function renderSites() {
-                    if (selector.renderSitesSelect) {
-                        selector.renderSitesSelect(siteSelect, sites, homeUrl);
-                    }
-                }
-
-                modeInputs.forEach(function (input) {
-                    input.addEventListener('change', function () {
-                        applyTargetMode(input.value);
-                        updateTargetModeControls();
-                    });
-                });
-
-                if (manualInput) {
-                    manualInput.addEventListener('input', function () {
-                        resetSubpages(true);
-                        updateTargetModeControls();
-                    });
-                    manualInput.addEventListener('change', function () {
-                        resetSubpages(true);
-                        updateTargetModeControls();
-                    });
-                }
-
-                if (siteSelect) {
-                    siteSelect.addEventListener('change', function () {
-                        resetSubpages(true);
-                        updateTargetModeControls();
-                    });
-                }
-
-                if (subpagesSelect) {
-                    subpagesSelect.addEventListener('change', function () {
-                        updateTargetModeControls();
-                    });
-                }
-
-                if (envInputs.length) {
-                    envInputs.forEach(function (input) {
-                        input.addEventListener('change', function () {
-                            resetSubpages(true);
-                            updateTargetModeControls();
-                        });
-                    });
-                }
-
-                if (includePosts && maxPostsInput) {
-                    includePosts.addEventListener('change', function () {
-                        maxPostsInput.disabled = !includePosts.checked;
-                    });
-                    maxPostsInput.disabled = !includePosts.checked;
-                }
-
-                if (listPagesBtn) {
-                    listPagesBtn.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        if (listPagesBtn.disabled) {
-                            return;
-                        }
-                        if (!listPagesNonce) {
-                            setStatus('<?php echo esc_js( __( 'List Pages is not configured.', 'beseo' ) ); ?>');
-                            return;
-                        }
-                        var url = currentTargetUrl();
-                        if (!url) {
-                            setStatus('<?php echo esc_js( __( 'Select a target URL first.', 'beseo' ) ); ?>');
-                            return;
-                        }
-                        if (currentMode() === 'manual' && !isHomepageUrl(url)) {
-                            setStatus('<?php echo esc_js( __( 'List Pages requires a homepage URL.', 'beseo' ) ); ?>');
-                            resetSubpages(true);
-                            return;
-                        }
-                        var max = siteLimitInput ? parseInt(siteLimitInput.value, 10) : 25;
-                        max = isNaN(max) ? 25 : max;
-                        isListing = true;
-                        listReady = false;
-                        updateTargetModeControls();
-                        setStatus('<?php echo esc_js( __( 'Listing sitemap pages...', 'beseo' ) ); ?>');
-                        resetSubpages(true);
-                        if (!selector.requestListPages) {
-                            setStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
-                            resetSubpages(true);
-                            isListing = false;
-                            updateTargetModeControls();
-                            return;
-                        }
-                        selector.requestListPages({
-                            ajaxUrl: ajaxUrl,
-                            nonce: listPagesNonce,
-                            url: url,
-                            local: isLocalSelected(),
-                            max: max
-                        }).then(function (response) {
-                            isListing = false;
-                            updateTargetModeControls();
-                            if (!response || !response.success) {
-                                var msg = response && response.data && response.data.message ? response.data.message : '<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>';
-                                setStatus(msg);
-                                resetSubpages(true);
-                                listReady = false;
-                                return;
-                            }
-                            var pages = response.data && response.data.pages ? response.data.pages : [];
-                            if (!pages.length) {
-                                setStatus('<?php echo esc_js( __( 'No sitemap pages found.', 'beseo' ) ); ?>');
-                                resetSubpages(true);
-                                listReady = false;
-                                return;
-                            }
-                            populateSubpages(pages);
-                            setStatus('<?php echo esc_js( __( 'Pages loaded.', 'beseo' ) ); ?>');
-                            updateTargetModeControls();
-                        }).catch(function () {
-                            isListing = false;
-                            updateTargetModeControls();
-                            setStatus('<?php echo esc_js( __( 'Failed to list pages.', 'beseo' ) ); ?>');
-                            resetSubpages(true);
-                        });
-                    });
-                }
-
-                loadSites();
-                renderSites();
-                applyTargetMode(currentMode());
-                resetSubpages(true);
-                updateTargetModeControls();
-                if (listReady) {
-                    updateTargetModeControls();
-                }
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initTesterSelector);
-            } else {
-                initTesterSelector();
             }
         })();
     </script>

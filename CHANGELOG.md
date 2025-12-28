@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [2.1.62] - 2025-12-27
+Summary: Devnotes + social admin.
+
+### Changed
+- Touched areas: devnotes, social admin.
+
+### Files
+- assets/js/schema.js
+- beseo-devnotes.json
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+- includes/admin/partials/playfair-capture-script.php
+- includes/admin/partials/validator-panel.php
+- includes/admin/partials/validator-script.php
+- includes/admin/schema-view-preview.php
+- includes/admin/schema-view.php
+
+
 ## [2.1.61] - 2025-12-27
 Summary: Devnotes + social admin.
 

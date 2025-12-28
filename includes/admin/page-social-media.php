@@ -237,14 +237,6 @@ function be_schema_engine_render_social_media_page() {
         BE_SCHEMA_ENGINE_VERSION,
         true
     );
-    wp_enqueue_script(
-        'be-schema-selector',
-        BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
-        array(),
-        BE_SCHEMA_ENGINE_VERSION,
-        true
-    );
-
     // Save on POST.
     if ( isset( $_POST['be_schema_social_settings_submitted'] ) ) {
         be_schema_engine_save_social_settings();
@@ -393,11 +385,6 @@ function be_schema_engine_render_social_media_page() {
         $twitter_optional_props[] = 'twitter_image_alt';
     }
     $twitter_optional_serialized = implode( ',', $twitter_optional_props );
-
-    // Data for Validator tab (shared with Tools validator).
-    $validator_targets   = be_schema_admin_get_validator_targets();
-    $validator_page_data = $validator_targets['pages'];
-    $validator_post_data = $validator_targets['posts'];
 
     ?>
     <script>
@@ -726,13 +713,6 @@ function be_schema_engine_render_social_media_page() {
                                class="be-schema-social-tab-link"
                                data-social-tab="content">
                                 <?php esc_html_e( 'Open Graph', 'beseo' ); ?>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#be-schema-social-tab-validator"
-                               class="be-schema-social-tab-link"
-                               data-social-tab="validator">
-                                <?php esc_html_e( 'Tests', 'beseo' ); ?>
                             </a>
                         </li>
                         <li>
@@ -1130,25 +1110,6 @@ function be_schema_engine_render_social_media_page() {
                             </tbody>
                         </table>
                     </div>
-                </div>
-                <div id="be-schema-social-tab-validator" class="be-schema-social-tab-panel">
-                    <h2><?php esc_html_e( 'Tests', 'beseo' ); ?></h2>
-                    <?php
-                    $validator_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-styles.php';
-                    $validator_panel  = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-panel.php';
-                    $validator_script = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/validator-script.php';
-                    if ( file_exists( $validator_styles ) ) {
-                        include $validator_styles;
-                    }
-                    if ( file_exists( $validator_panel ) ) {
-                        include $validator_panel;
-                    } else {
-                        echo '<p class="description">' . esc_html__( 'Tests unavailable.', 'beseo' ) . '</p>';
-                    }
-                    if ( file_exists( $validator_script ) ) {
-                        include $validator_script;
-                    }
-                    ?>
                 </div>
                 <div id="be-schema-social-tab-platforms" class="be-schema-social-tab-panel">
                     <h2><?php esc_html_e( 'Platforms', 'beseo' ); ?></h2>
@@ -2073,7 +2034,7 @@ function be_schema_engine_render_social_media_page() {
                                     <h4 class="be-schema-social-section-title"><?php esc_html_e( 'Tools', 'beseo' ); ?></h4>
                                     <p class="description be-schema-social-description">
                                         <?php esc_html_e(
-                                            'Use the Validator tab under Tools for Twitter Card validation and previews.',
+                                            'Use Tester \u2192 Social Tests for Twitter Card validation and previews.',
                                             'beseo'
                                         ); ?>
                                     </p>

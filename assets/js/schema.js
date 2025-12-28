@@ -777,11 +777,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     var targetHelp = document.getElementById('be-schema-preview-target-help');
                     var targetStatus = document.getElementById('be-schema-preview-target-status');
                     var targetModeInputs = previewRoot.querySelectorAll('input[name="be-schema-preview-target-mode"]');
+                    if (!targetModeInputs.length) {
+                        targetModeInputs = document.querySelectorAll('input[name="be-schema-preview-target-mode"]');
+                    }
                     var siteSelect = document.getElementById('be-schema-preview-site');
                     var listPagesBtn = document.getElementById('be-schema-preview-list-pages');
                     var subpagesSelect = document.getElementById('be-schema-preview-subpages');
                     var siteLimitInput = document.getElementById('be-schema-preview-site-limit');
                     var envInputs = previewRoot.querySelectorAll('input[name="be-schema-preview-env"]');
+                    if (!envInputs.length) {
+                        envInputs = document.querySelectorAll('input[name="be-schema-preview-env"]');
+                    }
                     var includePostsToggle = document.getElementById('be-schema-preview-include-posts');
                     var maxPostsInput = document.getElementById('be-schema-preview-max-posts');
                     var healthBtn = document.getElementById('be-schema-preview-health');

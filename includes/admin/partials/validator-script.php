@@ -18,18 +18,30 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                 var tabs = document.querySelectorAll('.nav-tab-wrapper a[data-tools-tab]');
                 var panels = document.querySelectorAll('.be-schema-tools-panel');
                 var defaultTab = 'validator';
+                var hasValidatorTab = false;
+                tabs.forEach(function (tab) {
+                    if (tab.getAttribute('data-tools-tab') === 'validator') {
+                        hasValidatorTab = true;
+                    }
+                });
 
                 var validatorMode = document.querySelectorAll('input[name="be_schema_validator_mode"]');
+                if (!validatorMode.length) {
+                    validatorMode = document.querySelectorAll('input[name="be-schema-preview-target-mode"]');
+                }
                 var validatorType = document.querySelectorAll('input[name="be_schema_validator_type"]');
-                var siteSelect = document.getElementById('be-schema-validator-site');
-                var validatorManual = document.getElementById('be-schema-validator-manual');
-                var includePosts = document.getElementById('be-schema-validator-include-posts');
-                var maxPostsInput = document.getElementById('be-schema-validator-max-posts');
-                var listPagesBtn = document.getElementById('be-schema-validator-list-pages');
-                var subpagesSelect = document.getElementById('be-schema-validator-subpages');
-                var siteLimitInput = document.getElementById('be-schema-validator-site-limit');
+                var siteSelect = document.getElementById('be-schema-validator-site') || document.getElementById('be-schema-preview-site');
+                var validatorManual = document.getElementById('be-schema-validator-manual') || document.getElementById('be-schema-preview-target');
+                var includePosts = document.getElementById('be-schema-validator-include-posts') || document.getElementById('be-schema-preview-include-posts');
+                var maxPostsInput = document.getElementById('be-schema-validator-max-posts') || document.getElementById('be-schema-preview-max-posts');
+                var listPagesBtn = document.getElementById('be-schema-validator-list-pages') || document.getElementById('be-schema-preview-list-pages');
+                var subpagesSelect = document.getElementById('be-schema-validator-subpages') || document.getElementById('be-schema-preview-subpages');
+                var siteLimitInput = document.getElementById('be-schema-validator-site-limit') || document.getElementById('be-schema-preview-site-limit');
                 var envInputs = document.querySelectorAll('input[name="be-schema-validator-env"]');
-                var selectorStatus = document.getElementById('be-schema-validator-selector-status');
+                if (!envInputs.length) {
+                    envInputs = document.querySelectorAll('input[name="be-schema-preview-env"]');
+                }
+                var selectorStatus = document.getElementById('be-schema-validator-selector-status') || document.getElementById('be-schema-preview-target-status');
                 var ogCheckbox = document.getElementById('be-schema-validator-og');
                 var twitterCheckbox = document.getElementById('be-schema-validator-twitter');
                 var cropsCheckbox = document.getElementById('be-schema-validator-crops');
@@ -93,14 +105,16 @@ var validatorPages = <?php echo wp_json_encode( $validator_page_data ); ?>;
                     });
                 }
 
-                tabs.forEach(function(tab) {
-                    tab.addEventListener('click', function(event) {
-                        event.preventDefault();
-                        activateTab(tab.getAttribute('data-tools-tab'));
+                if (hasValidatorTab) {
+                    tabs.forEach(function(tab) {
+                        tab.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            activateTab(tab.getAttribute('data-tools-tab'));
+                        });
                     });
-                });
 
-                activateTab(defaultTab || 'dashboard');
+                    activateTab(defaultTab || 'dashboard');
+                }
 
                     function getRadioValue(inputs) {
                         var selected = '';

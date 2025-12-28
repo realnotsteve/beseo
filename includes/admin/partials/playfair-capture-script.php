@@ -336,16 +336,16 @@
                     resultsEl.style.display = 'block';
                 }
 
-                if (context === 'schema') {
+                var counts = {};
+                if (schemaDom || schemaServer) {
                     var schemaDomList = payload.schema ? payload.schema.dom : [];
                     var schemaServerList = payload.schema ? payload.schema.server : [];
                     setPre(schemaDom, schemaDomList);
                     setPre(schemaServer, schemaServerList);
-                    renderMeta(payload.meta || {}, payload, {
-                        schemaDom: countList(schemaDomList),
-                        schemaServer: countList(schemaServerList)
-                    });
-                } else {
+                    counts.schemaDom = countList(schemaDomList);
+                    counts.schemaServer = countList(schemaServerList);
+                }
+                if (ogDom || ogServer || twitterDom || twitterServer) {
                     var domEntries = payload.opengraph ? payload.opengraph.dom : [];
                     var serverEntries = payload.opengraph ? payload.opengraph.server : [];
                     var domSplit = splitOpengraph(domEntries);
@@ -354,13 +354,12 @@
                     setPre(ogServer, serverSplit.og);
                     setPre(twitterDom, domSplit.twitter);
                     setPre(twitterServer, serverSplit.twitter);
-                    renderMeta(payload.meta || {}, payload, {
-                        ogDom: countList(domSplit.og),
-                        ogServer: countList(serverSplit.og),
-                        twitterDom: countList(domSplit.twitter),
-                        twitterServer: countList(serverSplit.twitter)
-                    });
+                    counts.ogDom = countList(domSplit.og);
+                    counts.ogServer = countList(serverSplit.og);
+                    counts.twitterDom = countList(domSplit.twitter);
+                    counts.twitterServer = countList(serverSplit.twitter);
                 }
+                renderMeta(payload.meta || {}, payload, counts);
 
                 if (payload.logs) {
                     setPre(logsConsole, payload.logs.console || null);
