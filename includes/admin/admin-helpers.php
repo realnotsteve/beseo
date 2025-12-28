@@ -67,3 +67,35 @@ if ( ! function_exists( 'be_schema_admin_get_validator_targets' ) ) {
         );
     }
 }
+
+if ( ! function_exists( 'be_schema_admin_get_playfair_defaults' ) ) {
+    /**
+     * Retrieve Playfair capture defaults from settings.
+     *
+     * @param array|null $settings Optional settings override.
+     * @return array
+     */
+    function be_schema_admin_get_playfair_defaults( $settings = null ) {
+        if ( null === $settings ) {
+            if ( function_exists( 'be_schema_engine_get_settings' ) ) {
+                $settings = be_schema_engine_get_settings();
+            } else {
+                $settings = get_option( 'be_schema_engine_settings', array() );
+            }
+        }
+
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        return array(
+            'mode'         => isset( $settings['playfair_mode'] ) ? $settings['playfair_mode'] : 'auto',
+            'profile'      => isset( $settings['playfair_default_profile'] ) ? $settings['playfair_default_profile'] : 'desktop_chromium',
+            'wait_ms'      => isset( $settings['playfair_default_wait_ms'] ) ? (int) $settings['playfair_default_wait_ms'] : 1500,
+            'include_html' => ! empty( $settings['playfair_include_html_default'] ),
+            'include_logs' => ! empty( $settings['playfair_include_logs_default'] ),
+            'locale'       => isset( $settings['playfair_default_locale'] ) ? $settings['playfair_default_locale'] : '',
+            'timezone'     => isset( $settings['playfair_default_timezone'] ) ? $settings['playfair_default_timezone'] : '',
+        );
+    }
+}

@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.58",
+    "version": "2.1.59",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -540,7 +540,9 @@
     "Schema > Preview Target now uses the Selector box pattern (Local toggle, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages) and removes the Use Homepage shortcut.",
     "Image Selection Summary panels have been removed from Platforms (dashboard and overviews) to streamline the social UI.",
     "Schema > Tests Render Criteria now shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls removed).",
-    "Social Media > Tests now uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts) instead of the old dropdown/search selector."
+    "Social Media > Tests now uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts) instead of the old dropdown/search selector.",
+    "Playfair capture outputs now live under Schema > Tests (schema) and Social Media > Tests (Open Graph/Twitter), removing the Tools > Playfair tab.",
+    "Sitemap page now includes a status pill with last generated time and links to /sitemap.xml, /sitemap_index.xml, and the latest sitemap file; the success notice also shows the friendly /sitemap_index.xml link."
   ],
   "ui_rules": [
     "Use the \"Selector\" box pattern (as in Analyser > Overview) whenever a user must select a web page."
@@ -548,7 +550,8 @@
   "logic_notes": [
     "Social engine now honors the per-network enable toggles: Open Graph output depends on social_enable_og, Twitter Cards on social_enable_twitter, and both keys now have defaults to avoid notices on fresh installs.",
     "The master social enable flag now mirrors the per-network toggles so Open Graph/Twitter output no longer stops early when the legacy master flag was unset.",
-    "Schema engine now honors admin override flags for BE_SCHEMA_DISABLE_ALL, BE_SCHEMA_DISABLE_ELEMENTOR, and BE_SCHEMA_DEBUG when wp-config constants are not set."
+    "Schema engine now honors admin override flags for BE_SCHEMA_DISABLE_ALL, BE_SCHEMA_DISABLE_ELEMENTOR, and BE_SCHEMA_DEBUG when wp-config constants are not set.",
+    "Sitemap alias now runs early on template_redirect so /sitemap.xml is served before canonical redirects."
   ],
   "refactor_notes": [
     "Centralized social settings defaults/merging into includes/engine/core-social-settings.php; core-social.php and the admin save now share a single source of truth for default keys and merges.",
@@ -557,7 +560,9 @@
     "Schema optional dropdowns now use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels.",
     "Added shared admin helpers for URL validation and validator target lists; schema/social now delegate to them.",
     "Added shared selector utilities (includes/admin/js/be-selector.js) to reuse list-pages/selector logic across analyser, schema preview, and validator.",
-    "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials."
+    "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials.",
+    "Created shared Playfair capture partials and moved the Tools Playfair UI into Schema > Tests and Social Media > Tests.",
+    "Fixed Schema > Tests Playfair include to avoid a PHP parse error."
   ],
   "ui_notes_tools": [
     "Tools submenu now has Dashboard and Images tabs; Dashboard points to key schema/social toggles, Images links to Schema \u2192 WebSite images while we stage future utilities. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."

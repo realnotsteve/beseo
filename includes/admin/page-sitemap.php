@@ -52,8 +52,9 @@ if ( ! function_exists( 'be_schema_engine_build_sitemap_entries' ) ) {
 
         if ( $args['include_home'] ) {
             $home_lastmod = gmdate( 'c', time() );
+            $home_loc     = home_url( '/' );
             $entries[] = array(
-                'loc'        => home_url( '/' ),
+                'loc'        => $home_loc,
                 'lastmod'    => $home_lastmod,
                 'changefreq' => $args['changefreq_home'],
                 'priority'   => number_format( $args['priority_home'] / 10, 1, '.', '' ),
@@ -101,8 +102,9 @@ if ( ! function_exists( 'be_schema_engine_build_sitemap_entries' ) ) {
                     $entry_freq         = $is_page ? $args['changefreq_pages'] : $args['changefreq_posts'];
                     $entry_priority_raw = $is_page ? $args['priority_pages'] : max( $args['priority_posts'], $args['priority_posts_min'] );
                     $entry_lastmod      = $args['include_lastmod'] ? gmdate( 'c', strtotime( $lastmod ? $lastmod : 'now' ) ) : '';
+                    $entry_loc          = get_permalink( $post_item );
                     $entries[]          = array(
-                        'loc'        => get_permalink( $post_item ),
+                        'loc'        => $entry_loc,
                         'lastmod'    => $entry_lastmod,
                         'changefreq' => $entry_freq,
                         'priority'   => number_format( $entry_priority_raw / 10, 1, '.', '' ),
@@ -126,8 +128,9 @@ if ( ! function_exists( 'be_schema_engine_build_sitemap_entries' ) ) {
 
             foreach ( $archives as $archive_entry ) {
                 $entry_lastmod    = $args['include_lastmod'] ? $archive_entry['lastmod'] : '';
+                $archive_loc      = $archive_entry['loc'];
                 $entries[]        = array(
-                    'loc'        => $archive_entry['loc'],
+                    'loc'        => $archive_loc,
                     'lastmod'    => $entry_lastmod,
                     'changefreq' => $archive_entry['current'] ? $args['changefreq_archive_now'] : $args['changefreq_archive_old'],
                     'priority'   => number_format( $args['priority_archives'] / 10, 1, '.', '' ),
@@ -999,8 +1002,8 @@ if ( ! function_exists( 'be_schema_engine_write_sitemaps' ) ) {
                 $result['notice_class'] = 'error';
                 return $result;
             }
-            $written_paths[]        = $file_path;
-            $written_urls[]         = trailingslashit( $upload_dir['baseurl'] ) . 'beseo-sitemaps/' . $file_def['name'];
+            $written_paths[] = $file_path;
+            $written_urls[]  = trailingslashit( $upload_dir['baseurl'] ) . 'beseo-sitemaps/' . $file_def['name'];
             $sitemap_written_meta[] = array(
                 'url'     => trailingslashit( $upload_dir['baseurl'] ) . 'beseo-sitemaps/' . $file_def['name'],
                 'path'    => $file_path,
@@ -1139,6 +1142,39 @@ function be_schema_engine_render_sitemap_page() {
         }
     }
 
+    $sitemap_meta         = get_option( 'be_schema_sitemap_last', array() );
+    $sitemap_meta         = is_array( $sitemap_meta ) ? $sitemap_meta : array();
+    $sitemap_generated_at = isset( $sitemap_meta['generated_at'] ) ? (string) $sitemap_meta['generated_at'] : '';
+    $sitemap_generated_ts = $sitemap_generated_at ? strtotime( $sitemap_generated_at ) : 0;
+    $sitemap_generated_on = $sitemap_generated_ts ? date_i18n( 'M j, Y g:i a', $sitemap_generated_ts ) : '';
+    $sitemap_status_label = __( 'Not generated', 'beseo' );
+    $sitemap_status_class = 'off';
+    $sitemap_status_note  = '';
+    $sitemap_file_path    = '';
+    if ( $sitemap_generated_at ) {
+        if ( ! empty( $sitemap_meta['index_path'] ) && file_exists( $sitemap_meta['index_path'] ) ) {
+            $sitemap_file_path = $sitemap_meta['index_path'];
+        } elseif ( ! empty( $sitemap_meta['sitemaps'][0]['path'] ) && file_exists( $sitemap_meta['sitemaps'][0]['path'] ) ) {
+            $sitemap_file_path = $sitemap_meta['sitemaps'][0]['path'];
+        } elseif ( ! empty( $sitemap_meta['primary_path'] ) && file_exists( $sitemap_meta['primary_path'] ) ) {
+            $sitemap_file_path = $sitemap_meta['primary_path'];
+        }
+
+        if ( $sitemap_file_path ) {
+            $sitemap_status_label = __( 'Generated', 'beseo' );
+            $sitemap_status_class = '';
+        } else {
+            $sitemap_status_label = __( 'Missing file', 'beseo' );
+            $sitemap_status_note  = __( 'The last generated sitemap file was not found on disk.', 'beseo' );
+        }
+    }
+    $sitemap_latest_url = '';
+    if ( ! empty( $sitemap_meta['index_url'] ) ) {
+        $sitemap_latest_url = $sitemap_meta['index_url'];
+    } elseif ( ! empty( $sitemap_meta['primary_url'] ) ) {
+        $sitemap_latest_url = $sitemap_meta['primary_url'];
+    }
+
     ?>
     <div class="wrap">
         <h1><?php esc_html_e( 'BE Schema Engine – Sitemap', 'beseo' ); ?></h1>
@@ -1175,6 +1211,12 @@ function be_schema_engine_render_sitemap_page() {
                     <p>
                         <strong><?php esc_html_e( 'Sitemap index URL:', 'beseo' ); ?></strong>
                         <a href="<?php echo esc_url( $written_index_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $written_index_url ); ?></a>
+                    </p>
+                <?php endif; ?>
+                <?php if ( $written_index_url ) : ?>
+                    <p>
+                        <strong><?php esc_html_e( 'Friendly index URL:', 'beseo' ); ?></strong>
+                        <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( home_url( '/sitemap_index.xml' ) ); ?></a>
                     </p>
                 <?php endif; ?>
                 <?php if ( $written_index_path ) : ?>
@@ -1267,12 +1309,73 @@ function be_schema_engine_render_sitemap_page() {
                 border-radius: 4px;
                 padding: 10px 12px;
             }
+            .be-schema-status-row {
+                margin: 4px 0 10px;
+            }
+            .be-schema-status-pill {
+                display: inline-block;
+                margin-right: 6px;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 12px;
+                letter-spacing: 0.01em;
+                background-color: #31b355ff;
+                border: 1px solid #2a2a2aff;
+                color: #ffffffff;
+            }
+            .be-schema-status-pill.off {
+                background-color: #b03e31ff;
+                border: 1px solid #2a2a2aff;
+                color: #ffffffff;
+            }
         </style>
 
         <form method="get" id="be-schema-sitemap-form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return false;">
             <?php wp_nonce_field( 'be_schema_generate_sitemap', 'be_schema_sitemap_nonce' ); ?>
             <input type="hidden" name="action" value="be_schema_generate_sitemap" />
             <div class="beseo-sitemap-sections">
+                <div class="beseo-sitemap-section">
+                    <h3 class="beseo-section-title"><?php esc_html_e( 'Status', 'beseo' ); ?></h3>
+                    <p class="be-schema-status-row">
+                        <span class="be-schema-status-pill <?php echo esc_attr( $sitemap_status_class ); ?>">
+                            <?php
+                            printf(
+                                esc_html__( 'Sitemap: %s', 'beseo' ),
+                                esc_html( $sitemap_status_label )
+                            );
+                            ?>
+                        </span>
+                    </p>
+                    <p class="description">
+                        <?php if ( $sitemap_generated_on ) : ?>
+                            <?php
+                            printf(
+                                esc_html__( 'Last generated: %s', 'beseo' ),
+                                esc_html( $sitemap_generated_on )
+                            );
+                            ?>
+                        <?php else : ?>
+                            <?php esc_html_e( 'No sitemap has been generated yet.', 'beseo' ); ?>
+                        <?php endif; ?>
+                        <?php if ( $sitemap_status_note ) : ?>
+                            <br /><?php echo esc_html( $sitemap_status_note ); ?>
+                        <?php endif; ?>
+                    </p>
+                    <p class="description">
+                        <a href="<?php echo esc_url( home_url( '/sitemap.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
+                            <?php esc_html_e( 'Open /sitemap.xml', 'beseo' ); ?>
+                        </a>
+                        | <a href="<?php echo esc_url( home_url( '/sitemap_index.xml' ) ); ?>" target="_blank" rel="noopener noreferrer">
+                            <?php esc_html_e( 'Open /sitemap_index.xml', 'beseo' ); ?>
+                        </a>
+                        <?php if ( $sitemap_latest_url ) : ?>
+                            | <a href="<?php echo esc_url( $sitemap_latest_url ); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php esc_html_e( 'Open latest file', 'beseo' ); ?>
+                            </a>
+                        <?php endif; ?>
+                    </p>
+                </div>
                 <div class="beseo-sitemap-section">
                     <h3 class="beseo-section-title"><?php esc_html_e( 'Inclusion', 'beseo' ); ?></h3>
                     <table class="form-table">
@@ -1511,6 +1614,7 @@ function be_schema_engine_render_sitemap_page() {
             var hasFlash = <?php echo wp_json_encode( isset( $_GET['beseo_sitemap_flash'] ) ); ?>;
             var inlineErr = document.getElementById('be-schema-sitemap-inline-error');
             var generating = false;
+
             if (selectEl) {
                 selectEl.addEventListener('change', function() {
                     if (iframeEl) {

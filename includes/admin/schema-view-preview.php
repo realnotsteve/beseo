@@ -8,6 +8,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function be_schema_engine_render_schema_tab_preview() {
+    $playfair_styles = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-styles.php';
+    if ( file_exists( $playfair_styles ) ) {
+        include $playfair_styles;
+    }
     ?>
     <h2><?php esc_html_e( 'Preview', 'beseo' ); ?></h2>
     <p class="description be-schema-description">
@@ -141,5 +145,33 @@ function be_schema_engine_render_schema_tab_preview() {
         <p class="description"><?php esc_html_e( 'Select two columns to compare their JSON-LD output.', 'beseo' ); ?></p>
         <div class="be-schema-preview-diff-body" id="be-schema-preview-diff-body"></div>
     </div>
+
+    <div class="be-schema-global-section">
+        <h4 class="be-schema-section-title"><?php esc_html_e( 'Playfair Capture', 'beseo' ); ?></h4>
+        <p class="description">
+            <?php esc_html_e( 'Capture schema output via Playfair using the selector above.', 'beseo' ); ?>
+        </p>
+        <?php
+        $playfair_panel = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-panel.php';
+        if ( file_exists( $playfair_panel ) ) {
+            $playfair_capture_context  = 'schema';
+            $playfair_capture_selector = 'schema';
+            $playfair_capture_id       = 'be-schema-playfair';
+            $playfair_capture_defaults = function_exists( 'be_schema_admin_get_playfair_defaults' )
+                ? be_schema_admin_get_playfair_defaults()
+                : array();
+            $playfair_capture_show_schema  = true;
+            $playfair_capture_show_og      = false;
+            $playfair_capture_show_twitter = false;
+            $playfair_capture_show_html    = true;
+            $playfair_capture_show_logs    = true;
+            include $playfair_panel;
+        }
+        ?>
+    </div>
     <?php
+    $playfair_script = BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/partials/playfair-capture-script.php';
+    if ( file_exists( $playfair_script ) ) {
+        include $playfair_script;
+    }
 }

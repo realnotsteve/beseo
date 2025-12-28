@@ -113,4 +113,4 @@ function be_schema_engine_maybe_serve_sitemap_alias() {
     readfile( $target_path );
     exit;
 }
-add_action( 'template_redirect', 'be_schema_engine_maybe_serve_sitemap_alias' );
+add_action( 'template_redirect', 'be_schema_engine_maybe_serve_sitemap_alias', 1 );
