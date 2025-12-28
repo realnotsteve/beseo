@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.3] - 2025-12-28
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- CHANGELOG.md
+- beseo-devnotes.json
+- includes/admin/admin-menu.php
+- includes/admin/page-dashboard.php
+- includes/admin/page-tools.php
+
+
 ## [3.0.2] - 2025-12-28
 Summary: Devnotes + schema admin.
 
@@ -502,7 +516,7 @@ Summary: Playfair capture.
 
 ### Changed
 - Replaced the ZIP-based Playfair flow with a JSON capture client (local/remote, auto fallback, includeHtml/includeLogs, locale/timezone).
-- Updated Playfair settings, Tools UI, and CLI to match the JSON API, health checks, token handling, and SSRF guardrails.
+- Updated Playfair settings, Analyser UI, and CLI to match the JSON API, health checks, token handling, and SSRF guardrails.
 
 ### Files
 - beseo-devnotes.json
@@ -1034,10 +1048,10 @@ Summary: Devnotes.
 
 
 ## [2.0.22] - 2025-12-15
-Summary: Remove Tools Settings tab.
+Summary: Remove Analyser Settings tab.
 
 ### Changed
-- Removed the Settings tab from Tools; Tools now focuses on Dashboard, Validator, Images, and Help (when applicable).
+- Removed the Settings tab from Analyser; Analyser now focuses on Schema Tests, Social Tests, Images, and Help (when applicable).
 
 ### Files
 - beseo.php
@@ -1045,11 +1059,11 @@ Summary: Remove Tools Settings tab.
 - includes/admin/page-tools.php
 
 ## [2.1.0] - 2025-12-15
-Summary: Minor bump for Validator and Tools updates.
+Summary: Minor bump for Social Tests and Analyser updates.
 
 ### Changed
 - Incremented version to 2.1.0.
-- Added Tools Analysis tab placeholder and ongoing Validator UX refinements.
+- Added Analyser Analysis tab placeholder and ongoing Social Tests UX refinements.
 
 ### Files
 - beseo.php
@@ -1063,7 +1077,7 @@ Summary: Analyser submenu scaffold.
 - New Analyser submenu with Overview/Issues/Pages/History/Settings tabs and issue group sidebar.
 
 ### Changed
-- Removed the Analysis tab from Tools; Tools remains Dashboard/Validator/Images/Help.
+- Removed the Analysis tab from Analyser; Analyser remains Schema Tests/Social Tests/Images/Help.
 
 ### Files
 - beseo.php
@@ -1083,10 +1097,10 @@ Summary: Introduce build version segment.
 - beseo-devnotes.json
 
 ## [2.0.23] - 2025-12-15
-Summary: Add Tools Analysis tab (placeholder).
+Summary: Add Analyser Analysis tab (placeholder).
 
 ### Added
-- Added an Analysis tab under Tools (placeholder content).
+- Added an Analysis tab under Analyser (placeholder content).
 
 ### Changed
 - Incremented version to 2.0.23.
@@ -1097,10 +1111,10 @@ Summary: Add Tools Analysis tab (placeholder).
 - includes/admin/page-tools.php
 
 ## [2.0.21] - 2025-12-15
-Summary: Validator persistence, metrics, and UI controls.
+Summary: Social Tests persistence, metrics, and UI controls.
 
 ### Added
-- Fetch timing/redirect badges, fetch log drawer, and image/type/dimension metrics in Validator results.
+- Fetch timing/redirect badges, fetch log drawer, and image/type/dimension metrics in Social Tests results.
 - Copy summary action, per-platform preview visibility toggles, and session persistence for validator inputs.
 - External validators now include LinkedIn Post Inspector and Metatags, plus a new-tab toggle.
 
@@ -1147,14 +1161,14 @@ Summary: Devnotes + social admin.
 
 
 ## [2.0.17] - 2025-12-15
-Summary: Tools Validator UI + server-side validation.
+Summary: Analyser Social Tests UI + server-side validation.
 
 ### Added
-- New Validator tab layout with previews, source map, warnings, optional posts, search, manual URL mode, and crop overlays.
+- New Social Tests tab layout with previews, source map, warnings, optional posts, search, manual URL mode, and crop overlays.
 - Server-side validator that fetches pages/images, resolves platform sources, and flags Twitter downgrade, type, and aspect-ratio issues.
 
 ### Changed
-- Tools now defaults to the Validator tab; Twitter Tools points users to the Validator.
+- Analyser now defaults to the Social Tests tab; Twitter Tools points users to Social Tests.
 
 ### Files
 - beseo.php
@@ -1163,11 +1177,11 @@ Summary: Tools Validator UI + server-side validation.
 - includes/admin/page-tools.php
 
 ## [2.0.16] - 2025-12-15
-Summary: Tools Validator tab + cleanup.
+Summary: Analyser Social Tests tab + cleanup.
 
 ### Changed
-- Added a Validator tab under Tools with dropdown/manual URL selection and buttons for BESEO validator and Twitter’s validator (new tab).
-- Removed the Twitter Tools embed/controls; Twitter Tools now points users to Tools → Validator.
+- Added a Social Tests tab under Analyser with dropdown/manual URL selection and buttons for BESEO validator and Twitter’s validator (new tab).
+- Removed the Twitter Tools embed/controls; Twitter Tools now points users to Analyser → Social Tests.
 
 ### Files
 - beseo.php
@@ -1333,7 +1347,7 @@ Summary: Help text overrides + settings submenu.
 ### Changed
 - Added Help Text submenu with override UI and gettext-based overrides.
 - Bumped plugin/devnotes version to 2.0.3 for the new feature.
-- Tools page now adapts tabs for the Help Text entry point.
+- Analyser page now adapts tabs for the Help Text entry point.
 
 ### Files
 - beseo.php

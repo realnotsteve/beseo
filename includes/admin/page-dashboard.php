@@ -39,8 +39,8 @@ function be_schema_engine_render_dashboard_page() {
                 <?php esc_html_e( 'Reserved for future sameAs / social profile settings.', 'beseo' ); ?>
             </li>
             <li>
-                <strong><?php esc_html_e( 'Tools', 'beseo' ); ?></strong> –
-                <?php esc_html_e( 'Currently points you to the main diagnostics under Schema → Settings.', 'beseo' ); ?>
+                <strong><?php esc_html_e( 'Analyser', 'beseo' ); ?></strong> –
+                <?php esc_html_e( 'Diagnostics and testers for Schema, Social, and Playfair.', 'beseo' ); ?>
             </li>
         </ul>
 

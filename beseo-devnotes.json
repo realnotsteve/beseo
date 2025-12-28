@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -540,7 +540,7 @@
     "Image Selection Summary panels are not present in Platforms (dashboard and overviews) to streamline the social UI.",
     "Analyser > Schema Tests Render Criteria shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls are not present).",
     "Analyser > Social Tests uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts).",
-    "Playfair capture lives under Analyser > Wayfair Tester with schema, Open Graph, and Twitter outputs.",
+    "Playfair capture lives under Analyser > Playfair Tester with schema, Open Graph, and Twitter outputs.",
     "Sitemap page includes a status pill with last generated time and links to /sitemap.xml, /sitemap_index.xml, and the latest sitemap file; the success notice also shows the friendly /sitemap_index.xml link. Sitemap sections use tabs with Dashboard (status + preview/generate), Inclusion, Crawl Hints, Notifications, and External Links. Preview mode toggle always shows XML/HTML radios and disables the unavailable format. Dashboard contains a two-column status + preview/generate box (preview/generate on the left), a Generation Results box, and a Preview Results box; Generation Results uses a custom boxed summary instead of a WP notice stripe. Preview Results shows pretty-printed, color-coded XML/HTML code blocks side-by-side when both are present, with matched heights; a single preview keeps a minimum height."
   ],
   "ui_rules": [
@@ -562,16 +562,19 @@
     "Schema optional dropdowns use the shared optional-field helper with proper scopes/hidden/singleton metadata across Person, WebSite images, Organisation, and Publisher panels.",
     "Added shared admin helpers for URL validation and validator target lists; schema/social delegate to them.",
     "Added shared selector utilities (includes/admin/js/be-selector.js) to reuse list-pages/selector logic across analyser, schema preview, and validator.",
-    "Removed inline validator CSS/JS from the Tools page to rely on the shared validator partials.",
-    "Shared Playfair capture partials power Analyser > Wayfair Tester.",
+    "Removed inline validator CSS/JS from the Analyser page to rely on the shared validator partials.",
+    "Shared Playfair capture partials power Analyser > Playfair Tester.",
     "Fixed Schema Tests preview template after moving it into Analyser.",
     "Removed Schema Tests Playfair include after moving captures to Analyser.",
     "Added shared admin UI helpers (tabs/sections/status pills) plus admin-ui.css so sitemap/tools/schema reuse common layout styling.",
     "Moved Sitemap inline scripts into assets/js/sitemap-admin.js and localized runtime data for the admin UI.",
-    "Standardized tester panels in page-tools.php with shared wrapper + selector helpers for Schema, Social, Wayfair, Analyser, and Images tabs."
+    "Standardized tester panels in page-tools.php with shared wrapper + selector helpers for Schema, Social, Playfair, Analyser, and Images tabs.",
+    "Normalized Analyser/Playfair naming in UI strings and comments to avoid legacy Tools/Wayfair drift.",
+    "Aligned CHANGELOG terminology with Analyser/Playfair and Schema/Social Tests naming to reduce documentation drift."
   ],
   "ui_notes_tools": [
-    "Analyser submenu has Schema Tests, Social Tests, Wayfair Tester, Analyser, and Images tabs with a shared selector header; Analyser hosts its Overview/Issues/Pages/History/Settings subtabs; Images links to Schema \u2192 WebSite images. Tabs use WP nav-tab styling with inline CSS/JS fallback to ensure visibility.",
+    "Analyser submenu has Schema Tests, Social Tests, Playfair Tester, Analyser, and Images tabs with a shared selector header; Analyser hosts its Overview/Issues/Pages/History/Settings subtabs; Images links to Schema \u2192 WebSite images. Tabs use WP nav-tab styling with inline CSS/JS fallback to ensure visibility.",
+    "Analyser > Playfair Tester focuses on capture output only (settings summary removed).",
     "Analyser is accessed via the Analyser tab within the Analyser page (no separate submenu).",
     "Analyser appears above Settings in the admin submenu order."
   ],
@@ -604,7 +607,7 @@
     "Settings > Lists local checks skip URL remapping when the target is already local (localhost/.local/private IP).",
     "Settings > Lists local checks fall back to the current site base when the Playfair local base looks like a Playfair endpoint (host.docker.internal/port 3719).",
     "Library row order is Save Website, URL, Label, then Local/Remote checks. Saved sites render in the Websites box with the same controls plus a per-site Auto-check toggle. Local/Remote checks probe reachability via admin AJAX and store status per site.",
-    "Settings > Wayfair tab hosts Playfair configuration; Local File Access toggle controls private/localhost capture allowance.",
+    "Settings > Playfair tab hosts Playfair configuration; Local File Access toggle controls private/localhost capture allowance.",
     "Settings tabs use the standard hash-based nav-tab switching for immediate panel swaps."
   ],
   "debug_notes": [

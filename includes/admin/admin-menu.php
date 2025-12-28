@@ -105,7 +105,7 @@ function be_schema_engine_register_admin_menu() {
         'be_schema_engine_render_tools_page'
     );
 
-    // "Settings" submenu (shortcut into Tools for quick toggles).
+    // "Settings" submenu (shortcut into Analyser settings tabs).
     add_submenu_page(
         $top_level_slug,
         __( 'Settings', 'beseo' ),

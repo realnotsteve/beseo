@@ -514,7 +514,7 @@ function be_schema_engine_render_tester_panel_close() {
 }
 
 /**
- * Render the Tools submenu page.
+ * Render the Analyser/Settings submenu page.
  *
  * For now, all diagnostics and status information live under
  * Schema → Settings, but this page provides quick entry points.
@@ -775,7 +775,7 @@ function be_schema_engine_render_tools_page() {
             );
             $tools_tabs[] = array(
                 'key'   => 'wayfair',
-                'label' => __( 'Wayfair Tester', 'beseo' ),
+                'label' => __( 'Playfair Tester', 'beseo' ),
                 'href'  => '#be-schema-tools-wayfair',
                 'data'  => array( 'tools-tab' => 'wayfair' ),
             );
@@ -806,7 +806,7 @@ function be_schema_engine_render_tools_page() {
             );
             $tools_tabs[] = array(
                 'key'   => 'wayfair',
-                'label' => __( 'Wayfair', 'beseo' ),
+                'label' => __( 'Playfair', 'beseo' ),
                 'href'  => '#be-schema-tools-wayfair',
                 'data'  => array( 'tools-tab' => 'wayfair' ),
             );
@@ -881,50 +881,9 @@ function be_schema_engine_render_tools_page() {
             be_schema_engine_render_tester_panel_open(
                 'be-schema-tools-wayfair',
                 ( 'wayfair' === $tools_default_tab ),
-                __( 'Wayfair Tester', 'beseo' )
+                __( 'Playfair Tester', 'beseo' )
             );
             ?>
-                <div class="be-schema-playfair-box">
-                    <h3><?php esc_html_e( 'Wayfair Settings Summary', 'beseo' ); ?></h3>
-                    <p class="description">
-                        <?php esc_html_e( 'Review the current Playfair endpoints and defaults. Edit full settings under Settings → Wayfair.', 'beseo' ); ?>
-                    </p>
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Mode', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( $settings['playfair_mode'] ?? 'auto' ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Remote base URL', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( $settings['playfair_remote_base_url'] ?? '' ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Local base URL', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( $settings['playfair_local_base_url'] ?? '' ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Timeout (seconds)', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( (string) ( $settings['playfair_timeout_seconds'] ?? 60 ) ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Default profile', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( $settings['playfair_default_profile'] ?? 'desktop_chromium' ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Default wait (ms)', 'beseo' ); ?></th>
-                            <td><?php echo esc_html( (string) ( $settings['playfair_default_wait_ms'] ?? 1500 ) ); ?></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Local file access', 'beseo' ); ?></th>
-                            <td><?php echo ! empty( $settings['playfair_allow_private_targets'] ) ? esc_html__( 'Enabled', 'beseo' ) : esc_html__( 'Disabled', 'beseo' ); ?></td>
-                        </tr>
-                    </table>
-                    <p>
-                        <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=beseo-settings&tab=wayfair' ) ); ?>">
-                            <?php esc_html_e( 'Edit Wayfair Settings', 'beseo' ); ?>
-                        </a>
-                    </p>
-                </div>
                 <?php
                 if ( file_exists( $playfair_panel ) ) {
                     echo '<h3>' . esc_html__( 'Playfair Capture', 'beseo' ) . '</h3>';
@@ -1023,7 +982,7 @@ function be_schema_engine_render_tools_page() {
                     <input type="hidden" name="be_schema_playfair_settings_submitted" value="1" />
 
                     <div class="be-schema-playfair-box">
-                        <h3><?php esc_html_e( 'Wayfair Settings', 'beseo' ); ?></h3>
+                        <h3><?php esc_html_e( 'Playfair Settings', 'beseo' ); ?></h3>
                         <p class="description"><?php esc_html_e( 'Configure Playfair capture endpoints and defaults.', 'beseo' ); ?></p>
                         <table class="form-table">
                             <tr>
@@ -1117,7 +1076,7 @@ function be_schema_engine_render_tools_page() {
                         </table>
                     </div>
 
-                    <?php submit_button( __( 'Save Wayfair Settings', 'beseo' ) ); ?>
+                    <?php submit_button( __( 'Save Playfair Settings', 'beseo' ) ); ?>
                 </form>
             </div>
         <?php endif; ?>
