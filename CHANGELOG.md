@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.6] - 2025-12-28
+Summary: Devnotes.
+
+### Changed
+- Touched areas: devnotes.
+
+### Files
+- assets/css/schema.css
+- beseo-devnotes.json
+
+
 ## [3.0.5] - 2025-12-28
 Summary: Devnotes.
 

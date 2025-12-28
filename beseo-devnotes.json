@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "3.0.5",
+    "version": "3.0.6",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -540,6 +540,7 @@
     "Image Selection Summary panels are not present in Platforms (dashboard and overviews) to streamline the social UI.",
     "Analyser > Schema Tests Render Criteria shares one row with the Create/Refresh/Clear actions, uses vertical dividers between Capture/View/Colour/Add BE SEO, and derives Local vs Remote from the Selector (Render Location controls are not present).",
     "Analyser > Social Tests uses the shared Selector box pattern (Local/Remote, Websites/Manual URL, List Pages, Subpage(s), Max Site Pages, Include Posts/Max Posts).",
+    "Schema preview graph panels no longer enforce a minimum height so they can shrink to fit content.",
     "Playfair capture lives under Analyser > Playfair with schema, Open Graph, and Twitter outputs.",
     "Sitemap page includes a status pill with last generated time and links to /sitemap.xml, /sitemap_index.xml, and the latest sitemap file; the success notice also shows the friendly /sitemap_index.xml link. Sitemap sections use tabs with Dashboard (status + preview/generate), Inclusion, Crawl Hints, Notifications, and External Links. Preview mode toggle always shows XML/HTML radios and disables the unavailable format. Dashboard contains a two-column status + preview/generate box (preview/generate on the left), a Generation Results box, and a Preview Results box; Generation Results uses a custom boxed summary instead of a WP notice stripe. Preview Results shows pretty-printed, color-coded XML/HTML code blocks side-by-side when both are present, with matched heights; a single preview keeps a minimum height."
   ],
