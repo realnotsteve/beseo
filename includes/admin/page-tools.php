@@ -634,13 +634,13 @@ function be_schema_engine_render_tools_page() {
         } else {
             $tools_default_tab = 'help';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'schema', 'social', 'wayfair', 'analyser', 'images' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'schema', 'social', 'wayfair', 'analyser' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
     <div class="wrap">
         <h1>
-            <?php echo $is_settings_submenu ? esc_html__( 'BE Schema Engine – Settings', 'beseo' ) : esc_html__( 'BE Schema Engine – Analyser', 'beseo' ); ?>
+            <?php echo $is_settings_submenu ? esc_html__( 'BE SEO – Settings', 'beseo' ) : esc_html__( 'BE SEO – Analyser', 'beseo' ); ?>
         </h1>
         <style>
             .be-schema-help-accent {
@@ -775,7 +775,7 @@ function be_schema_engine_render_tools_page() {
             );
             $tools_tabs[] = array(
                 'key'   => 'wayfair',
-                'label' => __( 'Playfair Tester', 'beseo' ),
+                'label' => __( 'Playfair', 'beseo' ),
                 'href'  => '#be-schema-tools-wayfair',
                 'data'  => array( 'tools-tab' => 'wayfair' ),
             );
@@ -784,12 +784,6 @@ function be_schema_engine_render_tools_page() {
                 'label' => __( 'Analyser', 'beseo' ),
                 'href'  => '#be-schema-tools-analyser',
                 'data'  => array( 'tools-tab' => 'analyser' ),
-            );
-            $tools_tabs[] = array(
-                'key'   => 'images',
-                'label' => __( 'Images', 'beseo' ),
-                'href'  => '#be-schema-tools-images',
-                'data'  => array( 'tools-tab' => 'images' ),
             );
         } else {
             $tools_tabs[] = array(
@@ -881,12 +875,19 @@ function be_schema_engine_render_tools_page() {
             be_schema_engine_render_tester_panel_open(
                 'be-schema-tools-wayfair',
                 ( 'wayfair' === $tools_default_tab ),
-                __( 'Playfair Tester', 'beseo' )
+                ''
             );
             ?>
                 <?php
                 if ( file_exists( $playfair_panel ) ) {
-                    echo '<h3>' . esc_html__( 'Playfair Capture', 'beseo' ) . '</h3>';
+                    be_schema_engine_admin_render_section_open(
+                        __( 'Playfair Capture', 'beseo' ),
+                        array(
+                            'section_class' => 'be-schema-global-section',
+                            'title_class'   => 'be-schema-section-title',
+                            'title_tag'     => 'h4',
+                        )
+                    );
                     echo '<p class="description">' . esc_html__( 'Capture schema, Open Graph, and Twitter tags via Playfair using the shared selector above.', 'beseo' ) . '</p>';
                     $playfair_capture_context  = 'tester';
                     $playfair_capture_selector = 'schema';
@@ -900,6 +901,7 @@ function be_schema_engine_render_tools_page() {
                     $playfair_capture_show_html    = true;
                     $playfair_capture_show_logs    = true;
                     include $playfair_panel;
+                    be_schema_engine_admin_render_section_close();
                 }
                 ?>
             <?php be_schema_engine_render_tester_panel_close(); ?>
@@ -1079,23 +1081,6 @@ function be_schema_engine_render_tools_page() {
                     <?php submit_button( __( 'Save Playfair Settings', 'beseo' ) ); ?>
                 </form>
             </div>
-        <?php endif; ?>
-
-        <?php if ( ! $is_settings_submenu ) : ?>
-            <?php
-            be_schema_engine_render_tester_panel_open(
-                'be-schema-tools-images',
-                ( 'images' === $tools_default_tab ),
-                __( 'Images', 'beseo' ),
-                __( 'Image helpers: use Schema → Website → Global/Person/Publisher for recommended aspect ratios and validation pills. More tools coming soon.', 'beseo' )
-            );
-            ?>
-                <p>
-                    <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=beseo-schema#website' ) ); ?>">
-                        <?php esc_html_e( 'Go to Schema Images', 'beseo' ); ?>
-                    </a>
-                </p>
-            <?php be_schema_engine_render_tester_panel_close(); ?>
         <?php endif; ?>
 
     </div>

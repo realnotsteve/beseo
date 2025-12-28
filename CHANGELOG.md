@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.4] - 2025-12-28
+Summary: Devnotes + social admin.
+
+### Changed
+- Touched areas: devnotes, social admin.
+
+### Files
+- beseo-devnotes.json
+- includes/admin/page-analyser.php
+- includes/admin/page-sitemap.php
+- includes/admin/page-social-media.php
+- includes/admin/page-tools.php
+- includes/admin/partials/social-facebook-content.php
+- includes/admin/partials/social-facebook.php
+- includes/admin/partials/social-open-graph.php
+- includes/admin/partials/social-platforms.php
+- includes/admin/partials/social-twitter-cards.php
+- includes/admin/partials/social-twitter.php
+
+
 ## [3.0.3] - 2025-12-28
 Summary: Devnotes.
 

@@ -1206,7 +1206,7 @@ function be_schema_engine_render_sitemap_page() {
 
     ?>
     <div class="wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Sitemap', 'beseo' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Sitemap', 'beseo' ); ?></h1>
 
         <p class="description">
             <?php esc_html_e( 'Generate XML/HTML sitemaps for selected content, with optional pings to search engines.', 'beseo' ); ?>

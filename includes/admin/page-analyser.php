@@ -267,7 +267,7 @@ function be_schema_engine_render_analyser_page() {
     $home_url    = home_url( '/' );
     ?>
     <div class="wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Analyser', 'beseo' ); ?></h1>
+        <h1><?php esc_html_e( 'BE SEO – Analyser', 'beseo' ); ?></h1>
         <?php be_schema_engine_render_analyser_content( $default_tab, $home_url ); ?>
     </div>
     <?php
