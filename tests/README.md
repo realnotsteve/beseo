@@ -6,24 +6,22 @@ Goal: quick, repeatable checks for the recent validation and debug-visibility ch
 Prereqs
 -------
 - WordPress admin access with the BE SEO plugin active.
-- For debug readiness checks, set `WP_DEBUG` to `true` in wp-config.php.
+- For debug/dry-run log checks, set `WP_DEBUG` to `true` in wp-config.php (and ensure logging is enabled in your environment).
 
-Schema Admin (Settings / Website)
----------------------------------
-1) URL validation (Organisation/Publisher):
-   - Enter an invalid URL (e.g., `foo` or `javascript:alert(1)`) in Organisation URL or any Publisher URL field, save.
+Schema Admin (Website / Debug)
+------------------------------
+1) URL validation (Organisation URL only):
+   - Enter an invalid URL (e.g., `foo` or `javascript:alert(1)`) in Organisation URL, save.
    - Expect: error notice on the Schema page, field value cleared.
-- Enter a valid `https://example.com` style URL and save; no notice.
-2) Copyright year:
-   - Enter `23` and save.
-   - Expect: error notice and field cleared. Enter `2024`; no notice.
-3) Schema dry run:
-   - Enable “Schema Dry Run (No Output)” in Settings and ensure WP_DEBUG + Admin Debug are on.
-   - Load a front-end page; expect no JSON-LD output in source, but see `BE_SCHEMA_DRY_RUN` entries in error log.
+   - Enter a valid `https://example.com` style URL and save; no notice.
+2) Schema dry run:
+   - Go to Schema > Debug and enable “Generate but do not output schema”.
+   - Load a front-end page; expect no JSON-LD output in source.
+   - With WP_DEBUG + “Enable debug output” on, confirm `BE_SCHEMA_DRY_RUN` entries in the error log.
    - Disable dry run and confirm JSON-LD outputs again.
-3) Debug readiness box:
-   - With `WP_DEBUG` off: Debug row shows pill `WP_DEBUG: OFF` and message that debug output requires WP_DEBUG.
-   - With `WP_DEBUG` on and admin Debug on: all pills should be ON (WP_DEBUG/Admin Debug/Constant if set).
+3) Debug logging:
+   - With `WP_DEBUG` off: the Debug logging row shows a warning message about WP_DEBUG being required.
+   - With `WP_DEBUG` on and “Enable debug output” checked: load a front-end page and confirm `BE_SCHEMA_DEBUG_GRAPH` entries in the error log.
 
 Social Admin
 ------------
@@ -34,9 +32,10 @@ Social Admin
 2) Facebook Page URL:
    - Same pattern: invalid string -> error + cleared; valid URL -> accepted.
 3) Social dry run:
-   - Enable “social dry run” on the dashboard.
-   - Load a front-end page; expect no OG/Twitter meta tags in page source, but `BE_SOCIAL_DRY_RUN` entries in error log.
-   - Disable dry run and confirm tags return.
+   - Social Media > Platforms > Facebook > Tools: enable “OpenGraph dry run”.
+   - Social Media > Platforms > Twitter > Tools: enable “Twitter dry run”.
+   - Load a front-end page; expect OG/Twitter meta tags to be suppressed for the enabled toggles, and `BE_SOCIAL_DRY_RUN` entries in the error log.
+   - Disable dry run toggles and confirm tags return.
 
 General
 -------
