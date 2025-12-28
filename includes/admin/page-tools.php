@@ -490,6 +490,10 @@ function be_schema_engine_render_tools_page() {
         be_schema_engine_save_playfair_settings();
     }
     $settings = function_exists( 'be_schema_engine_get_settings' ) ? be_schema_engine_get_settings() : array();
+    $analyser_default_tab = function_exists( 'be_schema_engine_get_analyser_default_tab' )
+        ? be_schema_engine_get_analyser_default_tab()
+        : 'overview';
+    $analyser_home_url = home_url( '/' );
 
     wp_enqueue_script(
         'be-schema-help-accent',
@@ -508,6 +512,12 @@ function be_schema_engine_render_tools_page() {
             array(),
             BE_SCHEMA_ENGINE_VERSION
         );
+        wp_enqueue_style(
+            'be-schema-analyser',
+            BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/css/analyser.css',
+            array(),
+            BE_SCHEMA_ENGINE_VERSION
+        );
         wp_enqueue_script(
             'be-schema-selector',
             BE_SCHEMA_ENGINE_PLUGIN_URL . 'includes/admin/js/be-selector.js',
@@ -519,6 +529,13 @@ function be_schema_engine_render_tools_page() {
             'be-schema-admin',
             BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/js/schema.js',
             array( 'media-editor', 'be-schema-selector' ),
+            BE_SCHEMA_ENGINE_VERSION,
+            true
+        );
+        wp_enqueue_script(
+            'be-schema-analyser',
+            BE_SCHEMA_ENGINE_PLUGIN_URL . 'assets/js/analyser.js',
+            array( 'be-schema-selector' ),
             BE_SCHEMA_ENGINE_VERSION,
             true
         );
@@ -550,6 +567,13 @@ function be_schema_engine_render_tools_page() {
                 ),
             )
         );
+        wp_localize_script(
+            'be-schema-analyser',
+            'beSchemaAnalyserData',
+            function_exists( 'be_schema_engine_get_analyser_localize_data' )
+                ? be_schema_engine_get_analyser_localize_data( $analyser_default_tab )
+                : array()
+        );
     }
 
     if ( $is_settings_submenu ) {
@@ -570,7 +594,7 @@ function be_schema_engine_render_tools_page() {
         } else {
             $tools_default_tab = 'help';
         }
-    } elseif ( $requested_tab && in_array( $requested_tab, array( 'schema', 'social', 'wayfair', 'images' ), true ) ) {
+    } elseif ( $requested_tab && in_array( $requested_tab, array( 'schema', 'social', 'wayfair', 'analyser', 'images' ), true ) ) {
         $tools_default_tab = $requested_tab;
     }
     ?>
@@ -714,6 +738,7 @@ function be_schema_engine_render_tools_page() {
                 <a href="#be-schema-tools-schema" class="nav-tab<?php echo ( 'schema' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="schema"><?php esc_html_e( 'Schema Tests', 'beseo' ); ?></a>
                 <a href="#be-schema-tools-social" class="nav-tab<?php echo ( 'social' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="social"><?php esc_html_e( 'Social Tests', 'beseo' ); ?></a>
                 <a href="#be-schema-tools-wayfair" class="nav-tab<?php echo ( 'wayfair' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="wayfair"><?php esc_html_e( 'Wayfair Tester', 'beseo' ); ?></a>
+                <a href="#be-schema-tools-analyser" class="nav-tab<?php echo ( 'analyser' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="analyser"><?php esc_html_e( 'Analyser', 'beseo' ); ?></a>
             <?php endif; ?>
             <?php if ( $is_settings_submenu ) : ?>
                 <a href="#be-schema-tools-help" class="nav-tab<?php echo ( 'help' === $tools_default_tab ) ? ' nav-tab-active' : ''; ?>" data-tools-tab="help"><?php esc_html_e( 'Help Text', 'beseo' ); ?></a>
@@ -846,6 +871,20 @@ function be_schema_engine_render_tools_page() {
                     $playfair_capture_show_html    = true;
                     $playfair_capture_show_logs    = true;
                     include $playfair_panel;
+                }
+                ?>
+            </div>
+
+            <div id="be-schema-tools-analyser" class="be-schema-tools-panel<?php echo ( 'analyser' === $tools_default_tab ) ? ' active' : ''; ?>">
+                <h2><?php esc_html_e( 'Analyser', 'beseo' ); ?></h2>
+                <p class="description">
+                    <?php esc_html_e( 'Run quick crawls and review issue summaries, pages, and history.', 'beseo' ); ?>
+                </p>
+                <?php
+                if ( function_exists( 'be_schema_engine_render_analyser_content' ) ) {
+                    be_schema_engine_render_analyser_content( $analyser_default_tab, $analyser_home_url );
+                } else {
+                    echo '<p class="description">' . esc_html__( 'Analyser unavailable.', 'beseo' ) . '</p>';
                 }
                 ?>
             </div>

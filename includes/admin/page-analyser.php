@@ -13,12 +13,68 @@ require_once BE_SCHEMA_ENGINE_PLUGIN_DIR . 'includes/admin/analyser-service.php'
  * Determine the default analyser tab.
  */
 function be_schema_engine_get_analyser_default_tab() {
-    $default_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $default_tab = 'overview';
+    if ( isset( $_GET['analyser_tab'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $default_tab = sanitize_key( wp_unslash( $_GET['analyser_tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    } elseif ( isset( $_GET['tab'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $default_tab = sanitize_key( wp_unslash( $_GET['tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    }
     $allowed     = array( 'overview', 'issues', 'pages', 'history', 'settings' );
     if ( ! in_array( $default_tab, $allowed, true ) ) {
         $default_tab = 'overview';
     }
     return $default_tab;
+}
+
+/**
+ * Build analyser localization data for JS.
+ *
+ * @param string $default_tab Default tab key.
+ * @return array
+ */
+function be_schema_engine_get_analyser_localize_data( $default_tab ) {
+    return array(
+        'nonce'      => wp_create_nonce( 'be_schema_analyser' ),
+        'defaultTab' => $default_tab,
+        'homeUrl'    => home_url( '/' ),
+        'strings'    => array(
+            'noIssues'       => __( 'No issues detected for this crawl.', 'beseo' ),
+            'severity'       => __( 'Severity', 'beseo' ),
+            'type'           => __( 'Type', 'beseo' ),
+            'count'          => __( 'Count', 'beseo' ),
+            'examplePage'    => __( 'Example Page', 'beseo' ),
+            'noPagesYet'     => __( 'No pages processed yet.', 'beseo' ),
+            'noIssuesPage'   => __( 'No issues.', 'beseo' ),
+            'processed'      => __( 'Processed', 'beseo' ),
+            'queued'         => __( 'queued', 'beseo' ),
+            'crawlFailed'    => __( 'Crawl failed.', 'beseo' ),
+            'enterUrl'       => __( 'Enter a URL to analyse.', 'beseo' ),
+            'starting'       => __( 'Starting…', 'beseo' ),
+            'analysisFailed' => __( 'Analysis failed.', 'beseo' ),
+            'crawlStarted'   => __( 'Crawl started…', 'beseo' ),
+            'crawlStopped'   => __( 'Crawl stopped.', 'beseo' ),
+            'crawlPaused'    => __( 'Crawl paused.', 'beseo' ),
+            'resuming'       => __( 'Resuming…', 'beseo' ),
+            'enterLabelUrl'  => __( 'Enter a label and URL.', 'beseo' ),
+            'useHttp'        => __( 'Use http/https URLs only.', 'beseo' ),
+            'websiteSaved'   => __( 'Website saved.', 'beseo' ),
+            'noSavedSites'   => __( 'No saved websites yet.', 'beseo' ),
+            'listingPages'   => __( 'Listing sitemap pages…', 'beseo' ),
+            'listFailed'     => __( 'Failed to list pages.', 'beseo' ),
+            'listNoPages'    => __( 'No sitemap pages found.', 'beseo' ),
+            'listReady'      => __( 'Pages loaded.', 'beseo' ),
+            'subpagesNone'   => __( 'None', 'beseo' ),
+            'subpagesHome'   => __( 'Home page', 'beseo' ),
+            'subpagesDivider'=> __( '────────', 'beseo' ),
+            'noHistory'      => __( 'No history yet.', 'beseo' ),
+            'runTwo'         => __( 'Run two crawls to see deltas.', 'beseo' ),
+            'currentLabel'   => __( 'Current:', 'beseo' ),
+            'elapsedLabel'   => __( 'Elapsed:', 'beseo' ),
+            'errorsLabel'    => __( 'Errors:', 'beseo' ),
+            'errors'         => __( 'Errors', 'beseo' ),
+            'remove'         => __( 'Remove', 'beseo' ),
+        ),
+    );
 }
 
 /**
@@ -61,68 +117,24 @@ function be_schema_engine_enqueue_analyser_assets() {
         true
     );
 
-    $default_tab = be_schema_engine_get_analyser_default_tab();
-    $home_url    = home_url( '/' );
-
     wp_localize_script(
         'be-schema-analyser',
         'beSchemaAnalyserData',
-        array(
-            'nonce'      => wp_create_nonce( 'be_schema_analyser' ),
-            'defaultTab' => $default_tab,
-            'homeUrl'    => $home_url,
-            'strings'    => array(
-                'noIssues'       => __( 'No issues detected for this crawl.', 'beseo' ),
-                'severity'       => __( 'Severity', 'beseo' ),
-                'type'           => __( 'Type', 'beseo' ),
-                'count'          => __( 'Count', 'beseo' ),
-                'examplePage'    => __( 'Example Page', 'beseo' ),
-                'noPagesYet'     => __( 'No pages processed yet.', 'beseo' ),
-                'noIssuesPage'   => __( 'No issues.', 'beseo' ),
-                'processed'      => __( 'Processed', 'beseo' ),
-                'queued'         => __( 'queued', 'beseo' ),
-                'crawlFailed'    => __( 'Crawl failed.', 'beseo' ),
-                'enterUrl'       => __( 'Enter a URL to analyse.', 'beseo' ),
-                'starting'       => __( 'Starting…', 'beseo' ),
-                'analysisFailed' => __( 'Analysis failed.', 'beseo' ),
-                'crawlStarted'   => __( 'Crawl started…', 'beseo' ),
-                'crawlStopped'   => __( 'Crawl stopped.', 'beseo' ),
-                'crawlPaused'    => __( 'Crawl paused.', 'beseo' ),
-                'resuming'       => __( 'Resuming…', 'beseo' ),
-                'enterLabelUrl'  => __( 'Enter a label and URL.', 'beseo' ),
-                'useHttp'        => __( 'Use http/https URLs only.', 'beseo' ),
-                'websiteSaved'   => __( 'Website saved.', 'beseo' ),
-                'noSavedSites'   => __( 'No saved websites yet.', 'beseo' ),
-                'listingPages'   => __( 'Listing sitemap pages…', 'beseo' ),
-                'listFailed'     => __( 'Failed to list pages.', 'beseo' ),
-                'listNoPages'    => __( 'No sitemap pages found.', 'beseo' ),
-                'listReady'      => __( 'Pages loaded.', 'beseo' ),
-                'subpagesNone'   => __( 'None', 'beseo' ),
-                'subpagesHome'   => __( 'Home page', 'beseo' ),
-                'subpagesDivider'=> __( '────────', 'beseo' ),
-                'noHistory'      => __( 'No history yet.', 'beseo' ),
-                'runTwo'         => __( 'Run two crawls to see deltas.', 'beseo' ),
-                'currentLabel'   => __( 'Current:', 'beseo' ),
-                'elapsedLabel'   => __( 'Elapsed:', 'beseo' ),
-                'errorsLabel'    => __( 'Errors:', 'beseo' ),
-                'errors'         => __( 'Errors', 'beseo' ),
-                'remove'         => __( 'Remove', 'beseo' ),
-            ),
-        )
+        be_schema_engine_get_analyser_localize_data( be_schema_engine_get_analyser_default_tab() )
     );
 }
 add_action( 'admin_enqueue_scripts', 'be_schema_engine_enqueue_analyser_assets' );
 
 /**
- * Render the Analyser submenu page.
+ * Render the analyser content (tabs + panels).
+ *
+ * @param string|null $default_tab Default tab key.
+ * @param string|null $home_url Home URL for prefill.
  */
-function be_schema_engine_render_analyser_page() {
-    $default_tab = be_schema_engine_get_analyser_default_tab();
-    $home_url    = home_url( '/' );
+function be_schema_engine_render_analyser_content( $default_tab = null, $home_url = null ) {
+    $default_tab = $default_tab ? $default_tab : be_schema_engine_get_analyser_default_tab();
+    $home_url    = $home_url ? $home_url : home_url( '/' );
     ?>
-    <div class="wrap">
-        <h1><?php esc_html_e( 'BE Schema Engine – Analyser', 'beseo' ); ?></h1>
-
         <div class="be-schema-analyser-tabs">
             <a href="#be-schema-analyser-overview" class="be-schema-analyser-tab<?php echo ( 'overview' === $default_tab ) ? ' active' : ''; ?>" data-ana-tab="overview"><?php esc_html_e( 'Overview', 'beseo' ); ?></a>
             <a href="#be-schema-analyser-issues" class="be-schema-analyser-tab<?php echo ( 'issues' === $default_tab ) ? ' active' : ''; ?>" data-ana-tab="issues"><?php esc_html_e( 'Issues', 'beseo' ); ?></a>
@@ -244,6 +256,19 @@ function be_schema_engine_render_analyser_page() {
         <div id="be-schema-analyser-settings" class="be-schema-analyser-panel<?php echo ( 'settings' === $default_tab ) ? ' active' : ''; ?>">
             <p class="description"><?php esc_html_e( 'Website lists are managed under Settings → Lists.', 'beseo' ); ?></p>
         </div>
+    <?php
+}
+
+/**
+ * Render the Analyser submenu page.
+ */
+function be_schema_engine_render_analyser_page() {
+    $default_tab = be_schema_engine_get_analyser_default_tab();
+    $home_url    = home_url( '/' );
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e( 'BE Schema Engine – Analyser', 'beseo' ); ?></h1>
+        <?php be_schema_engine_render_analyser_content( $default_tab, $home_url ); ?>
     </div>
     <?php
 }

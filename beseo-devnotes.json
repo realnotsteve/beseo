@@ -4,7 +4,7 @@
     "alias": "BE SEO Engine",
     "author": "William Evans, PhD",
     "description": "Central, conservative schema + social meta for WordPress (Elementor-first), with strong safety, Elementor integration, debug tooling, and a predictable architecture.",
-    "version": "2.1.62",
+    "version": "2.1.63",
     "repo_root": "beseo/"
   },
   "workflows": {
@@ -570,7 +570,7 @@
     "Removed Schema Tests Playfair include after moving captures to Tester."
   ],
   "ui_notes_tools": [
-    "Tester submenu now has Schema Tests, Social Tests, Wayfair Tester, and Images tabs with a shared selector header; Images still links to Schema \u2192 WebSite images. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
+    "Tester submenu now has Schema Tests, Social Tests, Wayfair Tester, Analyser, and Images tabs with a shared selector header; Analyser hosts its Overview/Issues/Pages/History/Settings subtabs; Images still links to Schema \u2192 WebSite images. Tabs now use WP nav-tab styling with inline CSS/JS fallback to ensure visibility."
   ],
   "text_tone_notes": [
     "Removed the leading \"Optional.\" prefix from optional-field helper text across Schema UI for cleaner phrasing.",
