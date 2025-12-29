@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. The format 
 
 <hr />
 
+## [3.0.8] - 2025-12-28
+Summary: Update.
+
+### Changed
+- Updated staged files.
+
+### Files
+- .vscode/beseo.code-workspace
+
+
 ## [3.0.7] - 2025-12-28
 Summary: Devnotes + tests.
 
